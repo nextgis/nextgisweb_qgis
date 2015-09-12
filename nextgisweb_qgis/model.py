@@ -200,7 +200,7 @@ class RenderRequest(object):
         )
 
 
-class _qml_attr(SerializedProperty): # NOQA
+class _file_upload_attr(SerializedProperty): # NOQA
     def setter(self, srlzr, value):
         srcfile, _ = env.file_upload.get_filename(value['id'])
         fileobj = env.file_storage.fileobj(component='qgis')
@@ -215,4 +215,4 @@ class QgisVectorStyleSerializer(Serializer):
     identity = QgisVectorStyle.identity
     resclass = QgisVectorStyle
 
-    qml = _qml_attr(read=ResourceScope.read, write=ResourceScope.update)
+    file_upload = _file_upload_attr(read=None, write=ResourceScope.update)

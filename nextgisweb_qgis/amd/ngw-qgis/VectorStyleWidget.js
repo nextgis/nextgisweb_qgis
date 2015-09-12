@@ -34,7 +34,7 @@ define([
             var prefix = this.prefix,
                 setObject = function (key, value) { lang.setObject(prefix + "." + key, value, data); };
 
-            setObject("qml", this.wQml.get("value"));
+            setObject("file_upload", this.wFileUpload.get("value"));
         }
     });
 });
