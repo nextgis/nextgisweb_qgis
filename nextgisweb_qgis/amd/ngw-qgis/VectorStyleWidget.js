@@ -11,9 +11,7 @@ define([
     "dojo/text!./template/VectorStyleWidget.html",
     // template
     "dojox/layout/TableContainer",
-    "ngw/form/SpatialRefSysSelect",
-    "ngw/form/Uploader",
-    "dijit/form/ComboBox"
+    "ngw-file-upload/Uploader"
 ], function (
     declare,
     lang,
