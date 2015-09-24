@@ -20,14 +20,15 @@ class QgisComponent(Component):
     def configure(self):
         super(QgisComponent, self).configure()
 
+    def setup_pyramid(self, config):
+        super(QgisComponent, self).setup_pyramid(config)
+
         # Отдельный поток в котором мы будем запускать весь рендеринг,
         # иначе все падает в segfault при конкурентной обработке запросов.
         self.worker = Thread(target=self.renderer)
         self.queue = Queue()
         self.worker.start()
 
-    def setup_pyramid(self, config):
-        super(QgisComponent, self).setup_pyramid(config)
         from . import view
         view.setup_pyramid(self, config)
 
