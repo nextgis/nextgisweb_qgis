@@ -4,15 +4,15 @@ import os
 import os.path
 from shutil import copyfileobj
 from tempfile import mkdtemp
+from Queue import Queue
 from StringIO import StringIO
 
 import geojson
 import PIL
 from zope.interface import implements
 from qgis.core import (
-    QgsMapLayerRegistry,
     QgsVectorLayer,
-    QgsMapRenderer,
+    QgsMapSettings,
     QgsRectangle,
     QgsCoordinateReferenceSystem)
 from PyQt4.QtCore import (
@@ -22,7 +22,7 @@ from PyQt4.QtCore import (
     QIODevice)
 from PyQt4.QtGui import (
     QImage,
-    QPainter,
+    QColor,
     qRgba)
 
 from nextgisweb import db
@@ -128,37 +128,30 @@ class QgisVectorStyle(Base, Resource):
             fnstyle = os.path.join(dirname, 'layer.qml')
             os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
 
-            with env.qgis.rlock:
-                QgsMapLayerRegistry.instance().removeAllMapLayers()
+            layer = QgsVectorLayer(fndata, 'layer', 'ogr')
 
-                layer = QgsVectorLayer(fndata, 'layer', 'ogr')
-                QgsMapLayerRegistry.instance().addMapLayer(layer)
+            crs = QgsCoordinateReferenceSystem(self.srs.id)
+            layer.setCrs(crs)
 
-                crs = QgsCoordinateReferenceSystem(self.srs.id)
-                layer.setCrs(crs)
+            msettings = QgsMapSettings()
+            msettings.setLayers([layer.id()])
+            msettings.setFlag(QgsMapSettings.DrawLabeling)
+            msettings.setFlag(QgsMapSettings.Antialiasing)
 
-                render = QgsMapRenderer()
-                render.setLayerSet([layer.id()])
+            msettings.setCrsTransformEnabled(True)
+            msettings.setDestinationCrs(crs)
+            msettings.setMapUnits(crs.mapUnits())
+            msettings.setOutputSize(QSize(*render_size))
+            msettings.setExtent(QgsRectangle(*extended))
 
-                img = QImage(
-                    render_size[0], render_size[1],
-                    QImage.Format_ARGB32)
-                img.fill(qRgba(255, 255, 255, 0))
+            msettings.setOutputImageFormat(QImage.Format_ARGB32)
+            bgcolor = QColor.fromRgba(qRgba(255, 255, 255, 0))
+            msettings.setBackgroundColor(bgcolor)
+            msettings.setOutputDpi(96)
 
-                render.setOutputSize(
-                    QSize(img.width(), img.height()),
-                    img.logicalDpiX())
-                render.setDestinationCrs(crs)
-                render.setProjectionsEnabled(True)
-                render.setMapUnits(crs.mapUnits())
-
-                extent = QgsRectangle(*extended)
-                render.setExtent(extent)
-                painter = QPainter(img)
-                painter.setRenderHint(QPainter.Antialiasing)
-                render.render(painter)
-                painter.end()
-                QgsMapLayerRegistry.instance().removeAllMapLayers()
+            result = Queue()
+            env.qgis.queue.put((layer, msettings, result))
+            img = result.get()
 
         finally:
             if fndata and os.path.isfile(fndata):
