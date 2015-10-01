@@ -35,7 +35,7 @@ from nextgisweb.resource import (
     Serializer,
     SerializedProperty)
 from nextgisweb.feature_layer import IFeatureLayer
-from nextgisweb.style import (
+from nextgisweb.render import (
     IRenderableStyle,
     IExtentRenderRequest,
     ITileRenderRequest)
