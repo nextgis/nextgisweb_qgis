@@ -25,8 +25,9 @@ class QgisComponent(Component):
 
         # Отдельный поток в котором мы будем запускать весь рендеринг,
         # иначе все падает в segfault при конкурентной обработке запросов.
-        self.worker = Thread(target=self.renderer)
         self.queue = Queue()
+        self.worker = Thread(target=self.renderer)
+        self.worker.daemon = True
         self.worker.start()
 
         from . import view
