@@ -12,7 +12,6 @@ from nextgisweb.component import Component
 from .model import Base
 
 
-@Component.registry.register
 class QgisComponent(Component):
     identity = 'qgis'
     metadata = Base.metadata
