@@ -33,10 +33,10 @@ class QgisComponent(Component):
         view.setup_pyramid(self, config)
 
     def renderer(self):
-        QgsApplication.setPrefixPath('/usr', True)
-        QgsApplication.setMaxThreads(1)
-        QgsApplication.initQgis()
         qgis = QgsApplication([], False)
+        qgis.setPrefixPath('/usr', True)
+        qgis.setMaxThreads(1)
+        qgis.initQgis()
 
         while True:
             layer, settings, result = self.queue.get()
