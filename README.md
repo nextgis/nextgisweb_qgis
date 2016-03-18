@@ -24,3 +24,9 @@ $ cp `/usr/bin/python -c "import sip; print sip.__file__"` $DST
 $ cp -r `/usr/bin/python -c "import PyQt4, os.path; print os.path.split(PyQt4.__file__)[0]"` $DST
 $ cp -r `/usr/bin/python -c "import qgis, os.path; print os.path.split(qgis.__file__)[0]"` $DST
 ```
+
+Commercial support
+----------
+Need to fix a bug or add a feature to NextGISWeb QGIS? We provide custom development and support for this software. [Contact us](http://nextgis.ru/en/contact/) to discuss options!
+
+[![http://nextgis.com](http://nextgis.ru/img/nextgis.png)](http://nextgis.com)
