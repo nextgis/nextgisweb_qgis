@@ -15,11 +15,13 @@ from qgis.core import (
     QgsMapSettings,
     QgsRectangle,
     QgsCoordinateReferenceSystem)
+
 from PyQt4.QtCore import (
     QSize,
     QByteArray,
     QBuffer,
     QIODevice)
+
 from PyQt4.QtGui import (
     QImage,
     QColor,
@@ -128,31 +130,11 @@ class QgisVectorStyle(Base, Resource):
             fnstyle = os.path.join(dirname, 'layer.qml')
             os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
 
-            layer = QgsVectorLayer(fndata, 'layer', 'ogr')
-
-            crs = QgsCoordinateReferenceSystem(self.srs.id)
-            layer.setCrs(crs)
-
-            msettings = QgsMapSettings()
-            msettings.setLayers([layer.id()])
-            msettings.setFlag(QgsMapSettings.DrawLabeling)
-            msettings.setFlag(QgsMapSettings.Antialiasing)
-
-            msettings.setCrsTransformEnabled(True)
-            msettings.setDestinationCrs(crs)
-            msettings.setMapUnits(crs.mapUnits())
-            msettings.setOutputSize(QSize(*render_size))
-            msettings.setExtent(QgsRectangle(*extended))
-
-            msettings.setOutputImageFormat(QImage.Format_ARGB32)
-            bgcolor = QColor.fromRgba(qRgba(255, 255, 255, 0))
-            msettings.setBackgroundColor(bgcolor)
-            msettings.setOutputDpi(96)
-
             result = Queue()
-            env.qgis.queue.put((layer, msettings, result))
+            env.qgis.queue.put((fndata, fnstyle, result, self.srs, render_size, extended))
             img = result.get()
-
+        except Exception as ex:
+            pass
         finally:
             if fndata and os.path.isfile(fndata):
                 os.unlink(fndata)

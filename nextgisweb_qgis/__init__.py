@@ -8,9 +8,20 @@ from qgis.core import (
     QgsMapRendererCustomPainterJob)
 from PyQt4.QtGui import (QImage, QPainter, QColor, qRgba)
 
+from PyQt4.QtCore import (
+    QSize,
+    QByteArray,
+    QBuffer,
+    QIODevice)
+
 from nextgisweb.component import Component
 from .model import Base
 
+from qgis.core import (
+    QgsVectorLayer,
+    QgsMapSettings,
+    QgsRectangle,
+    QgsCoordinateReferenceSystem)
 
 class QgisComponent(Component):
     identity = 'qgis'
@@ -34,12 +45,34 @@ class QgisComponent(Component):
 
     def renderer(self):
         qgis = QgsApplication([], False)
-        qgis.setPrefixPath('/usr', True)
+        qgis.setPrefixPath('/opt/qgis_stable_14', True)
         qgis.setMaxThreads(1)
         qgis.initQgis()
 
         while True:
-            layer, settings, result = self.queue.get()
+            fndata, fnstyle, result, srs, render_size, extended = self.queue.get()
+
+            layer = QgsVectorLayer(fndata, 'layer', 'ogr')
+
+            crs = QgsCoordinateReferenceSystem(srs.id)
+            layer.setCrs(crs)
+
+            settings = QgsMapSettings()
+            settings.setLayers([layer.id()])
+            settings.setFlag(QgsMapSettings.DrawLabeling)
+            settings.setFlag(QgsMapSettings.Antialiasing)
+
+            settings.setCrsTransformEnabled(True)
+            settings.setDestinationCrs(crs)
+            settings.setMapUnits(crs.mapUnits())
+            settings.setOutputSize(QSize(*render_size))
+            settings.setExtent(QgsRectangle(*extended))
+
+            settings.setOutputImageFormat(QImage.Format_ARGB32)
+            bgcolor = QColor.fromRgba(qRgba(255, 255, 255, 0))
+            settings.setBackgroundColor(bgcolor)
+            settings.setOutputDpi(96)
+
 
             QgsMapLayerRegistry.instance().addMapLayer(layer)
             settings.setLayers([layer.id()])
