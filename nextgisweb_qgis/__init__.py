@@ -2,11 +2,25 @@
 from __future__ import unicode_literals, print_function, absolute_import
 from threading import Thread
 from Queue import Queue
+from StringIO import StringIO
+import PIL
+
 from qgis.core import (
     QgsApplication,
     QgsMapLayerRegistry,
-    QgsMapRendererCustomPainterJob)
-from PyQt4.QtGui import (QImage, QPainter, QColor, qRgba)
+    QgsMapRendererCustomPainterJob,
+    QgsVectorLayer,
+    QgsMapSettings,
+    QgsRectangle,
+    QgsCoordinateReferenceSystem
+)
+
+from PyQt4.QtGui import (
+    QImage,
+    QPainter,
+    QColor,
+    qRgba
+)
 
 from PyQt4.QtCore import (
     QSize,
@@ -17,11 +31,6 @@ from PyQt4.QtCore import (
 from nextgisweb.component import Component
 from .model import Base
 
-from qgis.core import (
-    QgsVectorLayer,
-    QgsMapSettings,
-    QgsRectangle,
-    QgsCoordinateReferenceSystem)
 
 class QgisComponent(Component):
     identity = 'qgis'
@@ -50,7 +59,7 @@ class QgisComponent(Component):
         qgis.initQgis()
 
         while True:
-            fndata, fnstyle, result, srs, render_size, extended = self.queue.get()
+            fndata, fnstyle, srs, render_size, extended, target_box, result = self.queue.get()
 
             layer = QgsVectorLayer(fndata, 'layer', 'ogr')
 
@@ -99,6 +108,19 @@ class QgisComponent(Component):
             painter.end()
 
             QgsMapLayerRegistry.instance().removeAllMapLayers()
+
+            ba = QByteArray()
+            bf = QBuffer(ba)
+            bf.open(QIODevice.WriteOnly)
+            img.save(bf, 'PNG')
+            bf.close()
+
+            buf = StringIO()
+            buf.write(bf.data())
+            buf.seek(0)
+
+            img = PIL.Image.open(buf)
+            img.crop(target_box)
 
             result.put(img)
 

@@ -5,27 +5,9 @@ import os.path
 from shutil import copyfileobj
 from tempfile import mkdtemp
 from Queue import Queue
-from StringIO import StringIO
 
 import geojson
-import PIL
 from zope.interface import implements
-from qgis.core import (
-    QgsVectorLayer,
-    QgsMapSettings,
-    QgsRectangle,
-    QgsCoordinateReferenceSystem)
-
-from PyQt4.QtCore import (
-    QSize,
-    QByteArray,
-    QBuffer,
-    QIODevice)
-
-from PyQt4.QtGui import (
-    QImage,
-    QColor,
-    qRgba)
 
 from nextgisweb import db
 from nextgisweb.models import declarative_base
@@ -118,6 +100,7 @@ class QgisVectorStyle(Base, Resource):
         feature_query.geom()
         features = feature_query()
 
+        res_img = None
         try:
             dirname, fndata, fnstyle = None, None, None
 
@@ -131,10 +114,8 @@ class QgisVectorStyle(Base, Resource):
             os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
 
             result = Queue()
-            env.qgis.queue.put((fndata, fnstyle, result, self.srs, render_size, extended))
-            img = result.get()
-        except Exception as ex:
-            pass
+            env.qgis.queue.put((fndata, fnstyle, self.srs, render_size, extended, target_box, result))
+            res_img = result.get()
         finally:
             if fndata and os.path.isfile(fndata):
                 os.unlink(fndata)
@@ -143,18 +124,7 @@ class QgisVectorStyle(Base, Resource):
             if dirname and os.path.isdir(dirname):
                 os.rmdir(dirname)
 
-        ba = QByteArray()
-        bf = QBuffer(ba)
-        bf.open(QIODevice.WriteOnly)
-        img.save(bf, 'PNG')
-        bf.close()
-
-        buf = StringIO()
-        buf.write(bf.data())
-        buf.seek(0)
-
-        img = PIL.Image.open(buf)
-        return img.crop(target_box)
+        return res_img
 
 
 class RenderRequest(object):
