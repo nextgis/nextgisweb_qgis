@@ -65,71 +65,75 @@ class QgisComponent(Component):
         qgis.initQgis()
 
         while True:
-            fndata, srs, render_size, extended, \
-                target_box, result = self.queue.get()
+            try:
+                fndata, srs, render_size, extended, \
+                    target_box, result = self.queue.get()
 
-            layer = QgsVectorLayer(fndata, 'layer', 'ogr')
+                layer = QgsVectorLayer(fndata, 'layer', 'ogr')
 
-            crs = QgsCoordinateReferenceSystem(srs.id)
-            layer.setCrs(crs)
+                crs = QgsCoordinateReferenceSystem(srs.id)
+                layer.setCrs(crs)
 
-            settings = QgsMapSettings()
-            settings.setLayers([layer.id()])
-            settings.setFlag(QgsMapSettings.DrawLabeling)
-            settings.setFlag(QgsMapSettings.Antialiasing)
+                settings = QgsMapSettings()
+                settings.setLayers([layer.id()])
+                settings.setFlag(QgsMapSettings.DrawLabeling)
+                settings.setFlag(QgsMapSettings.Antialiasing)
 
-            settings.setCrsTransformEnabled(True)
-            settings.setDestinationCrs(crs)
-            settings.setMapUnits(crs.mapUnits())
-            settings.setOutputSize(QSize(*render_size))
-            settings.setExtent(QgsRectangle(*extended))
+                settings.setCrsTransformEnabled(True)
+                settings.setDestinationCrs(crs)
+                settings.setMapUnits(crs.mapUnits())
+                settings.setOutputSize(QSize(*render_size))
+                settings.setExtent(QgsRectangle(*extended))
 
-            settings.setOutputImageFormat(QImage.Format_ARGB32)
-            bgcolor = QColor.fromRgba(qRgba(255, 255, 255, 0))
-            settings.setBackgroundColor(bgcolor)
-            settings.setOutputDpi(96)
+                settings.setOutputImageFormat(QImage.Format_ARGB32)
+                bgcolor = QColor.fromRgba(qRgba(255, 255, 255, 0))
+                settings.setBackgroundColor(bgcolor)
+                settings.setOutputDpi(96)
 
-            QgsMapLayerRegistry.instance().addMapLayer(layer)
-            settings.setLayers([layer.id()])
+                QgsMapLayerRegistry.instance().addMapLayer(layer)
+                settings.setLayers([layer.id()])
 
-            # Создаем QImage руками чтобы можно было использовать
-            # QgsMapRendererCustomPainterJob. Остальные не позволяют
-            # обойти баг с рисованием поверх старого.
-            img = QImage(settings.outputSize(), QImage.Format_ARGB32)
+                # Создаем QImage руками чтобы можно было использовать
+                # QgsMapRendererCustomPainterJob. Остальные не позволяют
+                # обойти баг с рисованием поверх старого.
+                img = QImage(settings.outputSize(), QImage.Format_ARGB32)
 
-            # Эти костыли нужны для того, чтобы корректно рисовались
-            # слои на прозрачном фоне, без этого получается каша.
-            img.fill(QColor.fromRgba(qRgba(255, 255, 255, 255)))
-            img.fill(QColor.fromRgba(qRgba(255, 255, 255, 0)))
+                # Эти костыли нужны для того, чтобы корректно рисовались
+                # слои на прозрачном фоне, без этого получается каша.
+                img.fill(QColor.fromRgba(qRgba(255, 255, 255, 255)))
+                img.fill(QColor.fromRgba(qRgba(255, 255, 255, 0)))
 
-            # DPI должно быть таким же как в settings, иначе ошибка. В QImage
-            # разрешение указывается в точках на метр по каждой оси.
-            dpm = settings.outputDpi() / 25.4 * 1000
-            img.setDotsPerMeterX(dpm)
-            img.setDotsPerMeterY(dpm)
+                # DPI должно быть таким же как в settings, иначе ошибка. В QImage
+                # разрешение указывается в точках на метр по каждой оси.
+                dpm = settings.outputDpi() / 25.4 * 1000
+                img.setDotsPerMeterX(dpm)
+                img.setDotsPerMeterY(dpm)
 
-            painter = QPainter(img)
-            job = QgsMapRendererCustomPainterJob(settings, painter)
-            job.renderSynchronously()
-            painter.end()
+                painter = QPainter(img)
+                job = QgsMapRendererCustomPainterJob(settings, painter)
+                job.renderSynchronously()
+                painter.end()
 
-            QgsMapLayerRegistry.instance().removeAllMapLayers()
+                QgsMapLayerRegistry.instance().removeAllMapLayers()
 
-            # Преобразование QImage в PIL
-            ba = QByteArray()
-            bf = QBuffer(ba)
-            bf.open(QIODevice.WriteOnly)
-            img.save(bf, 'PNG')
-            bf.close()
+                # Преобразование QImage в PIL
+                ba = QByteArray()
+                bf = QBuffer(ba)
+                bf.open(QIODevice.WriteOnly)
+                img.save(bf, 'PNG')
+                bf.close()
 
-            buf = StringIO()
-            buf.write(bf.data())
-            buf.seek(0)
+                buf = StringIO()
+                buf.write(bf.data())
+                buf.seek(0)
 
-            img = PIL.Image.open(buf)
-            img.crop(target_box)
+                img = PIL.Image.open(buf)
+                img.crop(target_box)
 
-            result.put(img)
+                result.put(img)
+            except Exception as ex:
+                print(ex.message)
+                # need write to log?
 
         qgis.exitQgis()
 
