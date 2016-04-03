@@ -35,6 +35,14 @@ You have to add `--lazy` to the command line, in this way application will be lo
 lazy = True
 ```
 
+If you get an error message `ERROR: Auth db directory path could not be created` then you have to specify directory where an existing qgis-auth.db is located or created if not present.
+This directory needs to be writeable by uwsgi process user. For example:
+
+```
+[uwsgi]
+env = QGIS_AUTH_DB_DIR_PATH=/var/www
+```
+
 License
 -------------
 This program is licensed under GNU GPL v2 or any later version
