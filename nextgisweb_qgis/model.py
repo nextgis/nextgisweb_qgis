@@ -116,7 +116,8 @@ class QgisVectorStyle(Base, Resource):
             result = Queue()
             env.qgis.queue.put((fndata, self.srs, render_size,
                                 extended, target_box, result))
-            res_img = result.get()
+            render_timeout = int(env.qgis.settings.get('render_timeout'))
+            res_img = result.get(block=True, timeout=render_timeout)
 
         finally:
             if fndata and os.path.isfile(fndata):

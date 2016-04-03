@@ -39,6 +39,8 @@ class QgisComponent(Component):
 
         if 'path' not in self.settings:
             self.settings['path'] = '/usr'
+        if 'render_timeout' not in self.settings:
+            self.settings['render_timeout'] = 10
 
     def configure(self):
         super(QgisComponent, self).configure()
@@ -113,6 +115,7 @@ class QgisComponent(Component):
 
             QgsMapLayerRegistry.instance().removeAllMapLayers()
 
+            # Преобразование QImage в PIL
             ba = QByteArray()
             bf = QBuffer(ba)
             bf.open(QIODevice.WriteOnly)
@@ -131,7 +134,8 @@ class QgisComponent(Component):
         qgis.exitQgis()
 
     settings_info = (
-        dict(key='path', desc=u"Директория, в которую установлен QGIS"),
+        dict(key='path', desc=u'Директория, в которую установлен QGIS'),
+        dict(key='render_timeout', desc=u'Таймаут отрисовки одного запроса QGIS\'ом в cек' ),
     )
 
 
