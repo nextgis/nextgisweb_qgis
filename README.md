@@ -25,6 +25,16 @@ $ cp -r `/usr/bin/python -c "import PyQt4, os.path; print os.path.split(PyQt4.__
 $ cp -r `/usr/bin/python -c "import qgis, os.path; print os.path.split(qgis.__file__)[0]"` $DST
 ```
 
+uWSGI Deployment Notes
+----------------------
+
+You have to add `--lazy` to the command line, in this way application will be loaded after master's fork, so each worker will get its thread.
+
+```
+[uwsgi]
+lazy = True
+```
+
 License
 -------------
 This program is licensed under GNU GPL v2 or any later version
