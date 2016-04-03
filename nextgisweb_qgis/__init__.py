@@ -131,9 +131,9 @@ class QgisComponent(Component):
                 img.crop(target_box)
 
                 result.put(img)
-            except Exception as ex:
-                print(ex.message)
-                # need write to log?
+
+            except Exception as e:
+                self.logger.error(e.message)
 
         qgis.exitQgis()
 
