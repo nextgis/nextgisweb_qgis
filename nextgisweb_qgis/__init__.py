@@ -12,15 +12,13 @@ from qgis.core import (
     QgsVectorLayer,
     QgsMapSettings,
     QgsRectangle,
-    QgsCoordinateReferenceSystem
-)
+    QgsCoordinateReferenceSystem)
 
 from PyQt4.QtGui import (
     QImage,
     QPainter,
     QColor,
-    qRgba
-)
+    qRgba)
 
 from PyQt4.QtCore import (
     QSize,
@@ -35,6 +33,12 @@ from .model import Base
 class QgisComponent(Component):
     identity = 'qgis'
     metadata = Base.metadata
+
+    def initialize(self):
+        super(QgisComponent, self).initialize()
+
+        if 'path' not in self.settings:
+            self.settings['path'] = '/usr'
 
     def configure(self):
         super(QgisComponent, self).configure()
@@ -54,12 +58,13 @@ class QgisComponent(Component):
 
     def renderer(self):
         qgis = QgsApplication([], False)
-        qgis.setPrefixPath('/opt/qgis_stable_14', True)
+        qgis.setPrefixPath(self.settings.get('path'), True)
         qgis.setMaxThreads(1)
         qgis.initQgis()
 
         while True:
-            fndata, fnstyle, srs, render_size, extended, target_box, result = self.queue.get()
+            fndata, srs, render_size, extended, \
+                target_box, result = self.queue.get()
 
             layer = QgsVectorLayer(fndata, 'layer', 'ogr')
 
@@ -81,7 +86,6 @@ class QgisComponent(Component):
             bgcolor = QColor.fromRgba(qRgba(255, 255, 255, 0))
             settings.setBackgroundColor(bgcolor)
             settings.setOutputDpi(96)
-
 
             QgsMapLayerRegistry.instance().addMapLayer(layer)
             settings.setLayers([layer.id()])
@@ -125,6 +129,10 @@ class QgisComponent(Component):
             result.put(img)
 
         qgis.exitQgis()
+
+    settings_info = (
+        dict(key='path', desc=u"Директория, в которую установлен QGIS"),
+    )
 
 
 def pkginfo():

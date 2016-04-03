@@ -114,8 +114,10 @@ class QgisVectorStyle(Base, Resource):
             os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
 
             result = Queue()
-            env.qgis.queue.put((fndata, fnstyle, self.srs, render_size, extended, target_box, result))
+            env.qgis.queue.put((fndata, self.srs, render_size,
+                                extended, target_box, result))
             res_img = result.get()
+
         finally:
             if fndata and os.path.isfile(fndata):
                 os.unlink(fndata)
@@ -145,7 +147,8 @@ class RenderRequest(object):
         )
 
 
-class _file_upload_attr(SerializedProperty): # NOQA
+class _file_upload_attr(SerializedProperty):  # NOQA
+
     def setter(self, srlzr, value):
         srcfile, _ = env.file_upload.get_filename(value['id'])
         fileobj = env.file_storage.fileobj(component='qgis')
