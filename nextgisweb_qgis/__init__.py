@@ -128,9 +128,9 @@ class QgisComponent(Component):
                 buf.seek(0)
 
                 img = PIL.Image.open(buf)
-                img.crop(target_box)
 
-                result.put(img)
+                # Вырезаем нужный нам кусок изображения
+                result.put(img.crop(target_box))
 
             except Exception as e:
                 self.logger.error(e.message)
