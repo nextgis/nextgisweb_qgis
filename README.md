@@ -30,12 +30,14 @@ $ cp -r `/usr/bin/python -c "import qgis, os.path; print os.path.split(qgis.__fi
 uWSGI Deployment Notes
 ----------------------
 
-You have to add `--lazy` to the command line, in this way application will be loaded after master's fork, so each worker will get its thread.
+You have to add `--lazy-apps` to the command line, in this way application will be loaded after master's fork, so each worker will get its thread.
 
 ```
 [uwsgi]
-lazy = True
+lazy-apps = True
 ```
+
+Beware as there is an older options named `lazy` that is way more invasive and highly discouraged (it is still here only for backward compatibility).
 
 If you get an error message `ERROR: Auth db directory path could not be created` then you have to specify directory where an existing qgis-auth.db is located or created if not present.
 This directory needs to be writeable by uwsgi process user. For example:
