@@ -19,16 +19,18 @@ $ pip install -e nextgisweb_qgis/
 QGIS and PyQT4 dependencies are not listed in `setup.py` because it hard to install it in virtualenv. So lets copy this packages from system packages to virtualenv. On Ubuntu this libraries located in `python-sip`, `python-qt4` and `python-qgis` packages.
 
 ```
-$ DST=`python -c "import sys; print sys.path[-1]"`
 # DST should point to virtualenv site-packages directory.
 # If it is point to another place you have to modify DST definition.
 # For example: DST=`python -c "import sys; print sys.path[-2]"`
+$ DST=`python -c "import sys; print sys.path[-1]"`
 $ echo $DST
-$ export PYTHONPATH=$PYTHONPATH:/usr/share/qgis/python
 $ cp `/usr/bin/python -c "import sip; print sip.__file__"` $DST
-$ cp -r `/usr/bin/python -c "import PyQt, os.path; print os.path.split(PyQt.__file__)[0]"` $DST
 $ cp -r `/usr/bin/python -c "import PyQt4, os.path; print os.path.split(PyQt4.__file__)[0]"` $DST
 $ cp -r `/usr/bin/python -c "import qgis, os.path; print os.path.split(qgis.__file__)[0]"` $DST
+
+# Only for latest QGIS version (not for 2.8)
+$ export PYTHONPATH=$PYTHONPATH:/usr/share/qgis/python
+$ cp -r `/usr/bin/python -c "import PyQt, os.path; print os.path.split(PyQt.__file__)[0]"` $DST
 ```
 
 uWSGI Deployment Notes
