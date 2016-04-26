@@ -20,6 +20,10 @@ QGIS and PyQT4 dependencies are not listed in `setup.py` because it hard to inst
 
 ```
 $ DST=`python -c "import sys; print sys.path[-1]"`
+# DST should point to virtualenv site-packages directory.
+# If it is point to another place you have to modify DST definition.
+# For example: DST=`python -c "import sys; print sys.path[-2]"`
+$ echo $DST
 $ export PYTHONPATH=$PYTHONPATH:/usr/share/qgis/python
 $ cp `/usr/bin/python -c "import sip; print sip.__file__"` $DST
 $ cp -r `/usr/bin/python -c "import PyQt, os.path; print os.path.split(PyQt.__file__)[0]"` $DST
