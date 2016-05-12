@@ -26,12 +26,14 @@ from nextgisweb.render import (
 from nextgisweb.file_storage import FileObj
 from nextgisweb.geometry import box
 
+from .util import _
+
 Base = declarative_base()
 
 
 class QgisVectorStyle(Base, Resource):
     identity = 'qgis_vector_style'
-    cls_display_name = "QGIS vector style"
+    cls_display_name = _("QGIS style")
 
     implements(IRenderableStyle)
 

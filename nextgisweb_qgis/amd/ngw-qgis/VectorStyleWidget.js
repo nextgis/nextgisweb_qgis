@@ -6,9 +6,11 @@ define([
     "dijit/_TemplatedMixin",
     "dijit/_WidgetsInTemplateMixin",
     "dijit/layout/ContentPane",
+    "ngw-pyramid/i18n!qgis",
+    "ngw-pyramid/hbs-i18n",
     "ngw-resource/serialize",
     // resource
-    "dojo/text!./template/VectorStyleWidget.html",
+    "dojo/text!./template/VectorStyleWidget.hbs",
     // template
     "dojox/layout/TableContainer",
     "ngw-file-upload/Uploader"
@@ -20,12 +22,14 @@ define([
     _TemplatedMixin,
     _WidgetsInTemplateMixin,
     ContentPane,
+    i18n,
+    hbsI18n,
     serialize,
     template
 ) {
     return declare([ContentPane, serialize.Mixin, _TemplatedMixin, _WidgetsInTemplateMixin], {
-        templateString: template,
-        title: "QGIS vector style",
+        templateString: hbsI18n(template, i18n),
+        title: i18n.gettext("QGIS style"),
         prefix: "qgis_vector_style",
 
         serializeInMixin: function (data) {
