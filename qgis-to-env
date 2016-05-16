@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+usage () {
+    echo "USAGE: qgis-to-env path-to-env"
+    exit -1
+}
+
+if [ ! -d "$1" ]; then usage; fi
+
+SRC1=`/usr/bin/python -c "import sip, os.path; print sip.__file__"`
+SRC2=`/usr/bin/python -c "import PyQt4, os.path; print os.path.split(PyQt4.__file__)[0]"`
+SRC3=`/usr/bin/python -c "import qgis, os.path; print os.path.split(qgis.__file__)[0]"`
+
+DST=`$1/bin/python -c "import sys; print sys.path[-1]"`
+
+cp -vu $SRC1 $DST
+cp -rvu $SRC2 $DST
+cp -rvu $SRC3 $DST
