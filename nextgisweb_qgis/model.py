@@ -132,6 +132,11 @@ class QgisVectorStyle(Base, Resource):
         return res_img
 
 
+DataScope.read.require(
+    DataScope.read,
+    attr='parent', cls=QgisVectorStyle)
+
+
 class RenderRequest(object):
     implements(IExtentRenderRequest, ITileRenderRequest)
 
