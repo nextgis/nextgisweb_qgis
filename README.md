@@ -53,6 +53,12 @@ This directory needs to be writeable by uwsgi process user. For example:
 env = QGIS_AUTH_DB_DIR_PATH=/var/www
 ```
 
+If you don't see cyrillic labels add the following environment variable:
+
+```
+environment = LC_ALL="en_US.UTF-8"
+```
+
 License
 -------------
 This program is licensed under GNU GPL v2 or any later version
