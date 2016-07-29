@@ -55,7 +55,8 @@ class QgisComponent(Component):
         self.worker.daemon = True
         self.worker.start()
 
-        from . import view
+        from . import view, api
+        api.setup_pyramid(self, config)
         view.setup_pyramid(self, config)
 
     def renderer(self):
