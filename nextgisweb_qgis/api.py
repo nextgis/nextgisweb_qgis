@@ -14,7 +14,11 @@ def vector_style_qml(request):
 
     fn = env.file_storage.filename(request.context.qml_fileobj)
 
-    return FileResponse(fn, request=request)
+    response = FileResponse(fn, request=request)
+    response.content_disposition = (b'attachment; filename=%d.qml'
+                                    % request.context.id)
+
+    return response
 
 
 def setup_pyramid(comp, config):
