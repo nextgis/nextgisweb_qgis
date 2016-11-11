@@ -6,6 +6,7 @@ from shutil import copyfileobj
 from tempfile import mkdtemp
 from Queue import Queue
 
+from decimal import Decimal
 import geojson
 from zope.interface import implements
 
@@ -30,6 +31,12 @@ from .util import _
 
 Base = declarative_base()
 
+
+class CustomGeoJSONEncoder(geojson.GeoJSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return str(obj)
+        return geojson.GeoJSONEncoder.default(self, obj)
 
 class QgisVectorStyle(Base, Resource):
     identity = 'qgis_vector_style'
@@ -110,7 +117,7 @@ class QgisVectorStyle(Base, Resource):
             fndata = os.path.join(dirname, 'layer.geojson')
 
             with open(fndata, 'wb') as fd:
-                fd.write(geojson.dumps(features))
+                fd.write(geojson.dumps(features, cls=CustomGeoJSONEncoder))
 
             fnstyle = os.path.join(dirname, 'layer.qml')
             os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
