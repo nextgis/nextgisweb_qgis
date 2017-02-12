@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function, absolute_import
+import os
 from threading import Thread
 from Queue import Queue
 from StringIO import StringIO
@@ -60,6 +61,9 @@ class QgisComponent(Component):
         view.setup_pyramid(self, config)
 
     def renderer(self):
+        if 'QGIS_AUTH_DB_DIR_PATH' not in os.environ:
+            os.environ['QGIS_AUTH_DB_DIR_PATH'] = '/tmp'
+
         qgis = QgsApplication([], False)
         qgis.setPrefixPath(self.settings.get('path'), True)
         qgis.setMaxThreads(1)
