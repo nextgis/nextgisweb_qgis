@@ -63,32 +63,24 @@ class QgisVectorStyle(Base, Resource):
 
         # Экстент с учетом отступов
         extended = (
-            max(srs.minx, extent[0] - res_x * padding),
-            max(srs.miny, extent[1] - res_y * padding),
-            min(srs.maxx, extent[2] + res_x * padding),
-            min(srs.maxy, extent[3] + res_y * padding),
-        )
-
-        # Маска отступов
-        pmask = (
-            extended[0] != srs.minx,
-            extended[1] != srs.miny,
-            extended[2] != srs.maxx,
-            extended[3] != srs.maxy
+            extent[0] - res_x * padding,
+            extent[1] - res_y * padding,
+            extent[2] + res_x * padding,
+            extent[3] + res_y * padding,
         )
 
         # Размер изображения с учетом отступов
         render_size = (
-            size[0] + int(pmask[0] + pmask[2]) * padding,
-            size[1] + int(pmask[1] + pmask[3]) * padding
+            size[0] + 2 * padding,
+            size[1] + 2 * padding
         )
 
         # Фрагмент изображения размера size
         target_box = (
-            pmask[0] * padding,
-            pmask[3] * padding,
-            size[0] + pmask[0] * padding,
-            size[1] + pmask[3] * padding
+            padding,
+            padding,
+            size[0] + padding,
+            size[1] + padding
         )
 
         # Выбираем объекты по экстенту
