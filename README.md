@@ -27,10 +27,6 @@ $ echo $DST
 $ cp `/usr/bin/python -c "import sip; print sip.__file__"` $DST
 $ cp -r `/usr/bin/python -c "import PyQt4, os.path; print os.path.split(PyQt4.__file__)[0]"` $DST
 $ cp -r `/usr/bin/python -c "import qgis, os.path; print os.path.split(qgis.__file__)[0]"` $DST
-
-# Only for latest QGIS version (2.16 and higher)
-$ export PYTHONPATH=$PYTHONPATH:/usr/share/qgis/python
-$ cp -r `/usr/bin/python -c "import PyQt, os.path; print os.path.split(PyQt.__file__)[0]"` $DST
 ```
 
 uWSGI Deployment Notes
