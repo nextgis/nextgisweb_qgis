@@ -1,3 +1,2 @@
-RUN apt-get install -y qgis python-qgis python-sip python-qt4
 ADD ./package/nextgisweb_qgis/qgis-to-env /build/nextgisweb_qgis
 RUN /build/nextgisweb_qgis/qgis-to-env /env
