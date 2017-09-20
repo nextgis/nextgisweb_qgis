@@ -13,7 +13,11 @@ from qgis.core import (
     QgsVectorLayer,
     QgsMapSettings,
     QgsRectangle,
-    QgsCoordinateReferenceSystem)
+    QgsCoordinateReferenceSystem,
+    QgsLegendRenderer,
+    QgsLayerTreeGroup,
+    QgsLayerTreeModel,
+    QgsLegendSettings)
 
 from PyQt4.QtGui import (
     QImage,
@@ -23,12 +27,16 @@ from PyQt4.QtGui import (
 
 from PyQt4.QtCore import (
     QSize,
+    QSizeF,
     QByteArray,
     QBuffer,
     QIODevice)
 
 from nextgisweb.component import Component
-from .model import Base
+from .model import (
+    Base,
+    ImageOptions,
+    LegendOptions)
 
 
 class QgisComponent(Component):
@@ -70,72 +78,126 @@ class QgisComponent(Component):
         qgis.initQgis()
 
         while True:
+            options = self.queue.get()
             try:
-                fndata, srs, render_size, extended, \
-                    target_box, result = self.queue.get()
+                if isinstance(options, LegendOptions):
+                    qml_filename, geometry_type, layer_name, result = options
 
-                layer = QgsVectorLayer(fndata, 'layer', 'ogr')
+                    # Make an empty memory layer and load qml
+                    layer = QgsVectorLayer(geometry_type, layer_name, 'memory')
+                    layer.loadNamedStyle(qml_filename)
 
-                crs = QgsCoordinateReferenceSystem(srs.id)
-                layer.setCrs(crs)
+                    QgsMapLayerRegistry.instance().addMapLayer(layer)
 
-                settings = QgsMapSettings()
-                settings.setLayers([layer.id()])
-                settings.setFlag(QgsMapSettings.DrawLabeling)
-                settings.setFlag(QgsMapSettings.Antialiasing)
+                    root = QgsLayerTreeGroup()
+                    root.addLayer(layer)
 
-                settings.setCrsTransformEnabled(True)
-                settings.setDestinationCrs(crs)
-                settings.setMapUnits(crs.mapUnits())
-                settings.setOutputSize(QSize(*render_size))
-                settings.setExtent(QgsRectangle(*extended))
+                    # 'Cannot create a QPixmap when no GUI is being used'
+                    #  warning occurs here
+                    model = QgsLayerTreeModel(root)
 
-                settings.setOutputImageFormat(QImage.Format_ARGB32)
-                bgcolor = QColor.fromRgba(qRgba(255, 255, 255, 0))
-                settings.setBackgroundColor(bgcolor)
-                settings.setOutputDpi(96)
+                    settings = QgsLegendSettings()
+                    settings.setTitle('')
+                    settings.setBoxSpace(1)
+                    settings.setSymbolSize(QSizeF(5, 3))
+                    settings.setDpi(96)
 
-                QgsMapLayerRegistry.instance().addMapLayer(layer)
-                settings.setLayers([layer.id()])
+                    renderer = QgsLegendRenderer(model, settings)
 
-                # Создаем QImage руками чтобы можно было использовать
-                # QgsMapRendererCustomPainterJob. Остальные не позволяют
-                # обойти баг с рисованием поверх старого.
-                img = QImage(settings.outputSize(), QImage.Format_ARGB32)
+                    # Dots per mm
+                    dpmm = settings.dpi() / 25.4
 
-                # Эти костыли нужны для того, чтобы корректно рисовались
-                # слои на прозрачном фоне, без этого получается каша.
-                img.fill(QColor.fromRgba(qRgba(255, 255, 255, 255)))
-                img.fill(QColor.fromRgba(qRgba(255, 255, 255, 0)))
+                    min_size = renderer.minimumSize()
+                    size = QSize(dpmm * min_size.width(),
+                                 dpmm * min_size.height())
+                    img = QImage(size, QImage.Format_ARGB32)
+                    img.fill(QColor(0, 0, 0, 0))
 
-                # DPI должно быть таким же как в settings, иначе ошибка. В QImage
-                # разрешение указывается в точках на метр по каждой оси.
-                dpm = settings.outputDpi() / 25.4 * 1000
-                img.setDotsPerMeterX(dpm)
-                img.setDotsPerMeterY(dpm)
+                    painter = QPainter()
+                    painter.begin(img)
+                    painter.scale(dpmm, dpmm)
+                    renderer.drawLegend(painter)
+                    painter.end()
 
-                painter = QPainter(img)
-                job = QgsMapRendererCustomPainterJob(settings, painter)
-                job.renderSynchronously()
-                painter.end()
+                    QgsMapLayerRegistry.instance().removeAllMapLayers()
 
-                QgsMapLayerRegistry.instance().removeAllMapLayers()
+                    ba = QByteArray()
+                    bf = QBuffer(ba)
+                    bf.open(QIODevice.WriteOnly)
+                    img.save(bf, 'PNG')
+                    bf.close()
 
-                # Преобразование QImage в PIL
-                ba = QByteArray()
-                bf = QBuffer(ba)
-                bf.open(QIODevice.WriteOnly)
-                img.save(bf, 'PNG')
-                bf.close()
+                    buf = StringIO()
+                    buf.write(bf.data())
+                    buf.seek(0)
+                    result.put(buf)
 
-                buf = StringIO()
-                buf.write(bf.data())
-                buf.seek(0)
+                elif isinstance(options, ImageOptions):
+                    fndata, srs, render_size, extended, \
+                        target_box, result = options
 
-                img = PIL.Image.open(buf)
+                    layer = QgsVectorLayer(fndata, 'layer', 'ogr')
 
-                # Вырезаем нужный нам кусок изображения
-                result.put(img.crop(target_box))
+                    crs = QgsCoordinateReferenceSystem(srs.id)
+                    layer.setCrs(crs)
+
+                    settings = QgsMapSettings()
+                    settings.setLayers([layer.id()])
+                    settings.setFlag(QgsMapSettings.DrawLabeling)
+                    settings.setFlag(QgsMapSettings.Antialiasing)
+
+                    settings.setCrsTransformEnabled(True)
+                    settings.setDestinationCrs(crs)
+                    settings.setMapUnits(crs.mapUnits())
+                    settings.setOutputSize(QSize(*render_size))
+                    settings.setExtent(QgsRectangle(*extended))
+
+                    settings.setOutputImageFormat(QImage.Format_ARGB32)
+                    bgcolor = QColor.fromRgba(qRgba(255, 255, 255, 0))
+                    settings.setBackgroundColor(bgcolor)
+                    settings.setOutputDpi(96)
+
+                    QgsMapLayerRegistry.instance().addMapLayer(layer)
+                    settings.setLayers([layer.id()])
+
+                    # Создаем QImage руками чтобы можно было использовать
+                    # QgsMapRendererCustomPainterJob. Остальные не позволяют
+                    # обойти баг с рисованием поверх старого.
+                    img = QImage(settings.outputSize(), QImage.Format_ARGB32)
+
+                    # Эти костыли нужны для того, чтобы корректно рисовались
+                    # слои на прозрачном фоне, без этого получается каша.
+                    img.fill(QColor.fromRgba(qRgba(255, 255, 255, 255)))
+                    img.fill(QColor.fromRgba(qRgba(255, 255, 255, 0)))
+
+                    # DPI должно быть таким же как в settings, иначе ошибка. В QImage
+                    # разрешение указывается в точках на метр по каждой оси.
+                    dpm = settings.outputDpi() / 25.4 * 1000
+                    img.setDotsPerMeterX(dpm)
+                    img.setDotsPerMeterY(dpm)
+
+                    painter = QPainter(img)
+                    job = QgsMapRendererCustomPainterJob(settings, painter)
+                    job.renderSynchronously()
+                    painter.end()
+
+                    QgsMapLayerRegistry.instance().removeAllMapLayers()
+
+                    # Преобразование QImage в PIL
+                    ba = QByteArray()
+                    bf = QBuffer(ba)
+                    bf.open(QIODevice.WriteOnly)
+                    img.save(bf, 'PNG')
+                    bf.close()
+
+                    buf = StringIO()
+                    buf.write(bf.data())
+                    buf.seek(0)
+
+                    img = PIL.Image.open(buf)
+
+                    # Вырезаем нужный нам кусок изображения
+                    result.put(img.crop(target_box))
 
             except Exception as e:
                 self.logger.error(e.message)

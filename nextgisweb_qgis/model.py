@@ -2,6 +2,7 @@
 from __future__ import unicode_literals, print_function, absolute_import
 import os
 import os.path
+from collections import namedtuple
 from shutil import copyfileobj
 from tempfile import mkdtemp
 from Queue import Queue
@@ -22,7 +23,8 @@ from nextgisweb.feature_layer import IFeatureLayer
 from nextgisweb.render import (
     IRenderableStyle,
     IExtentRenderRequest,
-    ITileRenderRequest)
+    ITileRenderRequest,
+    ILegendableStyle)
 from nextgisweb.file_storage import FileObj
 from nextgisweb.geometry import box
 
@@ -30,12 +32,17 @@ from .util import _
 
 Base = declarative_base()
 
+ImageOptions = namedtuple('ImageOptions', [
+    'fndata', 'srs', 'render_size', 'extended', 'target_box', 'result'])
+LegendOptions = namedtuple('LegendOptions', [
+    'qml', 'geometry_type', 'layer_name', 'result'])
+
 
 class QgisVectorStyle(Base, Resource):
     identity = 'qgis_vector_style'
     cls_display_name = _("QGIS style")
 
-    implements(IRenderableStyle)
+    implements(IRenderableStyle, ILegendableStyle)
 
     __scope__ = DataScope
 
@@ -108,8 +115,9 @@ class QgisVectorStyle(Base, Resource):
             os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
 
             result = Queue()
-            env.qgis.queue.put((fndata, self.srs, render_size,
-                                extended, target_box, result))
+            options = ImageOptions(fndata, self.srs, render_size,
+                                   extended, target_box, result)
+            env.qgis.queue.put(options)
             render_timeout = int(env.qgis.settings.get('render_timeout'))
             res_img = result.get(block=True, timeout=render_timeout)
 
@@ -122,6 +130,14 @@ class QgisVectorStyle(Base, Resource):
                 os.rmdir(dirname)
 
         return res_img
+
+    def render_legend(self):
+        result = Queue()
+        options = LegendOptions(env.file_storage.filename(self.qml_fileobj),
+                                self.parent.geometry_type,
+                                self.parent.display_name, result)
+        env.qgis.queue.put(options)
+        return result.get()
 
 
 class RenderRequest(object):
