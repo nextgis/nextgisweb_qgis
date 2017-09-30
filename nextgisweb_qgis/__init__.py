@@ -10,6 +10,8 @@ from qgis.core import (
     QgsApplication,
     QgsMapLayerRegistry,
     QgsMapRendererCustomPainterJob,
+    QgsFeature,
+    QgsGeometry,
     QgsVectorLayer,
     QgsMapSettings,
     QgsRectangle,
@@ -81,11 +83,12 @@ class QgisComponent(Component):
             options = self.queue.get()
             try:
                 if isinstance(options, LegendOptions):
-                    qml_filename, geometry_type, layer_name, result = options
+                    parent, fnstyle, result = options
 
                     # Make an empty memory layer and load qml
-                    layer = QgsVectorLayer(geometry_type, layer_name, 'memory')
-                    layer.loadNamedStyle(qml_filename)
+                    layer = QgsVectorLayer(parent.geometry_type,
+                                           parent.display_name, 'memory')
+                    layer.loadNamedStyle(fnstyle)
 
                     QgsMapLayerRegistry.instance().addMapLayer(layer)
 
@@ -133,10 +136,20 @@ class QgisComponent(Component):
                     result.put(buf)
 
                 elif isinstance(options, ImageOptions):
-                    fndata, srs, render_size, extended, \
-                        target_box, result = options
+                    features, parent, srs, render_size, extended, \
+                        fnstyle, target_box, result = options
 
-                    layer = QgsVectorLayer(fndata, 'layer', 'ogr')
+                    layer = QgsVectorLayer('%s?%s' % (
+                        parent.geometry_type,
+                        '&'.join('field=%s:%s' % (fld.keyname, fld.datatype)
+                                 for fld in parent.fields)), 'layer', 'memory')
+                    layer.loadNamedStyle(fnstyle)
+
+                    for feature in features:
+                        f = QgsFeature(layer.pendingFields())
+                        f.setAttributes(feature.fields.values())
+                        f.setGeometry(QgsGeometry.fromWkt(feature.geom.wkt))
+                        layer.dataProvider().addFeatures([f])
 
                     crs = QgsCoordinateReferenceSystem(srs.id)
                     layer.setCrs(crs)
