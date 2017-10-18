@@ -32,10 +32,10 @@ from .util import _
 
 Base = declarative_base()
 
-ImageOptions = namedtuple('ImageOptions', ['features', 'parent', 'srs',
-                                           'render_size', 'extended',
-                                           'fnstyle', 'target_box', 'result'])
-LegendOptions = namedtuple('LegendOptions', ['parent', 'fnstyle', 'result'])
+ImageOptions = namedtuple('ImageOptions', [
+    'fndata', 'srs', 'render_size', 'extended', 'target_box', 'result'])
+LegendOptions = namedtuple('LegendOptions', [
+    'qml', 'geometry_type', 'layer_name', 'result'])
 
 
 class QgisVectorStyle(Base, Resource):
@@ -103,26 +103,39 @@ class QgisVectorStyle(Base, Resource):
 
         res_img = None
         try:
-            fnstyle = env.file_storage.filename(self.qml_fileobj)
+            dirname, fndata, fnstyle = None, None, None
+
+            dirname = mkdtemp()
+            fndata = os.path.join(dirname, 'layer.geojson')
+
+            with open(fndata, 'wb') as fd:
+                fd.write(geojson.dumps(features))
+
+            fnstyle = os.path.join(dirname, 'layer.qml')
+            os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
 
             result = Queue()
-            options = ImageOptions(features, self.parent, self.srs,
-                                   render_size, extended, fnstyle, target_box,
-                                   result)
+            options = ImageOptions(fndata, self.srs, render_size,
+                                   extended, target_box, result)
             env.qgis.queue.put(options)
             render_timeout = int(env.qgis.settings.get('render_timeout'))
             res_img = result.get(block=True, timeout=render_timeout)
 
         finally:
-            pass
+            if fndata and os.path.isfile(fndata):
+                os.unlink(fndata)
+            if fnstyle and os.path.isfile(fnstyle):
+                os.unlink(fnstyle)
+            if dirname and os.path.isdir(dirname):
+                os.rmdir(dirname)
 
         return res_img
 
     def render_legend(self):
-        fnstyle = env.file_storage.filename(self.qml_fileobj)
-
         result = Queue()
-        options = LegendOptions(self.parent, fnstyle, result)
+        options = LegendOptions(env.file_storage.filename(self.qml_fileobj),
+                                self.parent.geometry_type,
+                                self.parent.display_name, result)
         env.qgis.queue.put(options)
         return result.get()
 
