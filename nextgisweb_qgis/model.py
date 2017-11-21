@@ -19,7 +19,9 @@ from nextgisweb.resource import (
     DataScope,
     Serializer,
     SerializedProperty)
-from nextgisweb.feature_layer import IFeatureLayer
+from nextgisweb.feature_layer import (
+    IFeatureLayer,
+    ComplexEncoder)
 from nextgisweb.render import (
     IRenderableStyle,
     IExtentRenderRequest,
@@ -109,7 +111,7 @@ class QgisVectorStyle(Base, Resource):
             fndata = os.path.join(dirname, 'layer.geojson')
 
             with open(fndata, 'wb') as fd:
-                fd.write(geojson.dumps(features))
+                fd.write(geojson.dumps(features, cls=ComplexEncoder))
 
             fnstyle = os.path.join(dirname, 'layer.qml')
             os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
