@@ -37,6 +37,12 @@ define([
                 setObject = function (key, value) { lang.setObject(prefix + "." + key, value, data); };
 
             setObject("file_upload", this.wFileUpload.get("value"));
+        },
+
+        validateDataInMixin: function (errback) {
+            return this.wFileUpload.upload_promise !== undefined &&
+                this.wFileUpload.upload_promise.isResolved();
         }
+
     });
 });
