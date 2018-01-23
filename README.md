@@ -16,7 +16,7 @@ $ source env/bin/activate
 $ pip install -e nextgisweb_qgis/
 ```
 
-QGIS and PyQT4 dependencies are not listed in `setup.py` because it hard to install it in virtualenv. So lets copy this packages from system packages to virtualenv. On Ubuntu this libraries located in `python-sip`, `python-qt4` and `python-qgis` packages.
+QGIS and PyQT4 dependencies are not listed in `setup.py` because it hard to install it in virtualenv. So lets copy this packages from system packages to virtualenv. On Ubuntu this libraries located in `qgis`, `python-sip`, `python-qt4` and `python-qgis` packages.
 
 ```
 $ qgis-to-env env
