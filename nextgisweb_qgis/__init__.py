@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function, absolute_import
+
 import os
+import re
+import PIL
+
 from threading import Thread
 from Queue import Queue
 from StringIO import StringIO
-import PIL
 
 from qgis.core import (
     QgsApplication,
