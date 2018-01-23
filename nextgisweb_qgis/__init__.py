@@ -51,6 +51,16 @@ class QgisComponent(Component):
         if 'render_timeout' not in self.settings:
             self.settings['render_timeout'] = 10
 
+        default_svgpaths = QgsApplication.svgPaths()
+        if 'svgpaths' not in self.settings:
+            self.settings['svgpaths'] = default_svgpaths
+        else:
+            self.settings['svgpaths'] = re.split(
+                r'[,\s]+', self.settings.get('svgpaths', ''))
+            for path in default_svgpaths:
+                if path not in self.settings['svgpaths']:
+                    self.settings['svgpaths'].append(path)
+
     def configure(self):
         super(QgisComponent, self).configure()
 
@@ -74,6 +84,7 @@ class QgisComponent(Component):
 
         qgis = QgsApplication([], False)
         qgis.setPrefixPath(self.settings.get('path'), True)
+        qgis.setDefaultSvgPaths(self.settings.get('svgpaths'))
         qgis.setMaxThreads(1)
         qgis.initQgis()
 
@@ -206,7 +217,8 @@ class QgisComponent(Component):
 
     settings_info = (
         dict(key='path', desc=u'Директория, в которую установлен QGIS'),
-        dict(key='render_timeout', desc=u'Таймаут отрисовки одного запроса QGIS\'ом в cек' ),
+        dict(key='svgpaths', desc=u'Директории, в которых осуществляется поиск SVG'),
+        dict(key='render_timeout', desc=u'Таймаут отрисовки одного запроса QGIS\'ом в cек'),
     )
 
 
