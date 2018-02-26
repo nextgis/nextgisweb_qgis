@@ -54,15 +54,11 @@ class QgisComponent(Component):
         if 'render_timeout' not in self.settings:
             self.settings['render_timeout'] = 10
 
-        default_svgpaths = QgsApplication.svgPaths()
-        if 'svgpaths' not in self.settings:
-            self.settings['svgpaths'] = default_svgpaths
-        else:
+        if 'svgpaths' in self.settings:
             self.settings['svgpaths'] = re.split(
                 r'[,\s]+', self.settings.get('svgpaths', ''))
-            for path in default_svgpaths:
-                if path not in self.settings['svgpaths']:
-                    self.settings['svgpaths'].append(path)
+        else:
+            self.settings['svgpaths'] = []
 
     def configure(self):
         super(QgisComponent, self).configure()
@@ -87,7 +83,8 @@ class QgisComponent(Component):
 
         qgis = QgsApplication([], False)
         qgis.setPrefixPath(self.settings.get('path'), True)
-        qgis.setDefaultSvgPaths(self.settings.get('svgpaths'))
+        qgis.setDefaultSvgPaths(
+            qgis.svgPaths() + self.settings.get('svgpaths'))
         qgis.setMaxThreads(1)
         qgis.initQgis()
 
