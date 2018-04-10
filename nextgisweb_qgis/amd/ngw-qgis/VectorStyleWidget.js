@@ -40,8 +40,9 @@ define([
         },
 
         validateDataInMixin: function (errback) {
-            return this.wFileUpload.upload_promise !== undefined &&
-                this.wFileUpload.upload_promise.isResolved();
+            return this.composite.operation == "create" ?
+                this.wFileUpload.upload_promise !== undefined &&
+                    this.wFileUpload.upload_promise.isResolved() : true;
         }
 
     });
