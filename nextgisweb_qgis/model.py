@@ -63,10 +63,10 @@ class QgisVectorStyle(Base, Resource):
     def srs(self):
         return self.parent.srs
 
-    def render_request(self, srs):
-        return RenderRequest(self, srs)
+    def render_request(self, srs, cond=None):
+        return RenderRequest(self, srs, cond)
 
-    def _render_image(self, srs, extent, size, padding=0):
+    def _render_image(self, srs, extent, size, cond, padding=0):
         res_x = (extent[2] - extent[0]) / size[0]
         res_y = (extent[3] - extent[1]) / size[1]
 
@@ -94,6 +94,10 @@ class QgisVectorStyle(Base, Resource):
 
         # Выбираем объекты по экстенту
         feature_query = self.parent.feature_query()
+
+        # Отфильтровываем объекты по условию
+        if cond is not None:
+            feature_query.filter_by(**cond)
 
         # FIXME: Тоже самое, но через интерфейсы
         if hasattr(feature_query, 'srs'):
@@ -145,17 +149,19 @@ class QgisVectorStyle(Base, Resource):
 class RenderRequest(object):
     implements(IExtentRenderRequest, ITileRenderRequest)
 
-    def __init__(self, style, srs):
+    def __init__(self, style, srs, cond=None):
         self.style = style
         self.srs = srs
+        self.cond = cond
 
     def render_extent(self, extent, size):
-        return self.style._render_image(self.srs, extent, size)
+        return self.style._render_image(self.srs, extent, size, self.cond)
 
     def render_tile(self, tile, size):
         extent = self.srs.tile_extent(tile)
         return self.style._render_image(
             self.srs, extent, (size, size),
+            self.cond,
             padding=size / 2
         )
 
