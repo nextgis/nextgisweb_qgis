@@ -113,7 +113,7 @@ class QgisVectorStyle(Base, Resource):
             fndata = os.path.join(dirname, 'layer.geojson')
 
             with open(fndata, 'wb') as fd:
-                fd.write(geojson.dumps(features, cls=ComplexEncoder))
+                fd.write(geojson.dumps(features))
 
             fnstyle = os.path.join(dirname, 'layer.qml')
             os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
