@@ -7,10 +7,10 @@ from shutil import copyfileobj
 from tempfile import mkdtemp
 from Queue import Queue
 
-import geojson
 from zope.interface import implements
 
 from nextgisweb import db
+from nextgisweb import geojson
 from nextgisweb.models import declarative_base
 from nextgisweb.env import env
 from nextgisweb.resource import (
@@ -19,9 +19,7 @@ from nextgisweb.resource import (
     DataScope,
     Serializer,
     SerializedProperty)
-from nextgisweb.feature_layer import (
-    IFeatureLayer,
-    ComplexEncoder)
+from nextgisweb.feature_layer import IFeatureLayer
 from nextgisweb.render import (
     IRenderableStyle,
     IExtentRenderRequest,
