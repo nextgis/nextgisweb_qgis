@@ -7,10 +7,10 @@ from shutil import copyfileobj
 from tempfile import mkdtemp
 from Queue import Queue
 
-import geojson
 from zope.interface import implements
 
 from nextgisweb import db
+from nextgisweb import geojson
 from nextgisweb.models import declarative_base
 from nextgisweb.env import env
 from nextgisweb.resource import (
@@ -19,9 +19,7 @@ from nextgisweb.resource import (
     DataScope,
     Serializer,
     SerializedProperty)
-from nextgisweb.feature_layer import (
-    IFeatureLayer,
-    ComplexEncoder)
+from nextgisweb.feature_layer import IFeatureLayer
 from nextgisweb.render import (
     IRenderableStyle,
     IExtentRenderRequest,
@@ -63,10 +61,10 @@ class QgisVectorStyle(Base, Resource):
     def srs(self):
         return self.parent.srs
 
-    def render_request(self, srs):
-        return RenderRequest(self, srs)
+    def render_request(self, srs, cond=None):
+        return RenderRequest(self, srs, cond)
 
-    def _render_image(self, srs, extent, size, padding=0):
+    def _render_image(self, srs, extent, size, cond, padding=0):
         res_x = (extent[2] - extent[0]) / size[0]
         res_y = (extent[3] - extent[1]) / size[1]
 
@@ -95,6 +93,10 @@ class QgisVectorStyle(Base, Resource):
         # Выбираем объекты по экстенту
         feature_query = self.parent.feature_query()
 
+        # Отфильтровываем объекты по условию
+        if cond is not None:
+            feature_query.filter_by(**cond)
+
         # FIXME: Тоже самое, но через интерфейсы
         if hasattr(feature_query, 'srs'):
             feature_query.srs(srs)
@@ -111,7 +113,7 @@ class QgisVectorStyle(Base, Resource):
             fndata = os.path.join(dirname, 'layer.geojson')
 
             with open(fndata, 'wb') as fd:
-                fd.write(geojson.dumps(features, cls=ComplexEncoder))
+                fd.write(geojson.dumps(features))
 
             fnstyle = os.path.join(dirname, 'layer.qml')
             os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
@@ -145,17 +147,19 @@ class QgisVectorStyle(Base, Resource):
 class RenderRequest(object):
     implements(IExtentRenderRequest, ITileRenderRequest)
 
-    def __init__(self, style, srs):
+    def __init__(self, style, srs, cond=None):
         self.style = style
         self.srs = srs
+        self.cond = cond
 
     def render_extent(self, extent, size):
-        return self.style._render_image(self.srs, extent, size)
+        return self.style._render_image(self.srs, extent, size, self.cond)
 
     def render_tile(self, tile, size):
         extent = self.srs.tile_extent(tile)
         return self.style._render_image(
             self.srs, extent, (size, size),
+            self.cond,
             padding=size / 2
         )
 
