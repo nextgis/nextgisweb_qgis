@@ -66,8 +66,8 @@ class QgisComponent(Component):
     def setup_pyramid(self, config):
         super(QgisComponent, self).setup_pyramid(config)
 
-        # Отдельный поток в котором мы будем запускать весь рендеринг,
-        # иначе все падает в segfault при конкурентной обработке запросов.
+        # Separate thread for rendering,
+        # will segfault otherwise with concurrent requests.
         self.queue = Queue()
         self.worker = Thread(target=self.renderer)
         self.worker.daemon = True
@@ -171,18 +171,18 @@ class QgisComponent(Component):
                     QgsMapLayerRegistry.instance().addMapLayer(layer)
                     settings.setLayers([layer.id()])
 
-                    # Создаем QImage руками чтобы можно было использовать
-                    # QgsMapRendererCustomPainterJob. Остальные не позволяют
-                    # обойти баг с рисованием поверх старого.
+                    # Create QImage by hand to be able to use
+                    # QgsMapRendererCustomPainterJob. Others will not
+                    # allow to workaround a bug with overlay rendering.
                     img = QImage(settings.outputSize(), QImage.Format_ARGB32)
 
-                    # Эти костыли нужны для того, чтобы корректно рисовались
-                    # слои на прозрачном фоне, без этого получается каша.
+                    # These cludges are needed for rendering
+                    # on transparent background, otherwise it's a mess.
                     img.fill(QColor.fromRgba(qRgba(255, 255, 255, 255)))
                     img.fill(QColor.fromRgba(qRgba(255, 255, 255, 0)))
 
-                    # DPI должно быть таким же как в settings, иначе ошибка. В QImage
-                    # разрешение указывается в точках на метр по каждой оси.
+                    # DPI should be equal to settings, otherwise an error. In QImage
+                    # the resolution is set in dots per meter for each axis.
                     dpm = settings.outputDpi() / 25.4 * 1000
                     img.setDotsPerMeterX(dpm)
                     img.setDotsPerMeterY(dpm)
@@ -194,7 +194,7 @@ class QgisComponent(Component):
 
                     QgsMapLayerRegistry.instance().removeAllMapLayers()
 
-                    # Преобразование QImage в PIL
+                    # Transform QImage to PIL
                     ba = QByteArray()
                     bf = QBuffer(ba)
                     bf.open(QIODevice.WriteOnly)
@@ -207,7 +207,7 @@ class QgisComponent(Component):
 
                     img = PIL.Image.open(buf)
 
-                    # Вырезаем нужный нам кусок изображения
+                    # Clip needed part
                     result.put(img.crop(target_box))
 
             except Exception as e:
@@ -216,9 +216,9 @@ class QgisComponent(Component):
         qgis.exitQgis()
 
     settings_info = (
-        dict(key='path', desc=u'Директория, в которую установлен QGIS'),
-        dict(key='svgpaths', desc=u'Директории, в которых осуществляется поиск SVG'),
-        dict(key='render_timeout', desc=u'Таймаут отрисовки одного запроса QGIS\'ом в cек'),
+        dict(key='path', desc=u'QGIS installation folder'),
+        dict(key='svgpaths', desc=u'SVG search folders'),
+        dict(key='render_timeout', desc=u'QGIS rendering timeout for one request'),
     )
 
 
