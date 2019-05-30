@@ -135,7 +135,7 @@ class QgisComponent(Component):
                     ba = QByteArray()
                     bf = QBuffer(ba)
                     bf.open(QIODevice.WriteOnly)
-                    img.save(bf, 'PNG')
+                    img.save(bf, 'TIFF', quality=100)
                     bf.close()
 
                     buf = StringIO()
@@ -198,7 +198,7 @@ class QgisComponent(Component):
                     ba = QByteArray()
                     bf = QBuffer(ba)
                     bf.open(QIODevice.WriteOnly)
-                    img.save(bf, 'PNG')
+                    img.save(bf, 'TIFF', quality=100)
                     bf.close()
 
                     buf = StringIO()
