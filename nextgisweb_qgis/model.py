@@ -34,10 +34,10 @@ Base = declarative_base()
 
 ImageOptions = namedtuple('ImageOptions', [
     'style', 'features', 'render_size', 'extended',
-    'target_box', 'result'])
+    'target_box'])
 
 LegendOptions = namedtuple('LegendOptions', [
-    'qml', 'geometry_type', 'layer_name', 'result'])
+    'qml', 'geometry_type', 'layer_name'])
 
 
 class QgisVectorStyle(Base, Resource):
@@ -107,21 +107,14 @@ class QgisVectorStyle(Base, Resource):
         feature_query.geom()
         features = feature_query()
 
-        result = Queue()
-        options = ImageOptions(self, features, render_size, extended, target_box, result)
-        env.qgis.queue.put(options)
-        render_timeout = int(env.qgis.settings.get('render_timeout'))
-        res_img = result.get(block=True, timeout=render_timeout)
-
-        return res_img
+        options = ImageOptions(self, features, render_size, extended, target_box)
+        return env.qgis.renderer_job(options)
 
     def render_legend(self):
-        result = Queue()
         options = LegendOptions(env.file_storage.filename(self.qml_fileobj),
                                 self.parent.geometry_type,
-                                self.parent.display_name, result)
-        env.qgis.queue.put(options)
-        return result.get()
+                                self.parent.display_name)
+        return env.qgis.renderer_job(options)
 
 
 class RenderRequest(object):

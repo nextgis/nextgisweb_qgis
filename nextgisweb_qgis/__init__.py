@@ -68,14 +68,14 @@ class QgisComponent(Component):
 
         if 'path' not in self.settings:
             self.settings['path'] = '/usr'
-        if 'render_timeout' not in self.settings:
-            self.settings['render_timeout'] = 10
 
         if 'svgpaths' in self.settings:
             self.settings['svgpaths'] = re.split(
                 r'[,\s]+', self.settings.get('svgpaths', ''))
         else:
             self.settings['svgpaths'] = []
+
+        self._render_timeout = float(self.settings.get('render_timeout', '10'))
 
     def configure(self):
         super(QgisComponent, self).configure()
@@ -94,6 +94,16 @@ class QgisComponent(Component):
         api.setup_pyramid(self, config)
         view.setup_pyramid(self, config)
 
+    def renderer_job(self, options):
+        result_queue = Queue()
+        self.queue.put((options, result_queue))
+
+        result = result_queue.get(block=True, timeout=self._render_timeout)
+        
+        if isinstance(result, Exception):
+            raise result
+        return result
+
     def renderer(self):
         if 'QGIS_AUTH_DB_DIR_PATH' not in os.environ:
             os.environ['QGIS_AUTH_DB_DIR_PATH'] = '/tmp'
@@ -106,10 +116,10 @@ class QgisComponent(Component):
         qgis.initQgis()
 
         while True:
-            options = self.queue.get()
+            options, result = self.queue.get()
             try:
                 if isinstance(options, LegendOptions):
-                    qml_filename, geometry_type, layer_name, result = options
+                    qml_filename, geometry_type, layer_name = options
 
                     # Make an empty memory layer and load qml
                     layer = QgsVectorLayer(geometry_type, layer_name, 'memory')
@@ -161,8 +171,7 @@ class QgisComponent(Component):
                     result.put(buf)
 
                 elif isinstance(options, ImageOptions):
-                    style, features, render_size, extended, \
-                        target_box, result = options
+                    style, features, render_size, extended, target_box = options
 
                     layer = self._qgs_memory_layer(style, features=features)
 
@@ -213,15 +222,16 @@ class QgisComponent(Component):
                     # Clip needed part
                     result.put(img.crop(target_box))
 
-            except Exception as e:
-                self.logger.error(e.message)
+            except Exception as exc:
+                self.logger.error(exc.message)
+                result.put(exc)
 
         qgis.exitQgis()
 
     def _qgs_memory_layer(self, style, features=None):
         """ Create QgsVectorLayer with memory backend and load features into it """
 
-        result = QgsVectorLayer(style.parent.geometry_type, None, 'memory')
+        result = QgsVectorLayer(style.parent.geometry_type, style.parent.display_name, 'memory')
         provider = result.dataProvider()
 
         # Setup layer fields
