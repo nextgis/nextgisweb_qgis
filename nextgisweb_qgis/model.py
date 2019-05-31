@@ -33,11 +33,10 @@ from .util import _
 Base = declarative_base()
 
 ImageOptions = namedtuple('ImageOptions', [
-    'style', 'features', 'render_size', 'extended',
-    'target_box'])
+    'style', 'features', 'render_size',
+    'extended', 'target_box'])
 
-LegendOptions = namedtuple('LegendOptions', [
-    'qml', 'geometry_type', 'layer_name'])
+LegendOptions = namedtuple('LegendOptions', ['style', ])
 
 
 class QgisVectorStyle(Base, Resource):
@@ -111,9 +110,7 @@ class QgisVectorStyle(Base, Resource):
         return env.qgis.renderer_job(options)
 
     def render_legend(self):
-        options = LegendOptions(env.file_storage.filename(self.qml_fileobj),
-                                self.parent.geometry_type,
-                                self.parent.display_name)
+        options = LegendOptions(self)
         return env.qgis.renderer_job(options)
 
 

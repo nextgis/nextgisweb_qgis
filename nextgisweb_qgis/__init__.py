@@ -119,11 +119,10 @@ class QgisComponent(Component):
             options, result = self.queue.get()
             try:
                 if isinstance(options, LegendOptions):
-                    qml_filename, geometry_type, layer_name = options
+                    style, = options
 
-                    # Make an empty memory layer and load qml
-                    layer = QgsVectorLayer(geometry_type, layer_name, 'memory')
-                    layer.loadNamedStyle(qml_filename)
+                    layer = self._qgs_memory_layer(style)
+                    layer.setName(style.parent.display_name)
 
                     QgsMapLayerRegistry.instance().addMapLayer(layer)
 
@@ -231,7 +230,7 @@ class QgisComponent(Component):
     def _qgs_memory_layer(self, style, features=None):
         """ Create QgsVectorLayer with memory backend and load features into it """
 
-        result = QgsVectorLayer(style.parent.geometry_type, style.parent.display_name, 'memory')
+        result = QgsVectorLayer(style.parent.geometry_type, None, 'memory')
         provider = result.dataProvider()
 
         # Setup layer fields
