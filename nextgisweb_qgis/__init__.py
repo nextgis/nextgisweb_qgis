@@ -20,7 +20,10 @@ from qgis.core import (
     QgsLegendRenderer,
     QgsLayerTreeGroup,
     QgsLayerTreeModel,
-    QgsLegendSettings)
+    QgsLegendSettings,
+    QgsFeature,
+    QgsField,
+    QgsGeometry)
 
 from PyQt4.QtGui import (
     QImage,
@@ -33,13 +36,26 @@ from PyQt4.QtCore import (
     QSizeF,
     QByteArray,
     QBuffer,
+    QVariant,
     QIODevice)
 
 from nextgisweb.component import Component
+from nextgisweb.feature_layer import FIELD_TYPE
 from .model import (
     Base,
     ImageOptions,
     LegendOptions)
+
+# Convert field type to QGIS type
+FIELD_TYPE_TO_QGIS = {
+    FIELD_TYPE.INTEGER: (QVariant.Int, 'int4'),
+    FIELD_TYPE.BIGINT: (QVariant.String, 'int8'), 
+    # TODO: FIELD_TYPE.REAL:
+    FIELD_TYPE.STRING: (QVariant.String, 'string')
+    # TODO: FIELD_TYPE.DATE:
+    # TODO: FIELD_TYPE.TIME:
+    # TODO: FIELD_TYPE.DATETIME:
+}
 
 
 class QgisComponent(Component):
@@ -144,13 +160,41 @@ class QgisComponent(Component):
                     result.put(buf)
 
                 elif isinstance(options, ImageOptions):
-                    fndata, srs, render_size, extended, \
+                    features, qml_filename, geometry_type, srs, render_size, extended, \
                         target_box, result = options
 
-                    layer = QgsVectorLayer(fndata, 'layer', 'ogr')
+                    layer = QgsVectorLayer(geometry_type, None, 'memory')
+
+                    dprov = layer.dataProvider()
+                    attrlist = []
+                    fldmap = {}
+                    fdlcount = 0
+                    for fld in features.fields:
+                        attrlist.append(QgsField(fld.keyname, *FIELD_TYPE_TO_QGIS[fld.datatype]))
+                        fldmap[fld.keyname] = fdlcount
+                        fdlcount += 1
+                    dprov.addAttributes(attrlist)
+                    qgsfields = dprov.fields()
+                    layer.updateFields()
+
+                    layer.startEditing()
+                    for feat in features:
+                        qgsfeat = QgsFeature(qgsfields)
+                        fattrs = [None] * fdlcount
+                        for k, v in feat.fields.iteritems():
+                            if v is not None:
+                                fattrs[fldmap[k]] = v
+                        qgsfeat.setAttributes(fattrs)
+                        qgsgeom = QgsGeometry()
+                        qgsgeom.fromWkb(feat.geom.wkb)
+                        qgsfeat.setGeometry(qgsgeom)
+                        layer.addFeature(qgsfeat)                   
+                    layer.commitChanges()
 
                     crs = QgsCoordinateReferenceSystem(srs.id)
                     layer.setCrs(crs)
+
+                    layer.loadNamedStyle(qml_filename)
 
                     settings = QgsMapSettings()
                     settings.setLayers([layer.id()])

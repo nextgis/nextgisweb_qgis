@@ -33,7 +33,7 @@ from .util import _
 Base = declarative_base()
 
 ImageOptions = namedtuple('ImageOptions', [
-    'fndata', 'srs', 'render_size', 'extended', 'target_box', 'result'])
+    'features', 'qml', 'geometry_type', 'srs', 'render_size', 'extended', 'target_box', 'result'])
 LegendOptions = namedtuple('LegendOptions', [
     'qml', 'geometry_type', 'layer_name', 'result'])
 
@@ -105,33 +105,13 @@ class QgisVectorStyle(Base, Resource):
         feature_query.geom()
         features = feature_query()
 
-        res_img = None
-        try:
-            dirname, fndata, fnstyle = None, None, None
 
-            dirname = mkdtemp()
-            fndata = os.path.join(dirname, 'layer.geojson')
-
-            with open(fndata, 'wb') as fd:
-                fd.write(geojson.dumps(features))
-
-            fnstyle = os.path.join(dirname, 'layer.qml')
-            os.symlink(env.file_storage.filename(self.qml_fileobj), fnstyle)
-
-            result = Queue()
-            options = ImageOptions(fndata, self.srs, render_size,
-                                   extended, target_box, result)
-            env.qgis.queue.put(options)
-            render_timeout = int(env.qgis.settings.get('render_timeout'))
-            res_img = result.get(block=True, timeout=render_timeout)
-
-        finally:
-            if fndata and os.path.isfile(fndata):
-                os.unlink(fndata)
-            if fnstyle and os.path.isfile(fnstyle):
-                os.unlink(fnstyle)
-            if dirname and os.path.isdir(dirname):
-                os.rmdir(dirname)
+        result = Queue()
+        options = ImageOptions(features, env.file_storage.filename(self.qml_fileobj), self.parent.geometry_type, self.srs, render_size,
+                                extended, target_box, result)
+        env.qgis.queue.put(options)
+        render_timeout = int(env.qgis.settings.get('render_timeout'))
+        res_img = result.get(block=True, timeout=render_timeout)
 
         return res_img
 
