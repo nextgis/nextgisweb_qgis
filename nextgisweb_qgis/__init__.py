@@ -161,41 +161,10 @@ class QgisComponent(Component):
                     result.put(buf)
 
                 elif isinstance(options, ImageOptions):
-                    features, qml_filename, geometry_type, srs, render_size, extended, \
+                    style, features, render_size, extended, \
                         target_box, result = options
 
-                    layer = QgsVectorLayer(geometry_type, None, 'memory')
-
-                    dprov = layer.dataProvider()
-                    attrlist = []
-                    fldmap = {}
-                    fdlcount = 0
-                    for fld in features.fields:
-                        attrlist.append(QgsField(fld.keyname, *FIELD_TYPE_TO_QGIS[fld.datatype]))
-                        fldmap[fld.keyname] = fdlcount
-                        fdlcount += 1
-                    dprov.addAttributes(attrlist)
-                    qgsfields = dprov.fields()
-                    layer.updateFields()
-
-                    layer.startEditing()
-                    for feat in features:
-                        qgsfeat = QgsFeature(qgsfields)
-                        fattrs = [None] * fdlcount
-                        for k, v in feat.fields.iteritems():
-                            if v is not None:
-                                fattrs[fldmap[k]] = v
-                        qgsfeat.setAttributes(fattrs)
-                        qgsgeom = QgsGeometry()
-                        qgsgeom.fromWkb(feat.geom.wkb)
-                        qgsfeat.setGeometry(qgsgeom)
-                        layer.addFeature(qgsfeat)                   
-                    layer.commitChanges()
-
-                    crs = QgsCoordinateReferenceSystem(srs.id)
-                    layer.setCrs(crs)
-
-                    layer.loadNamedStyle(qml_filename)
+                    layer = self._qgs_memory_layer(style, features=features)
 
                     settings = QgsMapSettings()
                     settings.setLayers([layer.id()])
@@ -203,8 +172,8 @@ class QgisComponent(Component):
                     settings.setFlag(QgsMapSettings.Antialiasing)
 
                     settings.setCrsTransformEnabled(True)
-                    settings.setDestinationCrs(crs)
-                    settings.setMapUnits(crs.mapUnits())
+                    settings.setDestinationCrs(layer.crs())
+                    settings.setMapUnits(layer.crs().mapUnits())
                     settings.setOutputSize(QSize(*render_size))
                     settings.setExtent(QgsRectangle(*extended))
 
@@ -239,18 +208,7 @@ class QgisComponent(Component):
 
                     QgsMapLayerRegistry.instance().removeAllMapLayers()
 
-                    # Transform QImage to PIL
-                    ba = QByteArray()
-                    bf = QBuffer(ba)
-                    bf.open(QIODevice.WriteOnly)
-                    img.save(bf, 'TIFF', quality=100)
-                    bf.close()
-
-                    buf = StringIO()
-                    buf.write(bf.data())
-                    buf.seek(0)
-
-                    img = PIL.Image.open(buf)
+                    img = self._qimage_to_pil(img)
 
                     # Clip needed part
                     result.put(img.crop(target_box))
@@ -259,6 +217,68 @@ class QgisComponent(Component):
                 self.logger.error(e.message)
 
         qgis.exitQgis()
+
+    def _qgs_memory_layer(self, style, features=None):
+        """ Create QgsVectorLayer with memory backend and load features into it """
+
+        result = QgsVectorLayer(style.parent.geometry_type, None, 'memory')
+        provider = result.dataProvider()
+
+        # Setup layer fields
+        fldmap = {}
+        for fld in style.parent.fields:
+            provider.addAttributes([
+                QgsField(fld.keyname,
+                *FIELD_TYPE_TO_QGIS[fld.datatype])
+            ])
+            fldmap[fld.keyname] = len(fldmap)
+        qgsfields = provider.fields()
+        result.updateFields()
+
+        # Load style from qml file
+        result.loadNamedStyle(self.env.file_storage.filename(style.qml_fileobj))
+
+        # Load features into layers if needed
+        if features is not None:
+            result.startEditing()
+
+            for feat in features:
+                qgsfeat = QgsFeature(qgsfields)
+                fattrs = [None] * len(fldmap)
+                for k, v in feat.fields.iteritems():
+                    if v is not None:
+                        fattrs[fldmap[k]] = v
+                qgsfeat.setAttributes(fattrs)
+                
+                # Method fromWkb() is much faster constructor fromWkt()
+                # TODO: QGIS 3 have constructor fromWkb()
+                qgsgeom = QgsGeometry()
+                qgsgeom.fromWkb(feat.geom.wkb)
+                qgsfeat.setGeometry(qgsgeom)
+                
+                result.addFeature(qgsfeat)                   
+
+            result.commitChanges()
+
+        result.setCrs(QgsCoordinateReferenceSystem(
+            style.parent.srs.id))
+
+        return result
+        
+    def _qimage_to_pil(self, qimage):
+        """ Convert QImage to PIL Image """
+
+        ba = QByteArray()
+        bf = QBuffer(ba)
+        bf.open(QIODevice.WriteOnly)
+        qimage.save(bf, 'TIFF', quality=100)
+        bf.close()
+
+        buf = StringIO()
+        buf.write(bf.data())
+        buf.seek(0)
+
+        return PIL.Image.open(buf)
 
     settings_info = (
         dict(key='path', desc=u'QGIS installation folder'),
