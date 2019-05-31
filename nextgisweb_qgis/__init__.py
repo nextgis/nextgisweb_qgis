@@ -152,7 +152,7 @@ class QgisComponent(Component):
                     ba = QByteArray()
                     bf = QBuffer(ba)
                     bf.open(QIODevice.WriteOnly)
-                    img.save(bf, 'TIFF', quality=100)
+                    img.save(bf, 'PNG')
                     bf.close()
 
                     buf = StringIO()
