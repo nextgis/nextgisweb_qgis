@@ -46,15 +46,16 @@ from .model import (
     ImageOptions,
     LegendOptions)
 
+
 # Convert field type to QGIS type
 FIELD_TYPE_TO_QGIS = {
     FIELD_TYPE.INTEGER: (QVariant.Int, 'int4'),
-    FIELD_TYPE.BIGINT: (QVariant.String, 'int8'), 
-    # TODO: FIELD_TYPE.REAL:
-    FIELD_TYPE.STRING: (QVariant.String, 'string')
-    # TODO: FIELD_TYPE.DATE:
-    # TODO: FIELD_TYPE.TIME:
-    # TODO: FIELD_TYPE.DATETIME:
+    FIELD_TYPE.BIGINT: (QVariant.LongLong, 'int8'), 
+    FIELD_TYPE.REAL: (QVariant.Double, 'real'),
+    FIELD_TYPE.STRING: (QVariant.String, 'string'),
+    FIELD_TYPE.DATE: (QVariant.Date, 'date'),
+    # TODO: FIELD_TYPE.TIME: 
+    FIELD_TYPE.DATETIME: (QVariant.DateTime, 'datetime'),
 }
 
 
