@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function, absolute_import
-import os
-import os.path
 from collections import namedtuple
 from shutil import copyfileobj
-from tempfile import mkdtemp
-from Queue import Queue
 
 from zope.interface import implements
 
 from nextgisweb import db
-from nextgisweb import geojson
 from nextgisweb.models import declarative_base
 from nextgisweb.env import env
 from nextgisweb.resource import (
@@ -106,7 +101,9 @@ class QgisVectorStyle(Base, Resource):
         feature_query.geom()
         features = feature_query()
 
-        options = ImageOptions(self, features, render_size, extended, target_box)
+        options = ImageOptions(
+            self, features, render_size,
+            extended, target_box)
         return env.qgis.renderer_job(options)
 
     def render_legend(self):

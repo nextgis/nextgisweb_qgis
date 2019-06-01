@@ -50,11 +50,11 @@ from .model import (
 # Convert field type to QGIS type
 FIELD_TYPE_TO_QGIS = {
     FIELD_TYPE.INTEGER: (QVariant.Int, 'int4'),
-    FIELD_TYPE.BIGINT: (QVariant.LongLong, 'int8'), 
+    FIELD_TYPE.BIGINT: (QVariant.LongLong, 'int8'),
     FIELD_TYPE.REAL: (QVariant.Double, 'real'),
     FIELD_TYPE.STRING: (QVariant.String, 'string'),
     FIELD_TYPE.DATE: (QVariant.Date, 'date'),
-    # TODO: FIELD_TYPE.TIME: 
+    # TODO: FIELD_TYPE.TIME:
     FIELD_TYPE.DATETIME: (QVariant.DateTime, 'datetime'),
 }
 
@@ -99,7 +99,7 @@ class QgisComponent(Component):
         self.queue.put((options, result_queue))
 
         result = result_queue.get(block=True, timeout=self._render_timeout)
-        
+
         if isinstance(result, Exception):
             raise result
         return result
@@ -170,7 +170,8 @@ class QgisComponent(Component):
                     result.put(buf)
 
                 elif isinstance(options, ImageOptions):
-                    style, features, render_size, extended, target_box = options
+                    style, features, render_size, \
+                        extended, target_box = options
 
                     layer = self._qgs_memory_layer(style, features=features)
 
@@ -203,8 +204,9 @@ class QgisComponent(Component):
                     img.fill(QColor.fromRgba(qRgba(255, 255, 255, 255)))
                     img.fill(QColor.fromRgba(qRgba(255, 255, 255, 0)))
 
-                    # DPI should be equal to settings, otherwise an error. In QImage
-                    # the resolution is set in dots per meter for each axis.
+                    # DPI should be equal to settings, otherwise an error.
+                    # In QImage the resolution is set in dots per meter
+                    # for each axis.
                     dpm = settings.outputDpi() / 25.4 * 1000
                     img.setDotsPerMeterX(dpm)
                     img.setDotsPerMeterY(dpm)
@@ -228,7 +230,8 @@ class QgisComponent(Component):
         qgis.exitQgis()
 
     def _qgs_memory_layer(self, style, features=None):
-        """ Create QgsVectorLayer with memory backend and load features into it """
+        """ Create QgsVectorLayer with memory backend and load
+        features into it """
 
         result = QgsVectorLayer(style.parent.geometry_type, None, 'memory')
         provider = result.dataProvider()
@@ -236,16 +239,17 @@ class QgisComponent(Component):
         # Setup layer fields
         fldmap = {}
         for fld in style.parent.fields:
-            provider.addAttributes([
-                QgsField(fld.keyname,
-                *FIELD_TYPE_TO_QGIS[fld.datatype])
-            ])
+            provider.addAttributes([QgsField(
+                fld.keyname,
+                *FIELD_TYPE_TO_QGIS[fld.datatype]
+            )])
             fldmap[fld.keyname] = len(fldmap)
         qgsfields = provider.fields()
         result.updateFields()
 
         # Load style from qml file
-        result.loadNamedStyle(self.env.file_storage.filename(style.qml_fileobj))
+        result.loadNamedStyle(self.env.file_storage.filename(
+            style.qml_fileobj))
 
         # Load features into layers if needed
         if features is not None:
@@ -258,14 +262,14 @@ class QgisComponent(Component):
                     if v is not None:
                         fattrs[fldmap[k]] = v
                 qgsfeat.setAttributes(fattrs)
-                
+
                 # Method fromWkb() is much faster constructor fromWkt()
                 # TODO: QGIS 3 have constructor fromWkb()
                 qgsgeom = QgsGeometry()
                 qgsgeom.fromWkb(feat.geom.wkb)
                 qgsfeat.setGeometry(qgsgeom)
-                
-                result.addFeature(qgsfeat)                   
+
+                result.addFeature(qgsfeat)
 
             result.commitChanges()
 
@@ -273,7 +277,7 @@ class QgisComponent(Component):
             style.parent.srs.id))
 
         return result
-        
+
     def _qimage_to_pil(self, qimage):
         """ Convert QImage to PIL Image """
 
@@ -292,7 +296,8 @@ class QgisComponent(Component):
     settings_info = (
         dict(key='path', desc=u'QGIS installation folder'),
         dict(key='svgpaths', desc=u'SVG search folders'),
-        dict(key='render_timeout', desc=u'QGIS rendering timeout for one request'),
+        dict(key='render_timeout',
+             desc=u'QGIS rendering timeout for one request'),
     )
 
 
