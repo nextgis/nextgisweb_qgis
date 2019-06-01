@@ -4,6 +4,7 @@ from __future__ import unicode_literals, print_function, absolute_import
 import os
 import re
 import PIL
+from datetime import date, time, datetime
 
 from threading import Thread
 from Queue import Queue
@@ -37,6 +38,9 @@ from PyQt4.QtCore import (
     QByteArray,
     QBuffer,
     QVariant,
+    QDate,
+    QTime,
+    QDateTime,
     QIODevice)
 
 from nextgisweb.component import Component
@@ -54,7 +58,7 @@ FIELD_TYPE_TO_QGIS = {
     FIELD_TYPE.REAL: (QVariant.Double, 'real'),
     FIELD_TYPE.STRING: (QVariant.String, 'string'),
     FIELD_TYPE.DATE: (QVariant.Date, 'date'),
-    # TODO: FIELD_TYPE.TIME:
+    FIELD_TYPE.TIME: (QVariant.Time, 'time'),
     FIELD_TYPE.DATETIME: (QVariant.DateTime, 'datetime'),
 }
 
@@ -259,8 +263,17 @@ class QgisComponent(Component):
                 qgsfeat = QgsFeature(qgsfields)
                 fattrs = [None] * len(fldmap)
                 for k, v in feat.fields.iteritems():
-                    if v is not None:
-                        fattrs[fldmap[k]] = v
+                    if v is None:
+                        continue
+                    elif isinstance(v, date):
+                        v = QDate(v.year, v.month, v.day)
+                    elif isinstance(v, time):
+                        v = QTime(v.hour, v.minute, v.second)
+                    elif isinstance(v, datetime):
+                        v = QDateTime(
+                            v.year, v.month, v.day,
+                            v.hour, v.minute, v.second)
+                    fattrs[fldmap[k]] = v
                 qgsfeat.setAttributes(fattrs)
 
                 # Method fromWkb() is much faster constructor fromWkt()
