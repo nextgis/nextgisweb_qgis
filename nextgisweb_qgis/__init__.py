@@ -255,6 +255,9 @@ class QgisComponent(Component):
         result.loadNamedStyle(self.env.file_storage.filename(
             style.qml_fileobj))
 
+        # Disable read only flag when it was set via qml file
+        result.setReadOnly(False)
+
         # Load features into layers if needed
         if features is not None:
             result.startEditing()
