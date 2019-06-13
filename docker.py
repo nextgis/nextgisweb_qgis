@@ -5,14 +5,10 @@ from ngwdocker import PackageBase
 
 class Package(PackageBase):
 
-    def options(self, func):
-        func = click.option('--qgis-ppa', is_flag=True, help="Use QGIS PPA")(func)
-        return func
-
     def debpackages(self):
         return (
-            'qgis',
-            'python-qgis',
+            'ngqgis',
+            'python-ngqgis',
             'python-sip',
             'python-qt4',
         )
