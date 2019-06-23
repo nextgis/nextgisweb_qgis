@@ -112,15 +112,19 @@ class QgisComponent(Component):
         if 'QGIS_AUTH_DB_DIR_PATH' not in os.environ:
             os.environ['QGIS_AUTH_DB_DIR_PATH'] = '/tmp'
 
-        qgis = QgsApplication([], False)
-        qgis.setPrefixPath(self.settings.get('path'), True)
-        qgis.setDefaultSvgPaths(
-            qgis.svgPaths() + self.settings.get('svgpaths'))
-        qgis.setMaxThreads(1)
-        qgis.initQgis()
-
+        qgis = None
         while True:
             options, result = self.queue.get()
+
+            # Don't start QGIS until first request
+            if qgis is None:
+                qgis = QgsApplication([], False)
+                qgis.setPrefixPath(self.settings.get('path'), True)
+                qgis.setDefaultSvgPaths(
+                    qgis.svgPaths() + self.settings.get('svgpaths'))
+                qgis.setMaxThreads(1)
+                qgis.initQgis()
+
             try:
                 if isinstance(options, LegendOptions):
                     style, = options
