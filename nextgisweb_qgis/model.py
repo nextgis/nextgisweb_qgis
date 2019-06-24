@@ -14,12 +14,18 @@ from nextgisweb.resource import (
     DataScope,
     Serializer,
     SerializedProperty)
-from nextgisweb.feature_layer import IFeatureLayer
+from nextgisweb.feature_layer import (
+    IFeatureLayer,
+    on_data_change as on_data_change_feature_layer,
+)
 from nextgisweb.render import (
     IRenderableStyle,
     IExtentRenderRequest,
     ITileRenderRequest,
-    ILegendableStyle)
+    ILegendableStyle,
+    on_style_change,
+    on_data_change as on_data_change_renderable,
+)
 from nextgisweb.file_storage import FileObj
 from nextgisweb.geometry import box
 
@@ -111,6 +117,13 @@ class QgisVectorStyle(Base, Resource):
         return env.qgis.renderer_job(options)
 
 
+@on_data_change_feature_layer.connect
+def on_data_change_feature_layer(resource, geom):
+    for child in resource.children:
+        if isinstance(child, QgisVectorStyle):
+            on_data_change_renderable.fire(child, geom)
+
+
 class RenderRequest(object):
     implements(IExtentRenderRequest, ITileRenderRequest)
 
@@ -141,6 +154,8 @@ class _file_upload_attr(SerializedProperty):  # NOQA
 
         with open(srcfile, 'r') as fs, open(dstfile, 'w') as fd:
             copyfileobj(fs, fd)
+
+        on_style_change.fire(srlzr.obj)
 
 
 class QgisVectorStyleSerializer(Serializer):
