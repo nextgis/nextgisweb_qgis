@@ -15,6 +15,7 @@ from qgis.core import (
     QgsMapLayerRegistry,
     QgsMapRendererCustomPainterJob,
     QgsVectorLayer,
+    QgsRasterLayer,
     QgsMapSettings,
     QgsRectangle,
     QgsCoordinateReferenceSystem,
@@ -47,7 +48,8 @@ from nextgisweb.component import Component
 from nextgisweb.feature_layer import FIELD_TYPE
 from .model import (
     Base,
-    ImageOptions,
+    VectorRenderOptions,
+    RasterRenderOptions,
     LegendOptions)
 
 
@@ -177,11 +179,17 @@ class QgisComponent(Component):
                     buf.seek(0)
                     result.put(buf)
 
-                elif isinstance(options, ImageOptions):
-                    style, features, render_size, \
-                        extended, target_box = options
-
-                    layer = self._qgs_memory_layer(style, features=features)
+                else:
+                    if isinstance(options, VectorRenderOptions):
+                        style, features, render_size, \
+                            extended, target_box = options
+                        layer = self._qgs_memory_layer(style, features=features)
+                    elif isinstance(options, RasterRenderOptions):
+                        style, path, render_size, \
+                            extended, target_box = options
+                        layer = QgsRasterLayer(path)
+                        layer.loadNamedStyle(self.env.file_storage.filename(
+                            style.qml_fileobj))
 
                     settings = QgsMapSettings()
                     settings.setLayers([layer.id()])
