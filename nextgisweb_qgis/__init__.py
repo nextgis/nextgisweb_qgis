@@ -10,6 +10,7 @@ from threading import Thread
 from Queue import Queue
 from StringIO import StringIO
 
+from osgeo import gdal
 from qgis.core import (
     QgsApplication,
     QgsMapLayerRegistry,
@@ -180,6 +181,7 @@ class QgisComponent(Component):
                     result.put(buf)
 
                 else:
+                    path = features = None
                     if isinstance(options, VectorRenderOptions):
                         style, features, render_size, \
                             extended, target_box = options
@@ -238,6 +240,10 @@ class QgisComponent(Component):
 
                     # Clip needed part
                     result.put(img.crop(target_box))
+
+                    # Cleanup
+                    if path is not None:
+                        gdal.Unlink(path)
 
             except Exception as exc:
                 self.logger.error(exc.message)
