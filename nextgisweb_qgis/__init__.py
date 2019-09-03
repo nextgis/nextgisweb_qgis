@@ -81,18 +81,18 @@ class QgisComponent(Component):
 
         self._render_timeout = float(self.settings.get('render_timeout', '10'))
 
-    def configure(self):
-        super(QgisComponent, self).configure()
-
-    def setup_pyramid(self, config):
-        super(QgisComponent, self).setup_pyramid(config)
-
         # Separate thread for rendering,
         # will segfault otherwise with concurrent requests.
         self.queue = Queue()
         self.worker = Thread(target=self.renderer)
         self.worker.daemon = True
         self.worker.start()
+
+    def configure(self):
+        super(QgisComponent, self).configure()
+
+    def setup_pyramid(self, config):
+        super(QgisComponent, self).setup_pyramid(config)
 
         from . import view, api
         api.setup_pyramid(self, config)
