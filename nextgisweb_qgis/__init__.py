@@ -82,7 +82,7 @@ class QgisComponent(Component):
         else:
             self.settings['svgpaths'] = []
 
-        self._render_timeout = float(self.settings.get('render_timeout', '10'))
+        self._render_timeout = float(self.settings.get('render_timeout', '60'))
 
     def configure(self):
         super(QgisComponent, self).configure()
