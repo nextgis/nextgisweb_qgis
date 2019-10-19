@@ -10,11 +10,13 @@ from threading import Thread
 from Queue import Queue
 from StringIO import StringIO
 
+from osgeo import gdal
 from qgis.core import (
     QgsApplication,
     QgsMapLayerRegistry,
     QgsMapRendererCustomPainterJob,
     QgsVectorLayer,
+    QgsRasterLayer,
     QgsMapSettings,
     QgsRectangle,
     QgsCoordinateReferenceSystem,
@@ -47,7 +49,8 @@ from nextgisweb.component import Component
 from nextgisweb.feature_layer import FIELD_TYPE
 from .model import (
     Base,
-    ImageOptions,
+    VectorRenderOptions,
+    RasterRenderOptions,
     LegendOptions)
 
 
@@ -79,7 +82,7 @@ class QgisComponent(Component):
         else:
             self.settings['svgpaths'] = []
 
-        self._render_timeout = float(self.settings.get('render_timeout', '10'))
+        self._render_timeout = float(self.settings.get('render_timeout', '60'))
 
         # Separate thread for rendering,
         # will segfault otherwise with concurrent requests.
@@ -177,11 +180,18 @@ class QgisComponent(Component):
                     buf.seek(0)
                     result.put(buf)
 
-                elif isinstance(options, ImageOptions):
-                    style, features, render_size, \
-                        extended, target_box = options
-
-                    layer = self._qgs_memory_layer(style, features=features)
+                else:
+                    path = features = None
+                    if isinstance(options, VectorRenderOptions):
+                        style, features, render_size, \
+                            extended, target_box = options
+                        layer = self._qgs_memory_layer(style, features=features)
+                    elif isinstance(options, RasterRenderOptions):
+                        style, path, render_size, \
+                            extended, target_box = options
+                        layer = QgsRasterLayer(path)
+                        layer.loadNamedStyle(self.env.file_storage.filename(
+                            style.qml_fileobj))
 
                     settings = QgsMapSettings()
                     settings.setLayers([layer.id()])
@@ -230,6 +240,10 @@ class QgisComponent(Component):
 
                     # Clip needed part
                     result.put(img.crop(target_box))
+
+                    # Cleanup
+                    if path is not None:
+                        gdal.Unlink(path)
 
             except Exception as exc:
                 self.logger.error(exc.message)
