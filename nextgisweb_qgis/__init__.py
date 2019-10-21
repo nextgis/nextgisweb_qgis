@@ -46,7 +46,7 @@ from PyQt4.QtCore import (
     QIODevice)
 
 from nextgisweb.component import Component
-from nextgisweb.feature_layer import FIELD_TYPE
+from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE
 from .model import (
     Base,
     VectorRenderOptions,
@@ -255,7 +255,15 @@ class QgisComponent(Component):
         """ Create QgsVectorLayer with memory backend and load
         features into it """
 
-        result = QgsVectorLayer(style.parent.geometry_type, None, 'memory')
+        geometry_type = style.parent.geometry_type
+
+        # QGIS memory layer doesn't support 3D geometry types
+        if geometry_type in GEOM_TYPE.has_z:   
+            # TODO: Remove enum values magic
+            # Strip last Z character
+            geometry_type = geometry_type[:-1] 
+
+        result = QgsVectorLayer(geometry_type, None, 'memory')
         provider = result.dataProvider()
 
         # Setup layer fields
