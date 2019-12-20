@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function, absolute_import
-import uuid
 
 from collections import namedtuple
 from shutil import copyfileobj
 
-from osgeo import gdal
 from zope.interface import implements
 
 from nextgisweb import db
@@ -102,17 +100,10 @@ class QgisRasterStyle(Base, Resource):
         extended, render_size, target_box = _render_bounds(
             extent, size, padding)
 
-        vsibuf = "/vsimem/%s" % uuid.uuid4()
-        gdal.Translate(
-            vsibuf,
-            env.file_storage.filename(self.parent.fileobj),
-            projWin=[extent[0], extent[3], extent[2], extent[1]],
-            width=size[0],
-            height=size[1],
-        )
+        path = env.file_storage.filename(self.parent.fileobj)
 
         options = RasterRenderOptions(
-            self, vsibuf, render_size,
+            self, path, render_size,
             extended, target_box)
         return env.qgis.renderer_job(options)
 
