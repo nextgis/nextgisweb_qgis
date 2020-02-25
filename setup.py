@@ -1,6 +1,8 @@
+import io
 from setuptools import setup, find_packages
 
-version = '0.0'
+with io.open('VERSION', 'r') as fd:
+    VERSION = fd.read().rstrip()
 
 requires = (
     'nextgisweb',
@@ -17,8 +19,8 @@ entry_points = {
 
 setup(
     name='nextgisweb_qgis',
+    version=VERSION,
     python_requires="<3",
-    version=version,
     description="",
     long_description="",
     classifiers=[],
