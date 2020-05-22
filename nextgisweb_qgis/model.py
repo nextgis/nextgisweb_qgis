@@ -170,6 +170,11 @@ def on_data_change_feature_layer(resource, geom):
             on_data_change_renderable.fire(child, geom)
 
 
+DataScope.read.require(
+    DataScope.read,
+    attr='parent', cls=QgisVectorStyle)
+
+
 class RenderRequest(object):
     implements(IExtentRenderRequest, ITileRenderRequest)
 
