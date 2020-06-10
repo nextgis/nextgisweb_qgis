@@ -100,7 +100,9 @@ class QgisRasterStyle(Base, Resource):
         extended, render_size, target_box = _render_bounds(
             extent, size, padding)
 
-        path = env.file_storage.filename(self.parent.fileobj)
+        # We need raster pyramids so use working directory filename
+        # instead of original filename.
+        path = env.raster_layer.workdir_filename(self.parent.fileobj)
 
         options = RasterRenderOptions(
             self, path, render_size,
