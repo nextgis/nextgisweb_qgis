@@ -184,7 +184,11 @@ class QgisComponent(Component):
                     buf = StringIO()
                     buf.write(bf.data())
                     buf.seek(0)
-                    result.put(buf)
+
+                    try:
+                        result.put((buf, ))
+                    except Full:
+                        pass # That's OK, job was canceled
 
                 else:
                     features = None
@@ -246,11 +250,11 @@ class QgisComponent(Component):
 
                     # Clip needed part
                     cimg = img.crop(target_box)
+
                     try:
                         result.put((cimg, ))
                     except Full:
-                        # That's OK, job was canceled
-                        pass
+                        pass # That's OK, job was canceled
 
             except Exception as exc:
                 if isinstance(exc, DetachedInstanceError) and result.full():
