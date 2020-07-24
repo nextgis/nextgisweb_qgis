@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function, absolute_import
-
+import sys
 import os
 import re
 import PIL
 from datetime import date, time, datetime
+import six
 
 from threading import Thread
-from Queue import Queue
+from Queue import Queue, Empty, Full
 from StringIO import StringIO
+
+from sqlalchemy.orm.exc import DetachedInstanceError
 
 from qgis.core import (
     QgsApplication,
@@ -45,12 +48,11 @@ from PyQt4.QtCore import (
     QIODevice)
 
 from nextgisweb.component import Component
+from nextgisweb.core.exception import user_exception
 from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE
-from .model import (
-    Base,
-    VectorRenderOptions,
-    RasterRenderOptions,
-    LegendOptions)
+
+from .model import Base, VectorRenderOptions, RasterRenderOptions, LegendOptions
+from .util import _
 
 
 # Convert field type to QGIS type
@@ -101,14 +103,25 @@ class QgisComponent(Component):
         view.setup_pyramid(self, config)
 
     def renderer_job(self, options):
-        result_queue = Queue()
+        result_queue = Queue(maxsize=1)
         self.queue.put((options, result_queue))
 
-        result = result_queue.get(block=True, timeout=self._render_timeout)
+        try:
+            result = result_queue.get(block=True, timeout=self._render_timeout)
+        except Empty as exc:
+            try:
+                result_queue.put_nowait(None)  # Just say cancel the job
+            except Full:
+                pass  # Race condition between timeout and putting a result
 
-        if isinstance(result, Exception):
-            raise result
-        return result
+            raise user_exception(
+                exc, http_status_code=503,
+                title=_("QGIS render timeout"))
+
+        if isinstance(result[0], Exception):
+            six.reraise(*result[1])
+        else:
+            return result[0]
 
     def renderer(self):
         if 'QGIS_AUTH_DB_DIR_PATH' not in os.environ:
@@ -126,6 +139,10 @@ class QgisComponent(Component):
                     qgis.svgPaths() + self.settings.get('svgpaths'))
                 qgis.setMaxThreads(1)
                 qgis.initQgis()
+
+            # Check was the job canceled
+            if result.full():
+                continue
 
             try:
                 if isinstance(options, LegendOptions):
@@ -238,11 +255,18 @@ class QgisComponent(Component):
                     img = self._qimage_to_pil(img)
 
                     # Clip needed part
-                    result.put(img.crop(target_box))
+                    cimg = img.crop(target_box)
+                    try:
+                        result.put((cimg, ))
+                    except Full:
+                        # That's OK, job was canceled
+                        pass
 
             except Exception as exc:
-                self.logger.error(exc.message)
-                result.put(exc)
+                if isinstance(exc, DetachedInstanceError) and result.full():
+                    pass  # That's OK, database session may already closed
+                else:
+                    result.put((exc, sys.exc_info()))
 
         qgis.exitQgis()
 
