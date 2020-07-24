@@ -4,7 +4,7 @@ import sys
 import os
 import re
 import PIL
-from datetime import date, time, datetime
+from datetime import date, time, datetime, timedelta
 import six
 
 from threading import Thread
@@ -47,6 +47,7 @@ from PyQt4.QtCore import (
     QDateTime,
     QIODevice)
 
+from nextgisweb.lib.config import Option, OptionAnnotations
 from nextgisweb.component import Component
 from nextgisweb.core.exception import user_exception
 from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE
@@ -74,17 +75,6 @@ class QgisComponent(Component):
     def initialize(self):
         super(QgisComponent, self).initialize()
 
-        if 'path' not in self.settings:
-            self.settings['path'] = '/usr'
-
-        if 'svgpaths' in self.settings:
-            self.settings['svgpaths'] = re.split(
-                r'[,\s]+', self.settings.get('svgpaths', ''))
-        else:
-            self.settings['svgpaths'] = []
-
-        self._render_timeout = float(self.settings.get('render_timeout', '60'))
-
         # Separate thread for rendering,
         # will segfault otherwise with concurrent requests.
         self.queue = Queue()
@@ -106,8 +96,9 @@ class QgisComponent(Component):
         result_queue = Queue(maxsize=1)
         self.queue.put((options, result_queue))
 
+        timeout = self.options['render_timeout'].total_seconds()
         try:
-            result = result_queue.get(block=True, timeout=self._render_timeout)
+            result = result_queue.get(block=True, timeout=timeout)
         except Empty as exc:
             try:
                 result_queue.put_nowait(None)  # Just say cancel the job
@@ -134,9 +125,8 @@ class QgisComponent(Component):
             # Don't start QGIS until first request
             if qgis is None:
                 qgis = QgsApplication([], False)
-                qgis.setPrefixPath(self.settings.get('path'), True)
-                qgis.setDefaultSvgPaths(
-                    qgis.svgPaths() + self.settings.get('svgpaths'))
+                qgis.setPrefixPath(self.options['prefix_path'], True)
+                qgis.setDefaultSvgPaths(qgis.svgPaths() + self.options['svgpaths'])
                 qgis.setMaxThreads(1)
                 qgis.initQgis()
 
@@ -354,12 +344,16 @@ class QgisComponent(Component):
 
         return PIL.Image.open(buf)
 
-    settings_info = (
-        dict(key='path', desc=u'QGIS installation folder'),
-        dict(key='svgpaths', desc=u'SVG search folders'),
-        dict(key='render_timeout',
-             desc=u'QGIS rendering timeout for one request'),
-    )
+    option_annotations = OptionAnnotations((
+        Option('render_timeout', timedelta, default=timedelta(seconds=60),
+               doc="Timeout for one rendering request."),
+
+        Option('svgpaths', list, default=[],
+               doc="Search paths for SVG icons."),
+
+        Option('prefix_path', str, default="/usr",
+               doc="QGIS installation prefix path."),
+    ))
 
 
 def pkginfo():
