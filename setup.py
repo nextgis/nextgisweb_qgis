@@ -6,6 +6,7 @@ with io.open('VERSION', 'r') as fd:
 
 requires = (
     'nextgisweb',
+    'qgis_headless @ git+https://token:Bzncgka7hLyfzcMt9Xxn@gitlab.com/nextgis_private/qgis_headless.git@python',  # NOQA: E501
 )
 
 entry_points = {
@@ -20,7 +21,6 @@ entry_points = {
 setup(
     name='nextgisweb_qgis',
     version=VERSION,
-    python_requires="<3",
     description="",
     long_description="",
     classifiers=[],

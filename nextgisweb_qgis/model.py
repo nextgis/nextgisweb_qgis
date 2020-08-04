@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function, absolute_import
-
-from collections import namedtuple
+from uuid import uuid4
 from shutil import copyfileobj
+from contextlib import contextmanager
 
-from zope.interface import implements
+from zope.interface import implementer
+from osgeo import gdal, ogr, osr
+import qgis_headless
 
 from nextgisweb import db
 from nextgisweb.models import declarative_base
@@ -17,6 +19,8 @@ from nextgisweb.resource import (
     SerializedProperty)
 from nextgisweb.feature_layer import (
     IFeatureLayer,
+    FIELD_TYPE as FIELD_TYPE,
+    FIELD_TYPE_OGR as FIELD_OGR,
     on_data_change as on_data_change_feature_layer,
 )
 from nextgisweb.render import (
@@ -29,20 +33,14 @@ from nextgisweb.render import (
 )
 from nextgisweb.file_storage import FileObj
 from nextgisweb.geometry import box
+from nextgisweb.compat import lru_cache
 
-from .util import _
+from .util import _, qgis_init, qgis_image_to_pil
+
+
+_FIELD_TYPE_TO_OGR = dict(zip(FIELD_TYPE.enum, FIELD_OGR))
 
 Base = declarative_base()
-
-VectorRenderOptions = namedtuple('VectorRenderOptions', [
-    'style', 'features', 'render_size',
-    'extended', 'target_box'])
-
-RasterRenderOptions = namedtuple('RasterRenderOptions', [
-    'style', 'path', 'render_size',
-    'extended', 'target_box'])
-
-LegendOptions = namedtuple('LegendOptions', ['style', ])
 
 
 def _render_bounds(extent, size, padding):
@@ -74,11 +72,10 @@ def _render_bounds(extent, size, padding):
     return extended, render_size, target_box
 
 
+@implementer(IRenderableStyle)
 class QgisRasterStyle(Base, Resource):
     identity = 'qgis_raster_style'
     cls_display_name = _("QGIS style")
-
-    implements(IRenderableStyle)
 
     __scope__ = DataScope
 
@@ -102,19 +99,15 @@ class QgisRasterStyle(Base, Resource):
 
         # We need raster pyramids so use working directory filename
         # instead of original filename.
-        path = env.raster_layer.workdir_filename(self.parent.fileobj)
+        # path = env.raster_layer.workdir_filename(self.parent.fileobj)
 
-        options = RasterRenderOptions(
-            self, path, render_size,
-            extended, target_box)
-        return env.qgis.renderer_job(options)
+        raise NotImplementedError()
 
 
+@implementer((IRenderableStyle, ILegendableStyle))
 class QgisVectorStyle(Base, Resource):
     identity = 'qgis_vector_style'
     cls_display_name = _("QGIS style")
-
-    implements(IRenderableStyle, ILegendableStyle)
 
     __scope__ = DataScope
 
@@ -140,14 +133,13 @@ class QgisVectorStyle(Base, Resource):
         extended, render_size, target_box = _render_bounds(
             extent, size, padding)
 
-        # Выбираем объекты по экстенту
         feature_query = self.parent.feature_query()
 
-        # Отфильтровываем объекты по условию
+        # Apply filter condition
         if cond is not None:
             feature_query.filter_by(**cond)
 
-        # FIXME: Тоже самое, но через интерфейсы
+        # TODO: Do this via interfaces
         if hasattr(feature_query, 'srs'):
             feature_query.srs(srs)
 
@@ -155,14 +147,17 @@ class QgisVectorStyle(Base, Resource):
         feature_query.geom()
         features = feature_query()
 
-        options = VectorRenderOptions(
-            self, features, render_size,
-            extended, target_box)
-        return env.qgis.renderer_job(options)
+        qml = _qml_cache(env.file_storage.filename(self.qml_fileobj))
+
+        qgis_init()
+        with _features_to_ogr(self.parent, features) as ogr_path:
+            img = qgis_image_to_pil(qgis_headless.renderVector(
+                ogr_path, qml, *(tuple(extent) + tuple(size) + (srs.id, 100))))
+
+        return img
 
     def render_legend(self):
-        options = LegendOptions(self)
-        return env.qgis.renderer_job(options)
+        raise NotImplementedError()
 
 
 @on_data_change_feature_layer.connect
@@ -172,8 +167,8 @@ def on_data_change_feature_layer(resource, geom):
             on_data_change_renderable.fire(child, geom)
 
 
+@implementer(IExtentRenderRequest, ITileRenderRequest)
 class RenderRequest(object):
-    implements(IExtentRenderRequest, ITileRenderRequest)
 
     def __init__(self, style, srs, cond=None):
         self.style = style
@@ -218,3 +213,45 @@ class QgisRasterSerializer(Serializer):
     resclass = QgisRasterStyle
 
     file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
+
+
+@contextmanager
+def _features_to_ogr(src_layer, features):
+    path = '/vsimem/{}.gpkg'.format(uuid4())
+    ds = ogr.GetDriverByName('GPKG').CreateDataSource(path, options=[
+        'ADD_GPKG_OGR_CONTENTS=NO', ])
+    assert ds is not None, gdal.GetLastErrorMsg()
+
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(src_layer.srs.id)
+
+    layer = ds.CreateLayer('', srs=srs, options=['SPATIAL_INDEX=NO', ])
+    assert layer is not None, gdal.GetLastErrorMsg()
+
+    defn = layer.GetLayerDefn()
+
+    layer.CreateFields([
+        ogr.FieldDefn(field.keyname, _FIELD_TYPE_TO_OGR[field.datatype])
+        for field in src_layer.fields])
+
+    for src_feat in features:
+        feat = ogr.Feature(defn)
+        feat.SetFID(src_feat.id)
+        feat.SetGeometry(ogr.CreateGeometryFromWkb(src_feat.geom.wkb))
+
+        for field in src_feat.fields:
+            feat[field] = src_feat.fields[field]
+
+        layer.CreateFeature(feat)
+
+    try:
+        yield path
+    finally:
+        del ds, layer, defn
+        gdal.Unlink(path)
+
+
+@lru_cache()
+def _qml_cache(fn):
+    with open(fn, 'r') as fd:
+        return fd.read()
