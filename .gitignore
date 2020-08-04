@@ -23,3 +23,6 @@ coverage.xml
 # Translations
 *.mo
 *.pot
+
+# IDE
+.vscode
