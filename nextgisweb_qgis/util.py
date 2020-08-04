@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import ctypes
 from io import BytesIO
 
 from PIL import Image
@@ -19,5 +18,4 @@ def qgis_init():
 
 
 def qgis_image_to_pil(src):
-    data = bytes((ctypes.c_char * src.size()).from_address(src.data()))
-    return Image.open(BytesIO(data))
+    return Image.open(BytesIO(src.to_string()))
