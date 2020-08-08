@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 from zope.interface import implementer
 from osgeo import gdal, ogr, osr
-import qgis_headless
+from qgis_headless import MapRequest, CRS, Layer, Style
 
 from nextgisweb import db
 from nextgisweb.models import declarative_base
@@ -99,9 +99,24 @@ class QgisRasterStyle(Base, Resource):
 
         # We need raster pyramids so use working directory filename
         # instead of original filename.
-        # path = env.raster_layer.workdir_filename(self.parent.fileobj)
+        gdal_path = env.raster_layer.workdir_filename(self.parent.fileobj)
 
-        raise NotImplementedError()
+        qgis_init()
+
+        mreq = MapRequest()
+        mreq.set_dpi(96)
+        mreq.set_crs(CRS.from_epsg(srs.id))
+
+        style = Style.from_string(_qml_cache(
+            env.file_storage.filename(self.qml_fileobj)))
+
+        layer = Layer.from_gdal(gdal_path)
+        mreq.add_layer(layer, style)
+
+        res = mreq.render_image(extent, size)
+        img = qgis_image_to_pil(res)
+
+        return img
 
 
 @implementer((IRenderableStyle, ILegendableStyle))
@@ -147,12 +162,23 @@ class QgisVectorStyle(Base, Resource):
         feature_query.geom()
         features = feature_query()
 
-        qml = _qml_cache(env.file_storage.filename(self.qml_fileobj))
+        # TODO: Check that len(features) > 0 and skip rendering otherwise
 
         qgis_init()
+
+        mreq = MapRequest()
+        mreq.set_dpi(96)
+        mreq.set_crs(CRS.from_epsg(srs.id))
+
+        style = Style.from_string(_qml_cache(
+            env.file_storage.filename(self.qml_fileobj)))
+
         with _features_to_ogr(self.parent, features) as ogr_path:
-            img = qgis_image_to_pil(qgis_headless.renderVector(
-                ogr_path, qml, *(tuple(extent) + tuple(size) + (srs.id, 100))))
+            layer = Layer.from_ogr(ogr_path)
+            mreq.add_layer(layer, style)
+
+            res = mreq.render_image(extent, size)
+            img = qgis_image_to_pil(res)
 
         return img
 

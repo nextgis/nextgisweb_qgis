@@ -1,0 +1,3 @@
+[submodule "qgis_headless"]
+	path = qgis_headless
+	url = git@gitlab.com:nextgis_private/qgis_headless.git

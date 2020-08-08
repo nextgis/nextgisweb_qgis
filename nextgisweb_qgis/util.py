@@ -18,4 +18,4 @@ def qgis_init():
 
 
 def qgis_image_to_pil(src):
-    return Image.open(BytesIO(src.to_string()))
+    return Image.open(BytesIO(src.to_bytes()))
