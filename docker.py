@@ -9,7 +9,7 @@ class Package(PackageBase):
 
 @AppImage.on_apt.handler
 def on_apt(event):
-    event.command("apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 51F523511C7028C3")  # NOQA: E501
+    event.add_key("https://qgis.org/downloads/qgis-2020.gpg.key")
     event.add_repository("deb https://qgis.org/ubuntu-ltr bionic main")
     event.package(
         'build-essential', 'cmake',
