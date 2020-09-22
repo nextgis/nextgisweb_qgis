@@ -1,8 +1,6 @@
 define([
     "dojo/_base/declare",
     "dojo/_base/lang",
-    "dojo/Deferred",
-    "dojo/when",
     "dijit/_TemplatedMixin",
     "dijit/_WidgetsInTemplateMixin",
     "dijit/layout/ContentPane",
@@ -10,15 +8,13 @@ define([
     "ngw-pyramid/hbs-i18n",
     "ngw-resource/serialize",
     // resource
-    "dojo/text!./template/QgisStyleWidget.hbs",
+    "dojo/text!./template/QgisVectorStyleWidget.hbs",
     // template
     "dojox/layout/TableContainer",
     "ngw-file-upload/Uploader"
 ], function (
     declare,
     lang,
-    Deferred,
-    when,
     _TemplatedMixin,
     _WidgetsInTemplateMixin,
     ContentPane,

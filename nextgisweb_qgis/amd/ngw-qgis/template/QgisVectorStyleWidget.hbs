@@ -1,0 +1,16 @@
+<div data-dojo-type="${baseClass}" data-dojo-attach-point="focusNode"
+    data-ngw-serialize-prefix="${prefix}" style="padding: 1ex;">
+    <div data-dojo-type="dojox/layout/TableContainer" data-dojo-props="cols:1, labelWidth: 150">
+
+        <div data-dojo-attach-point="wFileUpload"
+            data-dojo-type="ngw-file-upload/Uploader"
+            title="{{gettext 'QML file'}}"></div>
+
+        <div data-dojo-attach-point="wSVGSymbolLibrary"
+            data-dojo-type="ngw-resource/ResourceBox"
+            data-ngw-serialize="svg_symbol_library"
+            data-dojo-props="cls: 'svg_symbol_library'"
+            title="{{gettext 'SVG symbol library'}}"></div>
+
+    </div>
+</div>

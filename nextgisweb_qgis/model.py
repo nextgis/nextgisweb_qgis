@@ -18,14 +18,18 @@ from nextgisweb.resource import (
     Resource,
     ResourceScope,
     DataScope,
+    DataStructureScope,
     Serializer,
-    SerializedProperty)
+    SerializedProperty as SP,
+    SerializedResourceRelationship as SRR,
+)
 from nextgisweb.feature_layer import (
     IFeatureLayer,
     FIELD_TYPE as FIELD_TYPE,
     FIELD_TYPE_OGR as FIELD_OGR,
     on_data_change as on_data_change_feature_layer,
 )
+from nextgisweb.icon_library import SVGSymbolLibrary
 from nextgisweb.render import (
     IRenderableStyle,
     IExtentRenderRequest,
@@ -127,10 +131,16 @@ class QgisVectorStyle(Base, Resource):
     identity = 'qgis_vector_style'
     cls_display_name = _("QGIS style")
 
-    __scope__ = DataScope
+    __scope__ = (DataScope, DataStructureScope)
 
     qml_fileobj_id = db.Column(db.ForeignKey(FileObj.id), nullable=True)
+    svg_symbol_library_id = db.Column(db.ForeignKey(SVGSymbolLibrary.id), nullable=True)
+
     qml_fileobj = db.relationship(FileObj, cascade='all')
+    svg_symbol_library = db.relationship(
+        SVGSymbolLibrary, foreign_keys=svg_symbol_library_id,
+        cascade=False, cascade_backrefs=False,
+    )
 
     @classmethod
     def check_parent(cls, parent):
@@ -174,8 +184,14 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(CRS.from_epsg(srs.id))
 
+        def path_resolver(name):
+            svg_symbol = self.svg_symbol_library.find_svg_symbol(name)
+            return name if svg_symbol is None else svg_symbol.path
+
+        callback = None if self.svg_symbol_library is None else path_resolver
+
         style = Style.from_string(_qml_cache(
-            env.file_storage.filename(self.qml_fileobj)))
+            env.file_storage.filename(self.qml_fileobj)), callback)
 
         with _features_to_ogr(self.parent, features) as ogr_path:
             layer = Layer.from_ogr(ogr_path)
@@ -183,7 +199,6 @@ class QgisVectorStyle(Base, Resource):
 
             res = mreq.render_image(extent, size)
             return qgis_image_to_pil(res)
-
 
     def render_legend(self):
         qgis_init()
@@ -205,7 +220,7 @@ class QgisVectorStyle(Base, Resource):
             mreq.add_layer(layer, style)
             res = mreq.render_legend()
             img = qgis_image_to_pil(res)
-            
+
         # PNG-compressed buffer is required for render_legend()
         # TODO: Switch to PIL Image in future!
         buf = BytesIO()
@@ -241,7 +256,7 @@ class RenderRequest(object):
         )
 
 
-class _file_upload_attr(SerializedProperty):  # NOQA
+class _file_upload_attr(SP):  # NOQA
 
     def setter(self, srlzr, value):
         srcfile, _ = env.file_upload.get_filename(value['id'])
@@ -260,6 +275,7 @@ class QgisVectorStyleSerializer(Serializer):
     resclass = QgisVectorStyle
 
     file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
+    svg_symbol_library = SRR(read=DataStructureScope.read, write=DataStructureScope.write)
 
 
 class QgisRasterSerializer(Serializer):
