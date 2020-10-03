@@ -185,7 +185,11 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_crs(CRS.from_epsg(srs.id))
 
         def path_resolver(name):
-            svg_symbol = self.svg_symbol_library.find_svg_symbol(name)
+            candidates = [name, ]
+            if name[-4:].lower() == '.svg':
+                candidates.append(name[:-4])
+
+            svg_symbol = self.svg_symbol_library.find_svg_symbol(candidates)
             return name if svg_symbol is None else svg_symbol.path
 
         callback = None if self.svg_symbol_library is None else path_resolver
