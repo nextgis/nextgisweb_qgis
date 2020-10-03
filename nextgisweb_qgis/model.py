@@ -42,7 +42,7 @@ from nextgisweb.file_storage import FileObj
 from nextgisweb.geometry import box
 from nextgisweb.compat import lru_cache
 
-from .util import _, qgis_init, qgis_image_to_pil
+from .util import _, qgis_image_to_pil
 
 
 _FIELD_TYPE_TO_OGR = dict(zip(FIELD_TYPE.enum, FIELD_OGR))
@@ -108,7 +108,7 @@ class QgisRasterStyle(Base, Resource):
         # instead of original filename.
         gdal_path = env.raster_layer.workdir_filename(self.parent.fileobj)
 
-        qgis_init()
+        env.qgis.qgis_init()
 
         mreq = MapRequest()
         mreq.set_dpi(96)
@@ -178,7 +178,7 @@ class QgisVectorStyle(Base, Resource):
         if len(features) == 0:
             return Image.new('RGBA', size)
 
-        qgis_init()
+        env.qgis.qgis_init()
 
         mreq = MapRequest()
         mreq.set_dpi(96)
@@ -205,7 +205,7 @@ class QgisVectorStyle(Base, Resource):
             return qgis_image_to_pil(res)
 
     def render_legend(self):
-        qgis_init()
+        env.qgis.qgis_init()
 
         mreq = MapRequest()
         mreq.set_dpi(96)

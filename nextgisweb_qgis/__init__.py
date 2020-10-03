@@ -15,10 +15,10 @@ class QgisComponent(Component):
 
     def initialize(self):
         super(QgisComponent, self).initialize()
+        self._qgis_initialized = False
 
     def configure(self):
         super(QgisComponent, self).configure()
-        qgis_headless.init([])
 
     def setup_pyramid(self, config):
         super(QgisComponent, self).setup_pyramid(config)
@@ -27,9 +27,15 @@ class QgisComponent(Component):
         api.setup_pyramid(self, config)
         view.setup_pyramid(self, config)
 
+    def qgis_init(self):
+        if not self._qgis_initialized:
+            qgis_headless.init([])
+            if 'svg_path' in self.options:
+                qgis_headless.set_svg_paths(self.options['svg_path'])
+            self._qgis_initialized = True
+
     option_annotations = OptionAnnotations((
-        Option('svgpaths', list, default=[],
-               doc="Search paths for SVG icons."),
+        Option('svg_path', list, doc="Search paths for SVG icons."),
     ))
 
 
