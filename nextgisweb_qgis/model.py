@@ -315,8 +315,19 @@ def _features_to_ogr(src_layer, features):
 
         # Setting field with feat[field] = ... doesn't work in GDAL < 2.3, see
         # https://github.com/OSGeo/gdal/issues/451
-        for fidx, field in enumerate(src_feat.fields):
-            feat.SetField(fidx, src_feat.fields[field])
+        for fidx, field in enumerate(src_layer.fields):
+            fname = field.keyname
+            value = src_feat.fields[fname]
+            if value is None:
+                pass
+            elif field.datatype == FIELD_TYPE.DATE:
+                feat.SetField(fidx, value.year, value.month, value.day, 0, 0, 0, 0)
+            elif field.datatype == FIELD_TYPE.TIME:
+                feat.SetField(fidx, 0, 0, 0, value.hour, value.minute, value.second, 0)
+            elif field.datatype == FIELD_TYPE.DATETIME:
+                feat.SetField(fidx, value.year, value.month, value.day, value.hour, value.minute, value.second, 0)
+            else:
+                feat.SetField(fidx, src_feat.fields[fname])
 
         layer.CreateFeature(feat)
 
