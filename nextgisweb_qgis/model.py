@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function, absolute_import
+import logging
 from uuid import uuid4
 from shutil import copyfileobj
 from contextlib import contextmanager
@@ -54,16 +55,6 @@ _GEOM_TYPE_TO_QGIS = {
     GEOM_TYPE.MULTIPOINT: Layer.GT_MULTIPOINT,
     GEOM_TYPE.MULTILINESTRING: Layer.GT_MULTILINESTRING,
     GEOM_TYPE.MULTIPOLYGON: Layer.GT_MULTIPOLYGON,
-}
-
-_FIELD_TYPE_TO_QGIS = {
-    FIELD_TYPE.INTEGER: Layer.FT_INTEGER,
-    FIELD_TYPE.BIGINT: Layer.FT_INTEGER64,
-    FIELD_TYPE.REAL: Layer.FT_REAL,
-    FIELD_TYPE.STRING: Layer.FT_STRING,
-    FIELD_TYPE.DATE: Layer.FT_DATE,
-    FIELD_TYPE.TIME: Layer.FT_TIME,
-    FIELD_TYPE.DATETIME: Layer.FT_DATETIME,
 }
 
 Base = declarative_base()
@@ -194,14 +185,15 @@ class QgisVectorStyle(Base, Resource):
         feature_query.geom()
 
         fields = tuple([
-            (field.keyname, _FIELD_TYPE_TO_QGIS[field.datatype])
-            for field in self.parent.fields])
+            (field.keyname, ) + _FIELD_TYPE_TO_QGIS[field.datatype]
+            for field in self.parent.fields
+        ])
 
-        # TODO: Add date, time, datetime types support
         features = list()
         for feat in feature_query():
             features.append((feat.id, feat.geom.wkb, tuple([
-                feat.fields[field] for field, _ in fields])))
+                convert(feat.fields[field])
+                for field, _, convert in fields])))
 
         if len(features) == 0:
             return Image.new('RGBA', size)
@@ -225,7 +217,7 @@ class QgisVectorStyle(Base, Resource):
 
         style = Style.from_string(_qml_cache(
             env.file_storage.filename(self.qml_fileobj)), callback)
-              
+
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
             crs, fields, tuple(features))
@@ -244,17 +236,13 @@ class QgisVectorStyle(Base, Resource):
         style = Style.from_string(_qml_cache(
             env.file_storage.filename(self.qml_fileobj)))
 
-        # TODO: Currently qgis headless doesn't render legend without
-        # some data. So we need to create some features from layer.
-        feature_query = self.parent.feature_query()
-        feature_query.geom()
-        feature_query.limit(1)
+        layer = Layer.from_data(
+            _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
+            CRS.from_epsg(self.parent.srs.id), (), ())
 
-        with _features_to_ogr(self.parent, feature_query()) as ogr_path:
-            layer = Layer.from_ogr(ogr_path)
-            mreq.add_layer(layer, style)
-            res = mreq.render_legend()
-            img = qgis_image_to_pil(res)
+        mreq.add_layer(layer, style)
+        res = mreq.render_legend()
+        img = qgis_image_to_pil(res)
 
         # PNG-compressed buffer is required for render_legend()
         # TODO: Switch to PIL Image in future!
@@ -324,3 +312,33 @@ class QgisRasterSerializer(Serializer):
 def _qml_cache(fn):
     with open(fn, 'r') as fd:
         return fd.read()
+
+
+def _convert_none(v):
+    return v
+
+
+def _convert_date(v):
+    if v is not None:
+        return v.timetuple()[0:3]
+
+
+def _convert_time(v):
+    if v is not None:
+        return (v.hour, v.minute, v.second)
+
+
+def _convert_datetime(v):
+    if v is not None:
+        return v.timetuple()[0:6]
+
+
+_FIELD_TYPE_TO_QGIS = {
+    FIELD_TYPE.INTEGER: (Layer.FT_INTEGER, _convert_none),
+    FIELD_TYPE.BIGINT: (Layer.FT_INTEGER64, _convert_none),
+    FIELD_TYPE.REAL: (Layer.FT_REAL, _convert_none),
+    FIELD_TYPE.STRING: (Layer.FT_STRING, _convert_none),
+    FIELD_TYPE.DATE: (Layer.FT_DATE, _convert_date),
+    FIELD_TYPE.TIME: (Layer.FT_TIME, _convert_time),
+    FIELD_TYPE.DATETIME: (Layer.FT_DATETIME, _convert_datetime),
+}
