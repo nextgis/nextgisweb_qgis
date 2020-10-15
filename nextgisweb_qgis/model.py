@@ -27,6 +27,7 @@ from nextgisweb.feature_layer import (
     IFeatureLayer,
     FIELD_TYPE as FIELD_TYPE,
     FIELD_TYPE_OGR as FIELD_OGR,
+    GEOM_TYPE as GEOM_TYPE,
     on_data_change as on_data_change_feature_layer,
 )
 from nextgisweb.icon_library import SVGSymbolLibrary
@@ -45,7 +46,25 @@ from nextgisweb.compat import lru_cache
 from .util import _, qgis_image_to_pil
 
 
-_FIELD_TYPE_TO_OGR = dict(zip(FIELD_TYPE.enum, FIELD_OGR))
+_GEOM_TYPE_TO_QGIS = {
+    # TODO: Add Z geometry support here
+    GEOM_TYPE.POINT: Layer.GT_POINT,
+    GEOM_TYPE.LINESTRING: Layer.GT_LINESTRING,
+    GEOM_TYPE.POLYGON: Layer.GT_POLYGON,
+    GEOM_TYPE.MULTIPOINT: Layer.GT_MULTIPOINT,
+    GEOM_TYPE.MULTILINESTRING: Layer.GT_MULTILINESTRING,
+    GEOM_TYPE.MULTIPOLYGON: Layer.GT_MULTIPOLYGON,
+}
+
+_FIELD_TYPE_TO_QGIS = {
+    FIELD_TYPE.INTEGER: Layer.FT_INTEGER,
+    FIELD_TYPE.BIGINT: Layer.FT_INTEGER64,
+    FIELD_TYPE.REAL: Layer.FT_REAL,
+    FIELD_TYPE.STRING: Layer.FT_STRING,
+    FIELD_TYPE.DATE: Layer.FT_DATE,
+    FIELD_TYPE.TIME: Layer.FT_TIME,
+    FIELD_TYPE.DATETIME: Layer.FT_DATETIME,
+}
 
 Base = declarative_base()
 
@@ -173,22 +192,32 @@ class QgisVectorStyle(Base, Resource):
 
         feature_query.intersects(box(*extended, srid=srs.id))
         feature_query.geom()
-        features = list(feature_query())
+
+        fields = tuple([
+            (field.keyname, _FIELD_TYPE_TO_QGIS[field.datatype])
+            for field in self.parent.fields])
+
+        # TODO: Add date, time, datetime types support
+        features = list()
+        for feat in feature_query():
+            features.append((feat.id, feat.geom.wkb, tuple([
+                feat.fields[field] for field, _ in fields])))
 
         if len(features) == 0:
             return Image.new('RGBA', size)
 
         env.qgis.qgis_init()
 
+        crs = CRS.from_epsg(srs.id)
+
         mreq = MapRequest()
         mreq.set_dpi(96)
-        mreq.set_crs(CRS.from_epsg(srs.id))
+        mreq.set_crs(crs)
 
         def path_resolver(name):
             candidates = [name, ]
             if name[-4:].lower() == '.svg':
                 candidates.append(name[:-4])
-
             svg_symbol = self.svg_symbol_library.find_svg_symbol(candidates)
             return name if svg_symbol is None else svg_symbol.path
 
@@ -196,13 +225,15 @@ class QgisVectorStyle(Base, Resource):
 
         style = Style.from_string(_qml_cache(
             env.file_storage.filename(self.qml_fileobj)), callback)
+              
+        layer = Layer.from_data(
+            _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
+            crs, fields, tuple(features))
 
-        with _features_to_ogr(self.parent, features) as ogr_path:
-            layer = Layer.from_ogr(ogr_path)
-            mreq.add_layer(layer, style)
+        mreq.add_layer(layer, style)
 
-            res = mreq.render_image(extent, size)
-            return qgis_image_to_pil(res)
+        res = mreq.render_image(extent, size)
+        return qgis_image_to_pil(res)
 
     def render_legend(self):
         env.qgis.qgis_init()
@@ -287,55 +318,6 @@ class QgisRasterSerializer(Serializer):
     resclass = QgisRasterStyle
 
     file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
-
-
-@contextmanager
-def _features_to_ogr(src_layer, features):
-    path = '/vsimem/{}.gpkg'.format(uuid4())
-    ds = ogr.GetDriverByName(ensure_str('GPKG')).CreateDataSource(ensure_str(path), options=[
-        'ADD_GPKG_OGR_CONTENTS=NO', ])
-    assert ds is not None, gdal.GetLastErrorMsg()
-
-    srs = osr.SpatialReference()
-    srs.ImportFromEPSG(src_layer.srs.id)
-
-    layer = ds.CreateLayer(ensure_str(''), srs=srs, options=['SPATIAL_INDEX=NO', ])
-    assert layer is not None, gdal.GetLastErrorMsg()
-
-    defn = layer.GetLayerDefn()
-
-    layer.CreateFields([
-        ogr.FieldDefn(ensure_str(field.keyname), _FIELD_TYPE_TO_OGR[field.datatype])
-        for field in src_layer.fields])
-
-    for src_feat in features:
-        feat = ogr.Feature(defn)
-        feat.SetFID(src_feat.id)
-        feat.SetGeometry(ogr.CreateGeometryFromWkb(src_feat.geom.wkb))
-
-        # Setting field with feat[field] = ... doesn't work in GDAL < 2.3, see
-        # https://github.com/OSGeo/gdal/issues/451
-        for fidx, field in enumerate(src_layer.fields):
-            fname = field.keyname
-            value = src_feat.fields[fname]
-            if value is None:
-                pass
-            elif field.datatype == FIELD_TYPE.DATE:
-                feat.SetField(fidx, value.year, value.month, value.day, 0, 0, 0, 0)
-            elif field.datatype == FIELD_TYPE.TIME:
-                feat.SetField(fidx, 0, 0, 0, value.hour, value.minute, value.second, 0)
-            elif field.datatype == FIELD_TYPE.DATETIME:
-                feat.SetField(fidx, value.year, value.month, value.day, value.hour, value.minute, value.second, 0)
-            else:
-                feat.SetField(fidx, src_feat.fields[fname])
-
-        layer.CreateFeature(feat)
-
-    try:
-        yield path
-    finally:
-        del ds, layer, defn
-        gdal.Unlink(path)
 
 
 @lru_cache()
