@@ -5,7 +5,7 @@ Changes
 -----
 
 - QGIS Headless based rendering instead of PyQGIS / PyQT.
-- SVG symbold support via SVG symbol library resource.
+- SVG markers support via SVG marker library resource.
 - Configuration option 'svgpaths' renamed to 'svg_path'.
 
 1.2.0

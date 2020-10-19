@@ -216,8 +216,8 @@ class QgisVectorStyle(Base, Resource):
             candidates = [name, ]
             if name[-4:].lower() == '.svg':
                 candidates.append(name[:-4])
-            svg_symbol = self.svg_marker_library.find_svg_symbol(candidates)
-            return name if svg_symbol is None else svg_symbol.path
+            svg_marker = self.svg_marker_library.find_svg_marker(candidates)
+            return name if svg_marker is None else svg_marker.path
 
         callback = None if self.svg_marker_library is None else path_resolver
 
