@@ -26,12 +26,13 @@ from nextgisweb.resource import (
 )
 from nextgisweb.feature_layer import (
     IFeatureLayer,
+    IFeatureQuerySimplify,
     FIELD_TYPE as FIELD_TYPE,
     FIELD_TYPE_OGR as FIELD_OGR,
     GEOM_TYPE as GEOM_TYPE,
     on_data_change as on_data_change_feature_layer,
 )
-from nextgisweb.icon_library import SVGSymbolLibrary
+from nextgisweb.svg_marker_library import SVGMarkerLibrary
 from nextgisweb.render import (
     IRenderableStyle,
     IExtentRenderRequest,
@@ -149,11 +150,11 @@ class QgisVectorStyle(Base, Resource):
     __scope__ = (DataScope, DataStructureScope)
 
     qml_fileobj_id = db.Column(db.ForeignKey(FileObj.id), nullable=True)
-    svg_symbol_library_id = db.Column(db.ForeignKey(SVGSymbolLibrary.id), nullable=True)
+    svg_marker_library_id = db.Column(db.ForeignKey(SVGMarkerLibrary.id), nullable=True)
 
     qml_fileobj = db.relationship(FileObj, cascade='all')
-    svg_symbol_library = db.relationship(
-        SVGSymbolLibrary, foreign_keys=svg_symbol_library_id,
+    svg_marker_library = db.relationship(
+        SVGMarkerLibrary, foreign_keys=svg_marker_library_id,
         cascade=False, cascade_backrefs=False,
     )
 
@@ -215,10 +216,10 @@ class QgisVectorStyle(Base, Resource):
             candidates = [name, ]
             if name[-4:].lower() == '.svg':
                 candidates.append(name[:-4])
-            svg_symbol = self.svg_symbol_library.find_svg_symbol(candidates)
+            svg_symbol = self.svg_marker_library.find_svg_symbol(candidates)
             return name if svg_symbol is None else svg_symbol.path
 
-        callback = None if self.svg_symbol_library is None else path_resolver
+        callback = None if self.svg_marker_library is None else path_resolver
 
         style = Style.from_string(_qml_cache(
             env.file_storage.filename(self.qml_fileobj)), callback)
@@ -303,7 +304,7 @@ class QgisVectorStyleSerializer(Serializer):
     resclass = QgisVectorStyle
 
     file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
-    svg_symbol_library = SRR(read=DataStructureScope.read, write=DataStructureScope.write)
+    svg_marker_library = SRR(read=DataStructureScope.read, write=DataStructureScope.write)
 
 
 class QgisRasterSerializer(Serializer):
