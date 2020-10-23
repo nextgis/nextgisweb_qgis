@@ -185,20 +185,6 @@ class QgisVectorStyle(Base, Resource):
         feature_query.intersects(box(*extended, srid=srs.id))
         feature_query.geom()
 
-        fields = tuple([
-            (field.keyname, ) + _FIELD_TYPE_TO_QGIS[field.datatype]
-            for field in self.parent.fields
-        ])
-
-        features = list()
-        for feat in feature_query():
-            features.append((feat.id, feat.geom.wkb, tuple([
-                convert(feat.fields[field])
-                for field, _, convert in fields])))
-
-        if len(features) == 0:
-            return Image.new('RGBA', size)
-
         env.qgis.qgis_init()
 
         crs = CRS.from_epsg(srs.id)
@@ -228,9 +214,35 @@ class QgisVectorStyle(Base, Resource):
         style = Style.from_string(_qml_cache(
             env.file_storage.filename(self.qml_fileobj)), path_resolver)
 
+        style_attrs = style.used_attributes()
+
+        qhl_fields = list()
+        cnv_fields = list()
+        qry_fields = list()
+
+        for field in self.parent.fields:
+            fkeyname = field.keyname
+            if fkeyname not in style_attrs:
+                continue
+            field_to_qgis = _FIELD_TYPE_TO_QGIS[field.datatype]
+            qhl_fields.append((fkeyname, field_to_qgis[0]))
+            cnv_fields.append((fkeyname, field_to_qgis[1]))
+            qry_fields.append(fkeyname)
+
+        feature_query.fields(*qry_fields)
+
+        features = list()
+        for feat in feature_query():
+            features.append((feat.id, feat.geom.wkb, tuple([
+                convert(feat.fields[field])
+                for field, convert in cnv_fields])))
+
+        if len(features) == 0:
+            return Image.new('RGBA', size)
+
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
-            crs, fields, tuple(features))
+            crs, tuple(qhl_fields), tuple(features))
 
         mreq.add_layer(layer, style)
 
