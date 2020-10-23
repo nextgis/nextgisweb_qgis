@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function, absolute_import
-import logging
-from uuid import uuid4
-from shutil import copyfileobj
-from contextlib import contextmanager
+
 from io import BytesIO
-from six import ensure_str
+from os import path
+from shutil import copyfileobj
 
 from zope.interface import implementer
-from osgeo import gdal, ogr, osr
 from qgis_headless import MapRequest, CRS, Layer, Style
 from PIL import Image
 
@@ -26,9 +23,7 @@ from nextgisweb.resource import (
 )
 from nextgisweb.feature_layer import (
     IFeatureLayer,
-    IFeatureQuerySimplify,
     FIELD_TYPE as FIELD_TYPE,
-    FIELD_TYPE_OGR as FIELD_OGR,
     GEOM_TYPE as GEOM_TYPE,
     on_data_change as on_data_change_feature_layer,
 )
@@ -213,16 +208,25 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_crs(crs)
 
         def path_resolver(name):
-            candidates = [name, ]
-            if name[-4:].lower() == '.svg':
-                candidates.append(name[:-4])
-            svg_marker = self.svg_marker_library.find_svg_marker(candidates)
-            return name if svg_marker is None else svg_marker.path
+            if path.isabs(name):
+                raise ValueError("Absolute paths are not allowed.")
 
-        callback = None if self.svg_marker_library is None else path_resolver
+            name = path.normpath(name)
+            if name[-4:].lower() == '.svg':
+                name = name[:-4]
+
+            items = name.split(path.sep)
+            for i in range(len(items)):
+                candidate = path.sep.join(items[i:])
+                filename = env.svg_marker_library.lookup_marker(
+                    candidate, library=self.svg_marker_library)
+                if filename is not None:
+                    return filename
+
+            return None
 
         style = Style.from_string(_qml_cache(
-            env.file_storage.filename(self.qml_fileobj)), callback)
+            env.file_storage.filename(self.qml_fileobj)), path_resolver)
 
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
