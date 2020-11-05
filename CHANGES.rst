@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.3.0
+-----
+
+- Faster processing of empty images.
+
 1.2.0
 -----
 

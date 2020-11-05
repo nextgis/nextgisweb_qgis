@@ -153,7 +153,9 @@ class QgisVectorStyle(Base, Resource):
 
         feature_query.intersects(box(*extended, srid=srs.id))
         feature_query.geom()
-        features = feature_query()
+        features = list(feature_query())
+        if len(features) == 0:
+            return None
 
         options = VectorRenderOptions(
             self, features, render_size,
