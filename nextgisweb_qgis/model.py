@@ -209,7 +209,7 @@ class QgisVectorStyle(Base, Resource):
                 if filename is not None:
                     return filename
 
-            return None
+            return name
 
         style = Style.from_string(_qml_cache(
             env.file_storage.filename(self.qml_fileobj)), path_resolver)
