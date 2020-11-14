@@ -237,7 +237,7 @@ class QgisVectorStyle(Base, Resource):
                 for field, convert in cnv_fields])))
 
         if len(features) == 0:
-            return Image.new('RGBA', size)
+            return None
 
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
