@@ -204,8 +204,7 @@ class QgisVectorStyle(Base, Resource):
             items = name.split(path.sep)
             for i in range(len(items)):
                 candidate = path.sep.join(items[i:])
-                filename = env.svg_marker_library.lookup_marker(
-                    candidate, library_id=self.svg_marker_library_id)
+                filename = env.svg_marker_library.lookup(candidate, self.svg_marker_library)
                 if filename is not None:
                     return filename
 
