@@ -221,7 +221,7 @@ class QgisVectorStyle(Base, Resource):
 
         for field in self.parent.fields:
             fkeyname = field.keyname
-            if fkeyname not in style_attrs:
+            if (style_attrs is not None) and (fkeyname not in style_attrs):
                 continue
             field_to_qgis = _FIELD_TYPE_TO_QGIS[field.datatype]
             qhl_fields.append((fkeyname, field_to_qgis[0]))
