@@ -273,6 +273,11 @@ class QgisVectorStyle(Base, Resource):
         return buf
 
 
+DataScope.read.require(
+    ResourceScope.read, cls=QgisVectorStyle,
+    attr='svg_marker_library', attr_empty=True)
+
+
 @on_data_change_feature_layer.connect
 def on_data_change_feature_layer(resource, geom):
     for child in resource.children:
