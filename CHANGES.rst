@@ -5,6 +5,7 @@ Changes
 -----
 
 - Faster processing of empty images.
+- Fix QML file download for raster style.
 
 1.2.0
 -----
