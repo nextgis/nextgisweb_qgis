@@ -23,11 +23,7 @@ def style_qml(request):
 
 def setup_pyramid(comp, config):
     config.add_route(
-        'qgis.vector_style_qml', '/api/resource/{id}/qml',
-        factory=resource_factory
-    ).add_view(style_qml, context=QgisVectorStyle, request_method='GET')
-
-    config.add_route(
-        'qgis.raster_style_qml', '/api/resource/{id}/qml',
-        factory=resource_factory
-    ).add_view(style_qml, context=QgisRasterStyle, request_method='GET')
+        'qgis.style_qml', '/api/resource/{id}/qml',
+        factory=resource_factory) \
+    .add_view(style_qml, context=QgisVectorStyle, request_method='GET') \
+    .add_view(style_qml, context=QgisRasterStyle, request_method='GET')
