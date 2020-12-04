@@ -8,6 +8,12 @@ Changes
 - SVG markers support via SVG marker library resource.
 - Configuration option 'svgpaths' renamed to 'svg_path'.
 
+1.3.0
+-----
+
+- Faster processing of empty images.
+- Fix QML file download for raster style.
+
 1.2.0
 -----
 
