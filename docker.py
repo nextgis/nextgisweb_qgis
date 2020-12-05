@@ -10,7 +10,7 @@ class Package(PackageBase):
 @AppImage.on_apt.handler
 def on_apt(event):
     event.add_key("https://qgis.org/downloads/qgis-2020.gpg.key")
-    event.add_repository("deb https://qgis.org/ubuntu-ltr bionic main")
+    event.add_repository("deb https://qgis.org/ubuntu-ltr $(lsb_release -sc) main")
     
     event.package(
         'build-essential', 'cmake',
