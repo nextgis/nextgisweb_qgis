@@ -8,6 +8,8 @@ class Package(PackageBase):
 
 @AppImage.on_apt.handler
 def on_apt(event):
+    if event.image.base != 'ubuntu:18.04':
+        raise ValueError("Only ubuntu:18.04 base image is supported for nextgisweb_qgis!")
     event.package('ngqgis', 'python-ngqgis', 'python-sip', 'python-qt4')
 
 
