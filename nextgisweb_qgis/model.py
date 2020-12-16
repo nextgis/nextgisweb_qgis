@@ -60,6 +60,10 @@ _GEOM_TYPE_TO_QGIS = {
 
 Base = declarative_base()
 
+SKIP_PATHS = [
+    '/usr/share/qgis/svg/',
+]
+
 
 def _render_bounds(extent, size, padding):
     res_x = (extent[2] - extent[0]) / size[0]
@@ -194,6 +198,11 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_crs(crs)
 
         def path_resolver(name):
+            for skip_path in SKIP_PATHS:
+                if name.startswith(skip_path):
+                    name = name.replace(skip_path, '', 1)
+                    break
+
             if path.isabs(name):
                 raise ValueError("Absolute paths are not allowed.")
 
