@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.3.1
+-----
+
+- Add migrations framework compability (backport from 2.1.x).
+
 1.3.0
 -----
 
