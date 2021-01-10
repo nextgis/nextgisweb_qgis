@@ -4,7 +4,7 @@ Changes
 2.1.0
 -----
 
-
+- Add migrations framework compability.
 
 2.0.0
 -----
