@@ -6,7 +6,6 @@ with io.open('VERSION', 'r') as fd:
 
 requires = (
     'nextgisweb>=3.7.0.dev1',
-    'qgis_headless',
 )
 
 entry_points = {
