@@ -9,14 +9,13 @@ from nextgisweb.resource import resource_factory, ResourceScope
 from .model import QgisVectorStyle, QgisRasterStyle
 
 
-def style_qml(request):
+def style_qml(resource, request):
     request.resource_permission(ResourceScope.read)
 
-    fn = env.file_storage.filename(request.context.qml_fileobj)
+    fn = env.file_storage.filename(resource.qml_fileobj)
 
     response = FileResponse(fn, request=request)
-    response.content_disposition = (b'attachment; filename=%d.qml'
-                                    % request.context.id)
+    response.content_disposition = 'attachment; filename=%d.qml' % resource.id
 
     return response
 
