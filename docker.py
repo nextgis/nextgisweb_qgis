@@ -9,16 +9,19 @@ class Package(PackageBase):
 
 @AppImage.on_apt.handler
 def on_apt(event):
-    event.add_key("https://qgis.org/downloads/qgis-2020.gpg.key")
-    event.add_repository("deb https://qgis.org/ubuntu-ltr $(lsb_release -sc) main")
-    
-    event.package(
-        'build-essential', 'cmake',
-        'libqgis-dev', 'qt5-image-formats-plugins',
+    if event.image.package.apt_repository.get('nextgis_rm'):
+        event.package('libngqgis-dev', 'ngqgis-providers-common')
+    else:
+        event.add_repository("deb https://qgis.org/ubuntu-ltr $(lsb_release -sc) main")
+        event.add_key("https://qgis.org/downloads/qgis-2020.gpg.key")
         # Package qgis-providers-common is required to get standard icons working.
         # TODO: Don't install package with its dependecies, just download it and
-        # extract files to /usr/share/qgis/svg.
-        'qgis-providers-common',
+        # extract files to /usr/share/qgis/svg
+        event.package('libqgis-dev', 'qgis-providers-common')
+
+    event.package(
+        'build-essential', 'cmake',
+        'qt5-image-formats-plugins',
     )
 
 
