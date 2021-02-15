@@ -141,6 +141,33 @@ class QgisRasterStyle(Base, Resource):
         return img
 
 
+def path_resolver_factory(svg_marker_library):
+
+    def path_resolver(name):
+        for skip_path in SKIP_PATHS:
+            if name.startswith(skip_path):
+                name = name.replace(skip_path, '', 1)
+                break
+
+        if path.isabs(name):
+            raise ValueError("Absolute paths are not allowed.")
+
+        name = path.normpath(name)
+        if name[-4:].lower() == '.svg':
+            name = name[:-4]
+
+        items = name.split(path.sep)
+        for i in range(len(items)):
+            candidate = path.sep.join(items[i:])
+            filename = env.svg_marker_library.lookup(candidate, svg_marker_library)
+            if filename is not None:
+                return filename
+
+        return name
+
+    return path_resolver
+
+
 @implementer((IRenderableStyle, ILegendableStyle))
 class QgisVectorStyle(Base, Resource):
     identity = 'qgis_vector_style'
@@ -197,27 +224,7 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(crs)
 
-        def path_resolver(name):
-            for skip_path in SKIP_PATHS:
-                if name.startswith(skip_path):
-                    name = name.replace(skip_path, '', 1)
-                    break
-
-            if path.isabs(name):
-                raise ValueError("Absolute paths are not allowed.")
-
-            name = path.normpath(name)
-            if name[-4:].lower() == '.svg':
-                name = name[:-4]
-
-            items = name.split(path.sep)
-            for i in range(len(items)):
-                candidate = path.sep.join(items[i:])
-                filename = env.svg_marker_library.lookup(candidate, self.svg_marker_library)
-                if filename is not None:
-                    return filename
-
-            return name
+        path_resolver = path_resolver_factory(self.svg_marker_library)
 
         style = Style.from_string(_qml_cache(
             env.file_storage.filename(self.qml_fileobj)), path_resolver)
@@ -263,8 +270,10 @@ class QgisVectorStyle(Base, Resource):
         mreq = MapRequest()
         mreq.set_dpi(96)
 
+        path_resolver = path_resolver_factory(self.svg_marker_library)
+
         style = Style.from_string(_qml_cache(
-            env.file_storage.filename(self.qml_fileobj)))
+            env.file_storage.filename(self.qml_fileobj)), path_resolver)
 
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
