@@ -5,11 +5,12 @@ from io import BytesIO
 from os import path
 from shutil import copyfileobj
 
+from shapely.geometry import box
 from zope.interface import implementer
 from qgis_headless import MapRequest, CRS, Layer, Style
-from PIL import Image
 
 from nextgisweb import db
+from nextgisweb.lib.geometry import Geometry
 from nextgisweb.models import declarative_base
 from nextgisweb.env import env
 from nextgisweb.resource import (
@@ -37,7 +38,6 @@ from nextgisweb.render import (
     on_data_change as on_data_change_renderable,
 )
 from nextgisweb.file_storage import FileObj
-from nextgisweb.geometry import box
 from nextgisweb.compat import lru_cache
 
 from .util import _, qgis_image_to_pil
@@ -213,7 +213,8 @@ class QgisVectorStyle(Base, Resource):
         if hasattr(feature_query, 'srs'):
             feature_query.srs(srs)
 
-        feature_query.intersects(box(*extended, srid=srs.id))
+        bbox = Geometry.from_shape(box(*extended), srid=srs.id)
+        feature_query.intersects(bbox)
         feature_query.geom()
 
         env.qgis.qgis_init()
