@@ -6,8 +6,8 @@ Installation to virtualenv
 
 Requirements:
 
-* Python virtualenv with nextgisweb installed
-* QGIS 2.8 or higher
+* Python 2.7 virtualenv with nextgisweb installed (Python 3 is not supported in this version)
+* QGIS 2.x (2.8 or higher, but not QGIS 3.x which is Python 3 only)
 
 ```
 $ cd /path/to/ngw
