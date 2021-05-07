@@ -5,6 +5,7 @@ import os
 import re
 import PIL
 from datetime import date, time, datetime, timedelta
+from pkg_resources import resource_filename
 import six
 
 from threading import Thread
@@ -126,7 +127,7 @@ class QgisComponent(Component):
             if qgis is None:
                 qgis = QgsApplication([], False)
                 qgis.setPrefixPath(self.options['prefix_path'], True)
-                qgis.setDefaultSvgPaths(qgis.svgPaths() + self.options['svgpaths'])
+                qgis.setDefaultSvgPaths(self.options['svgpaths'])
                 qgis.setMaxThreads(1)
                 qgis.initQgis()
 
@@ -352,7 +353,7 @@ class QgisComponent(Component):
         Option('render_timeout', timedelta, default=timedelta(seconds=60),
                doc="Timeout for one rendering request."),
 
-        Option('svgpaths', list, default=[],
+        Option('svgpaths', list, default=[resource_filename('nextgisweb', 'svg_marker_library/preset'), ],
                doc="Search paths for SVG icons."),
 
         Option('prefix_path', str, default="/usr",
