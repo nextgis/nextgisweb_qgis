@@ -4,8 +4,7 @@ define([
     "dijit/_TemplatedMixin",
     "dijit/_WidgetsInTemplateMixin",
     "dijit/layout/ContentPane",
-    "ngw-pyramid/i18n!qgis",
-    "ngw-pyramid/hbs-i18n",
+    "@nextgisweb/pyramid/i18n!",
     "ngw-resource/serialize",
     // resource
     "dojo/text!./template/QgisRasterStyleWidget.hbs",
@@ -19,12 +18,11 @@ define([
     _WidgetsInTemplateMixin,
     ContentPane,
     i18n,
-    hbsI18n,
     serialize,
     template
 ) {
     return declare([ContentPane, serialize.Mixin, _TemplatedMixin, _WidgetsInTemplateMixin], {
-        templateString: hbsI18n(template, i18n),
+        templateString: i18n.renderTemplate(template),
         title: i18n.gettext("QGIS style"),
         prefix: "qgis_raster_style",
 
