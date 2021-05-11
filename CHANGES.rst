@@ -4,6 +4,7 @@ Changes
 2.2.0
 -----
 
+- Minor fixes and NextGIS Web compability changes.
 
 
 2.1.0
