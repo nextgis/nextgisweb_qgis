@@ -15,6 +15,7 @@ from StringIO import StringIO
 from sqlalchemy.orm.exc import DetachedInstanceError
 
 from qgis.core import (
+    QGis,
     QgsApplication,
     QgsMapLayerRegistry,
     QgsMapRendererCustomPainterJob,
@@ -92,6 +93,11 @@ class QgisComponent(Component):
         from . import view, api
         api.setup_pyramid(self, config)
         view.setup_pyramid(self, config)
+
+    def sys_info(self):
+        return (
+            ("QGIS", QGis.QGIS_VERSION),
+        )
 
     def renderer_job(self, options):
         result_queue = Queue(maxsize=1)
