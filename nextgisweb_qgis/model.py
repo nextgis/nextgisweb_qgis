@@ -335,7 +335,7 @@ class _file_upload_attr(SP):  # NOQA
         srlzr.obj.qml_fileobj = fileobj
         dstfile = env.file_storage.filename(fileobj, makedirs=True)
 
-        with open(srcfile, 'r') as fs, open(dstfile, 'w') as fd:
+        with open(srcfile, 'rb') as fs, open(dstfile, 'wb') as fd:
             copyfileobj(fs, fd)
 
         on_style_change.fire(srlzr.obj)
