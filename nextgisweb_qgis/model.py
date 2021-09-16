@@ -212,9 +212,7 @@ class QgisVectorStyle(Base, Resource):
         if cond is not None:
             feature_query.filter_by(**cond)
 
-        # TODO: Do this via interfaces
-        if hasattr(feature_query, 'srs'):
-            feature_query.srs(srs)
+        feature_query.srs(srs)
 
         bbox = Geometry.from_shape(box(*extended), srid=srs.id)
         feature_query.intersects(bbox)
