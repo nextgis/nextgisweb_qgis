@@ -232,6 +232,8 @@ class QgisVectorStyle(Base, Resource):
             env.file_storage.filename(self.qml_fileobj)), path_resolver)
 
         style_attrs = style.used_attributes()
+        if style_attrs is not None:
+            style_attrs = {attr.lower() for attr in style_attrs}
 
         qhl_fields = list()
         cnv_fields = list()
@@ -239,7 +241,7 @@ class QgisVectorStyle(Base, Resource):
 
         for field in self.parent.fields:
             fkeyname = field.keyname
-            if (style_attrs is not None) and (fkeyname not in style_attrs):
+            if (style_attrs is not None) and (fkeyname.lower() not in style_attrs):
                 continue
             field_to_qgis = _FIELD_TYPE_TO_QGIS[field.datatype]
             qhl_fields.append((fkeyname, field_to_qgis[0]))
