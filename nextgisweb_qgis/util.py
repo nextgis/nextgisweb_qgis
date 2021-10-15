@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from io import BytesIO
 
 from PIL import Image
-import qgis_headless
 
 from nextgisweb.i18n import trstring_factory
 

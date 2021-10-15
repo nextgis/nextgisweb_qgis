@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function, absolute_import
-
 from nextgisweb.resource import Widget, Resource
 import nextgisweb.dynmenu as dm
 
@@ -12,6 +9,7 @@ class VectorStyleWidget(Widget):
     resource = QgisVectorStyle
     operation = ('create', 'update')
     amdmod = 'ngw-qgis/VectorStyleWidget'
+
 
 class RasterStyleWidget(Widget):
     resource = QgisRasterStyle

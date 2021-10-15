@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function, absolute_import
-
 from io import BytesIO
 from os import path
 from shutil import copyfileobj
@@ -308,7 +305,7 @@ def on_data_change_feature_layer(resource, geom):
 
 
 @implementer(IExtentRenderRequest, ITileRenderRequest)
-class RenderRequest(object):
+class RenderRequest:
 
     def __init__(self, style, srs, cond=None):
         self.style = style
