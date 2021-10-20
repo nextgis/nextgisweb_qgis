@@ -4,9 +4,10 @@ from shutil import copyfileobj
 
 from shapely.geometry import box
 from zope.interface import implementer
-from qgis_headless import MapRequest, CRS, Layer, Style
+from qgis_headless import MapRequest, CRS, Layer, Style, StyleValidationError
 
 from nextgisweb import db
+from nextgisweb.core.exception import ValidationError
 from nextgisweb.lib.geometry import Geometry
 from nextgisweb.models import declarative_base
 from nextgisweb.env import env
@@ -327,7 +328,13 @@ class RenderRequest:
 class _file_upload_attr(SP):  # NOQA
 
     def setter(self, srlzr, value):
-        srcfile, _ = env.file_upload.get_filename(value['id'])
+        srcfile, meta = env.file_upload.get_filename(value['id'])
+
+        try:
+            Style.from_file(srcfile)
+        except StyleValidationError:
+            raise ValidationError(_("QML file is not valid."))
+
         fileobj = env.file_storage.fileobj(component='qgis')
         srlzr.obj.qml_fileobj = fileobj
         dstfile = env.file_storage.filename(fileobj, makedirs=True)
