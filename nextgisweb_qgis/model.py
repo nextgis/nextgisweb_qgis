@@ -1,3 +1,4 @@
+from functools import lru_cache
 from io import BytesIO
 from os import path
 from shutil import copyfileobj
@@ -36,7 +37,6 @@ from nextgisweb.render import (
     on_data_change as on_data_change_renderable,
 )
 from nextgisweb.file_storage import FileObj
-from nextgisweb.compat import lru_cache
 
 from .util import _, qgis_image_to_pil
 
