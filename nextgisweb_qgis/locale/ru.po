@@ -1,10 +1,14 @@
-#: amd/ngw-qgis/RasterStyleWidget.js:28 amd/ngw-qgis/VectorStyleWidget.js:28
-#: model.py:100 model.py:147 view.py:27
+#: amd/ngw-qgis/RasterStyleWidget.js:26 amd/ngw-qgis/VectorStyleWidget.js:26
+#: model.py:98 model.py:175 view.py:25
 msgid "QGIS style"
 msgstr "Стиль QGIS"
 
+#: model.py:287 model.py:345
+msgid "QML file is not valid."
+msgstr "Некорректный QML файл."
+
 #: amd/ngw-qgis/template/QgisRasterStyleWidget.hbs:7
-#: amd/ngw-qgis/template/QgisVectorStyleWidget.hbs:7 view.py:30
+#: amd/ngw-qgis/template/QgisVectorStyleWidget.hbs:7 view.py:28
 msgid "QML file"
 msgstr "Файл QML"
 
