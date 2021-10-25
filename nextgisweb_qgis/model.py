@@ -337,6 +337,8 @@ class RenderRequest:
 class _file_upload_attr(SP):  # NOQA
 
     def setter(self, srlzr, value):
+        env.qgis.qgis_init()
+
         srcfile, meta = env.file_upload.get_filename(value['id'])
 
         try:
