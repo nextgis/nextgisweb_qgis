@@ -145,6 +145,9 @@ class QgisRasterStyle(Base, Resource):
 def path_resolver_factory(svg_marker_library):
 
     def path_resolver(name):
+        if name.startswith(('http://', 'https://')):
+            return name
+
         for skip_path in SKIP_PATHS:
             if name.startswith(skip_path):
                 name = name.replace(skip_path, '', 1)
