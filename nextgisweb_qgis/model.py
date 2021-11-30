@@ -6,6 +6,7 @@ from shutil import copyfileobj
 from shapely.geometry import box
 from zope.interface import implementer
 from qgis_headless import MapRequest, CRS, Layer, Style, StyleValidationError
+from qgis_headless.util import to_pil as qgis_image_to_pil
 
 from nextgisweb import db
 from nextgisweb.core.exception import ValidationError
@@ -38,7 +39,7 @@ from nextgisweb.render import (
 )
 from nextgisweb.file_storage import FileObj
 
-from .util import _, qgis_image_to_pil
+from .util import _
 
 
 _GEOM_TYPE_TO_QGIS = {
