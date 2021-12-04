@@ -1,13 +1,14 @@
 from functools import lru_cache
 from io import BytesIO
-from os import path
+from os.path import normpath, isabs, sep as path_sep
 from shutil import copyfileobj
 
-from shapely.geometry import box
-from zope.interface import implementer
 from qgis_headless import MapRequest, CRS, Layer, Style, StyleValidationError
 from qgis_headless.util import to_pil as qgis_image_to_pil
+from shapely.geometry import box
+from zope.interface import implementer
 
+from nextgisweb.lib.logging import logger
 from nextgisweb import db
 from nextgisweb.core.exception import ValidationError
 from nextgisweb.lib.geometry import Geometry
@@ -151,19 +152,23 @@ def path_resolver_factory(svg_marker_library):
 
         for skip_path in SKIP_PATHS:
             if name.startswith(skip_path):
-                name = name.replace(skip_path, '', 1)
+                name = name[len(skip_path):]
                 break
 
-        if path.isabs(name):
-            raise ValueError("Absolute paths are not allowed.")
+        name = normpath(name)
 
-        name = path.normpath(name)
+        if isabs(name) or name.startswith('..'):
+            # Absolute and backref paths aren't allowed because of security
+            # concerns. QGIS Headless doesn't support None here, so use the
+            # empty string.
+            return ''
+
         if name[-4:].lower() == '.svg':
             name = name[:-4]
 
-        items = name.split(path.sep)
+        items = name.split(path_sep)
         for i in range(len(items)):
-            candidate = path.sep.join(items[i:])
+            candidate = path_sep.join(items[i:])
             filename = env.svg_marker_library.lookup(candidate, svg_marker_library)
             if filename is not None:
                 return filename
