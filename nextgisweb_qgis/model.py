@@ -109,8 +109,15 @@ class QgisRasterStyle(Base, Resource):
         return parent.cls == 'raster_layer'
 
     @property
+    def srs_id(self):
+        return self.parent.srs_id
+
+    @property
     def srs(self):
         return self.parent.srs
+
+    def is_srs_supported(self, srs):
+        return True
 
     def render_request(self, srs):
         return RenderRequest(self, srs)
@@ -125,9 +132,11 @@ class QgisRasterStyle(Base, Resource):
 
         env.qgis.qgis_init()
 
+        crs = CRS.from_wkt(srs.wkt)
+
         mreq = MapRequest()
         mreq.set_dpi(96)
-        mreq.set_crs(CRS.from_epsg(srs.id))
+        mreq.set_crs(crs)
 
         qml = _qml_cache(env.file_storage.filename(self.qml_fileobj))
         try:
@@ -206,8 +215,15 @@ class QgisVectorStyle(Base, Resource):
         return self.parent
 
     @property
+    def srs_id(self):
+        return self.parent.srs_id
+
+    @property
     def srs(self):
         return self.parent.srs
+
+    def is_srs_supported(self, srs):
+        return True
 
     def render_request(self, srs, cond=None):
         return RenderRequest(self, srs, cond)
@@ -230,7 +246,7 @@ class QgisVectorStyle(Base, Resource):
 
         env.qgis.qgis_init()
 
-        crs = CRS.from_epsg(srs.id)
+        crs = CRS.from_wkt(srs.wkt)
 
         mreq = MapRequest()
         mreq.set_dpi(96)
@@ -272,9 +288,11 @@ class QgisVectorStyle(Base, Resource):
         if len(features) == 0:
             return None
 
+        layer_crs = CRS.from_wkt(self.parent.srs.wkt)
+
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
-            crs, tuple(qhl_fields), tuple(features))
+            layer_crs, tuple(qhl_fields), tuple(features))
 
         mreq.add_layer(layer, style)
 
@@ -295,9 +313,11 @@ class QgisVectorStyle(Base, Resource):
         except StyleValidationError:
             raise ValidationError(_("QML file is not valid."))
 
+        layer_crs = CRS.from_wkt(self.parent.srs.wkt)
+
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
-            CRS.from_epsg(self.parent.srs.id), (), ())
+            layer_crs, (), ())
 
         mreq.add_layer(layer, style)
         res = mreq.render_legend()
