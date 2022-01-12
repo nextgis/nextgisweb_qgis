@@ -359,11 +359,16 @@ class _file_upload_attr(SP):  # NOQA
 
         srcfile, meta = env.file_upload.get_filename(value['id'])
 
-        gt = srlzr.obj.parent.geometry_type
-        gt_qgis = _GEOM_TYPE_TO_QGIS[gt]
+        params = dict()
+
+        layer = srlzr.obj.parent
+        if IFeatureLayer.providedBy(layer):
+            gt = layer.geometry_type
+            gt_qgis = _GEOM_TYPE_TO_QGIS[gt]
+            params['layer_geometry_type'] = gt_qgis
 
         try:
-            Style.from_file(srcfile, layer_geometry_type=gt_qgis)
+            Style.from_file(srcfile, **params)
         except GeometryTypeMismatch:
             raise ValidationError(_("Layer geometry type mismatch."))
         except StyleValidationError:
