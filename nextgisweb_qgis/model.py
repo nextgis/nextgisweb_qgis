@@ -137,10 +137,7 @@ class QgisRasterStyle(Base, Resource):
         mreq.set_crs(CRS.from_epsg(srs.id))
 
         qml = _qml_cache(env.file_storage.filename(self.qml_fileobj))
-        try:
-            style = Style.from_string(qml)
-        except StyleValidationError:
-            return None
+        style = Style.from_string(qml)
 
         layer = Layer.from_gdal(gdal_path)
         mreq.add_layer(layer, style)
@@ -247,11 +244,7 @@ class QgisVectorStyle(Base, Resource):
         path_resolver = path_resolver_factory(self.svg_marker_library)
         gt = self.parent.geometry_type
         gt_qgis = _GEOM_TYPE_TO_QGIS[gt]
-
-        try:
-            style = Style.from_string(qml, path_resolver, layer_geometry_type=gt_qgis)
-        except StyleValidationError:
-            return None
+        style = Style.from_string(qml, path_resolver, layer_geometry_type=gt_qgis)
 
         style_attrs = style.used_attributes()
         if style_attrs is not None:
@@ -299,10 +292,7 @@ class QgisVectorStyle(Base, Resource):
         path_resolver = path_resolver_factory(self.svg_marker_library)
 
         qml = _qml_cache(env.file_storage.filename(self.qml_fileobj))
-        try:
-            style = Style.from_string(qml, path_resolver)
-        except StyleValidationError:
-            raise ValidationError(_("QML file is not valid."))
+        style = Style.from_string(qml, path_resolver)
 
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
