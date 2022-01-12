@@ -17,7 +17,7 @@ from zope.interface import implementer
 
 from nextgisweb.lib.logging import logger
 from nextgisweb import db
-from nextgisweb.core.exception import ValidationError
+from nextgisweb.core.exception import ValidationError, OperationalError
 from nextgisweb.lib.geometry import Geometry
 from nextgisweb.models import declarative_base
 from nextgisweb.env import env
@@ -331,15 +331,21 @@ class RenderRequest:
         self.cond = cond
 
     def render_extent(self, extent, size):
-        return self.style._render_image(self.srs, extent, size, self.cond)
+        try:
+            return self.style._render_image(self.srs, extent, size, self.cond)
+        except Exception as exc:
+            _reraise_qgis_exception(exc, OperationalError)
 
     def render_tile(self, tile, size):
         extent = self.srs.tile_extent(tile)
-        return self.style._render_image(
-            self.srs, extent, (size, size),
-            self.cond,
-            padding=size / 2
-        )
+        try:
+            return self.style._render_image(
+                self.srs, extent, (size, size),
+                self.cond,
+                padding=size / 2
+            )
+        except Exception as exc:
+            _reraise_qgis_exception(exc, OperationalError)
 
 
 class _file_upload_attr(SP):  # NOQA
@@ -359,10 +365,8 @@ class _file_upload_attr(SP):  # NOQA
 
         try:
             Style.from_file(srcfile, **params)
-        except GeometryTypeMismatch:
-            raise ValidationError(_("Layer geometry type mismatch."))
-        except StyleValidationError:
-            raise ValidationError(_("QML file is not valid."))
+        except Exception as exc:
+            _reraise_qgis_exception(exc, ValidationError)
 
         fileobj = env.file_storage.fileobj(component='qgis')
         srlzr.obj.qml_fileobj = fileobj
@@ -412,6 +416,15 @@ def _convert_time(v):
 def _convert_datetime(v):
     if v is not None:
         return v.timetuple()[0:6]
+
+
+def _reraise_qgis_exception(exc, cls):
+    if isinstance(exc, GeometryTypeMismatch):
+        raise cls(message=_("Layer geometry type mismatch.")) from exc
+    elif isinstance(exc, StyleValidationError):
+        raise cls(message=_("QML file is not valid.")) from exc
+    else:
+        raise exc
 
 
 _FIELD_TYPE_TO_QGIS = {
