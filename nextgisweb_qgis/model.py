@@ -3,7 +3,14 @@ from io import BytesIO
 from os.path import normpath, isabs, sep as path_sep
 from shutil import copyfileobj
 
-from qgis_headless import MapRequest, CRS, Layer, Style, StyleValidationError
+from qgis_headless import (
+    CRS,
+    GeometryTypeMismatch,
+    Layer,
+    MapRequest,
+    Style,
+    StyleValidationError,
+)
 from qgis_headless.util import to_pil as qgis_image_to_pil
 from shapely.geometry import box
 from zope.interface import implementer
@@ -236,11 +243,13 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(crs)
 
-        path_resolver = path_resolver_factory(self.svg_marker_library)
-
         qml = _qml_cache(env.file_storage.filename(self.qml_fileobj))
+        path_resolver = path_resolver_factory(self.svg_marker_library)
+        gt = self.parent.geometry_type
+        gt_qgis = _GEOM_TYPE_TO_QGIS[gt]
+
         try:
-            style = Style.from_string(qml, path_resolver)
+            style = Style.from_string(qml, path_resolver, layer_geometry_type=gt_qgis)
         except StyleValidationError:
             return None
 
@@ -350,8 +359,13 @@ class _file_upload_attr(SP):  # NOQA
 
         srcfile, meta = env.file_upload.get_filename(value['id'])
 
+        gt = srlzr.obj.parent.geometry_type
+        gt_qgis = _GEOM_TYPE_TO_QGIS[gt]
+
         try:
-            Style.from_file(srcfile)
+            Style.from_file(srcfile, layer_geometry_type=gt_qgis)
+        except GeometryTypeMismatch:
+            raise ValidationError(_("Layer geometry type mismatch."))
         except StyleValidationError:
             raise ValidationError(_("QML file is not valid."))
 
