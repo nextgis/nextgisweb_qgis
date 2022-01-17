@@ -5,7 +5,7 @@ from shutil import copyfileobj
 
 from qgis_headless import (
     CRS,
-    GeometryTypeMismatch,
+    StyleTypeMismatch,
     Layer,
     MapRequest,
     Style,
@@ -419,8 +419,8 @@ def _convert_datetime(v):
 
 
 def _reraise_qgis_exception(exc, cls):
-    if isinstance(exc, GeometryTypeMismatch):
-        raise cls(message=_("Layer geometry type mismatch.")) from exc
+    if isinstance(exc, StyleTypeMismatch):
+        raise cls(message=_("Layer type mismatch.")) from exc
     elif isinstance(exc, StyleValidationError):
         raise cls(message=_("QML file is not valid.")) from exc
     else:
