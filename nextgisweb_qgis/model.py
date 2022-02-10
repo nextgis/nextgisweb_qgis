@@ -6,6 +6,8 @@ from shutil import copyfileobj
 from qgis_headless import (
     CRS,
     StyleTypeMismatch,
+    LT_RASTER,
+    LT_VECTOR,
     Layer,
     MapRequest,
     Style,
@@ -359,9 +361,12 @@ class _file_upload_attr(SP):  # NOQA
 
         layer = srlzr.obj.parent
         if IFeatureLayer.providedBy(layer):
+            params['layer_type'] = LT_VECTOR
             gt = layer.geometry_type
             gt_qgis = _GEOM_TYPE_TO_QGIS[gt]
             params['layer_geometry_type'] = gt_qgis
+        else:
+            params['layer_type'] = LT_RASTER
 
         try:
             Style.from_file(srcfile, **params)
