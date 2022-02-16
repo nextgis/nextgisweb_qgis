@@ -1,9 +1,13 @@
 #: amd/ngw-qgis/RasterStyleWidget.js:26 amd/ngw-qgis/VectorStyleWidget.js:26
-#: model.py:98 model.py:175 view.py:25
+#: model.py:109 model.py:190 view.py:25
 msgid "QGIS style"
 msgstr "Стиль QGIS"
 
-#: model.py:287 model.py:345
+#: model.py:428
+msgid "Layer type mismatch."
+msgstr "Несоответствие типу слоя."
+
+#: model.py:430
 msgid "QML file is not valid."
 msgstr "Некорректный QML файл."
 
