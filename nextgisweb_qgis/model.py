@@ -3,6 +3,8 @@ from io import BytesIO
 from os.path import normpath, isabs, sep as path_sep
 from shutil import copyfileobj
 
+from .util import COMP_ID
+
 from qgis_headless import (
     CRS,
     StyleTypeMismatch,
@@ -138,8 +140,7 @@ class QgisRasterStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(CRS.from_epsg(srs.id))
 
-        qml = _qml_cache(env.file_storage.filename(self.qml_fileobj))
-        style = Style.from_string(qml)
+        style = _style_cache(self.qml_fileobj.uuid)
 
         layer = Layer.from_gdal(gdal_path)
         mreq.add_layer(layer, style)
@@ -242,11 +243,7 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(crs)
 
-        qml = _qml_cache(env.file_storage.filename(self.qml_fileobj))
-        path_resolver = path_resolver_factory(self.svg_marker_library)
-        gt = self.parent.geometry_type
-        gt_qgis = _GEOM_TYPE_TO_QGIS[gt]
-        style = Style.from_string(qml, path_resolver, layer_geometry_type=gt_qgis)
+        style = _style_cache(self.qml_fileobj.uuid, self.svg_marker_library_id)
 
         style_attrs = style.used_attributes()
         if style_attrs is not None:
@@ -291,10 +288,7 @@ class QgisVectorStyle(Base, Resource):
         mreq = MapRequest()
         mreq.set_dpi(96)
 
-        path_resolver = path_resolver_factory(self.svg_marker_library)
-
-        qml = _qml_cache(env.file_storage.filename(self.qml_fileobj))
-        style = Style.from_string(qml, path_resolver)
+        style = _style_cache(self.qml_fileobj.uuid, self.svg_marker_library_id)
 
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
@@ -373,7 +367,7 @@ class _file_upload_attr(SP):  # NOQA
         except Exception as exc:
             _reraise_qgis_exception(exc, ValidationError)
 
-        fileobj = env.file_storage.fileobj(component='qgis')
+        fileobj = env.file_storage.fileobj(component=COMP_ID)
         srlzr.obj.qml_fileobj = fileobj
         dstfile = env.file_storage.filename(fileobj, makedirs=True)
 
@@ -399,9 +393,18 @@ class QgisRasterSerializer(Serializer):
 
 
 @lru_cache()
-def _qml_cache(fn):
-    with open(fn, 'r') as fd:
-        return fd.read()
+def _style_cache(fileobj_uuid, svg_marker_library_id=None):
+    filename = env.file_storage.filename((COMP_ID, fileobj_uuid))
+    with open(filename, 'r') as fd:
+        qml = fd.read()
+
+    params = dict()
+    if svg_marker_library_id is not None:
+        svg_marker_library = SVGMarkerLibrary.filter_by(id=svg_marker_library_id).one()
+        path_resolver = path_resolver_factory(svg_marker_library)
+        params['svg_resolver'] = path_resolver
+
+    return Style.from_string(qml, **params)
 
 
 def _convert_none(v):
