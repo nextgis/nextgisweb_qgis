@@ -243,7 +243,9 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(crs)
 
-        style = _style_cache(self.qml_fileobj.uuid, self.svg_marker_library_id)
+        style = _style_cache(self.qml_fileobj.uuid,
+                             self.svg_marker_library_id,
+                             self.parent.geometry_type)
 
         style_attrs = style.used_attributes()
         if style_attrs is not None:
@@ -393,7 +395,7 @@ class QgisRasterSerializer(Serializer):
 
 
 @lru_cache()
-def _style_cache(fileobj_uuid, svg_marker_library_id=None):
+def _style_cache(fileobj_uuid, svg_marker_library_id=None, geometry_type=None):
     filename = env.file_storage.filename((COMP_ID, fileobj_uuid))
     with open(filename, 'r') as fd:
         qml = fd.read()
@@ -403,6 +405,9 @@ def _style_cache(fileobj_uuid, svg_marker_library_id=None):
         svg_marker_library = SVGMarkerLibrary.filter_by(id=svg_marker_library_id).one()
         path_resolver = path_resolver_factory(svg_marker_library)
         params['svg_resolver'] = path_resolver
+    if geometry_type is not None:
+        gt_qgis = _GEOM_TYPE_TO_QGIS[geometry_type]
+        params['layer_geometry_type'] = gt_qgis
 
     return Style.from_string(qml, **params)
 
