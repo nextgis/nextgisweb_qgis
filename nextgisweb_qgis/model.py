@@ -402,7 +402,7 @@ _style_cache = LRUCache(maxsize=256)
 
 
 def _read_style(fileobj, svg_marker_library=None, geometry_type=None):
-    key = (fileobj.uuid, svg_marker_library.tstamp, geometry_type)
+    key = (fileobj.uuid, svg_marker_library.tstamp if svg_marker_library else None, geometry_type)
     if (style := _style_cache.get(key)) is None:
         filename = env.file_storage.filename((COMP_ID, fileobj.uuid))
         with open(filename, 'r') as fd:
