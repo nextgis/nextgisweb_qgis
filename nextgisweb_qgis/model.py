@@ -1,7 +1,8 @@
-from functools import lru_cache
 from io import BytesIO
 from os.path import normpath, isabs, sep as path_sep
 from shutil import copyfileobj
+
+from cachetools import LRUCache
 
 from .util import COMP_ID
 
@@ -140,7 +141,7 @@ class QgisRasterStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(CRS.from_epsg(srs.id))
 
-        style = _style_cache(self.qml_fileobj.uuid)
+        style = _read_style(self.qml_fileobj)
 
         layer = Layer.from_gdal(gdal_path)
         mreq.add_layer(layer, style)
@@ -243,9 +244,10 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(crs)
 
-        style = _style_cache(self.qml_fileobj.uuid,
-                             self.svg_marker_library_id,
-                             self.parent.geometry_type)
+        style = _read_style(
+            self.qml_fileobj,
+            self.svg_marker_library,
+            self.parent.geometry_type)
 
         style_attrs = style.used_attributes()
         if style_attrs is not None:
@@ -290,7 +292,9 @@ class QgisVectorStyle(Base, Resource):
         mreq = MapRequest()
         mreq.set_dpi(96)
 
-        style = _style_cache(self.qml_fileobj.uuid, self.svg_marker_library_id)
+        style = _read_style(
+            self.qml_fileobj,
+            self.svg_marker_library)
 
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
@@ -394,22 +398,26 @@ class QgisRasterSerializer(Serializer):
     file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
 
 
-@lru_cache()
-def _style_cache(fileobj_uuid, svg_marker_library_id=None, geometry_type=None):
-    filename = env.file_storage.filename((COMP_ID, fileobj_uuid))
-    with open(filename, 'r') as fd:
-        qml = fd.read()
+_style_cache = LRUCache(maxsize=256)
 
-    params = dict()
-    if svg_marker_library_id is not None:
-        svg_marker_library = SVGMarkerLibrary.filter_by(id=svg_marker_library_id).one()
-        path_resolver = path_resolver_factory(svg_marker_library)
-        params['svg_resolver'] = path_resolver
-    if geometry_type is not None:
-        gt_qgis = _GEOM_TYPE_TO_QGIS[geometry_type]
-        params['layer_geometry_type'] = gt_qgis
 
-    return Style.from_string(qml, **params)
+def _read_style(fileobj, svg_marker_library=None, geometry_type=None):
+    key = (fileobj.uuid, svg_marker_library.tstamp, geometry_type)
+    if (style := _style_cache.get(key)) is None:
+        filename = env.file_storage.filename((COMP_ID, fileobj.uuid))
+        with open(filename, 'r') as fd:
+            qml = fd.read()
+
+        params = dict()
+        if svg_marker_library is not None:
+            path_resolver = path_resolver_factory(svg_marker_library)
+            params['svg_resolver'] = path_resolver
+        if geometry_type is not None:
+            gt_qgis = _GEOM_TYPE_TO_QGIS[geometry_type]
+            params['layer_geometry_type'] = gt_qgis
+
+        style = _style_cache[key] = Style.from_string(qml, **params)
+    return style
 
 
 def _convert_none(v):
