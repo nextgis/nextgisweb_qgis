@@ -5,7 +5,7 @@ from shutil import copyfileobj
 
 from cachetools import LRUCache
 
-from .util import COMP_ID
+from .util import COMP_ID, rand_color
 
 from qgis_headless import (
     CRS,
@@ -141,7 +141,7 @@ class QgisRasterStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(CRS.from_epsg(srs.id))
 
-        style = _read_style(self.qml_fileobj)
+        style = _read_style(self)
 
         layer = Layer.from_gdal(gdal_path)
         mreq.add_layer(layer, style)
@@ -234,10 +234,7 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(crs)
 
-        style = _read_style(
-            self.qml_fileobj,
-            self.svg_marker_library,
-            self.parent.geometry_type)
+        style = _read_style(self)
 
         style_attrs = style.used_attributes()
         if style_attrs is not None:
@@ -282,9 +279,7 @@ class QgisVectorStyle(Base, Resource):
         mreq = MapRequest()
         mreq.set_dpi(96)
 
-        style = _read_style(
-            self.qml_fileobj,
-            self.svg_marker_library)
+        style = _read_style(self)
 
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
@@ -391,22 +386,40 @@ class QgisRasterSerializer(Serializer):
 _style_cache = LRUCache(maxsize=256)
 
 
-def _read_style(fileobj, svg_marker_library=None, geometry_type=None):
-    key = (fileobj.uuid, svg_marker_library.tstamp if svg_marker_library else None, geometry_type)
+def _read_style(qgis_style):
+    if qgis_style.qml_fileobj_id is None:
+        key = qgis_style.id
+
+    else:
+        uuid = qgis_style.qml_fileobj.uuid
+        if isinstance(qgis_style, QgisVectorStyle):
+            sml = qgis_style.svg_marker_library
+            geometry_type = qgis_style.parent.geometry_type
+        else:
+            sml = geometry_type = None
+
+        key = (uuid, None if sml is None else sml.tstamp, geometry_type)
+
     if (style := _style_cache.get(key)) is None:
-        filename = env.file_storage.filename((COMP_ID, fileobj.uuid))
-        with open(filename, 'r') as fd:
-            qml = fd.read()
-
         params = dict()
-        if svg_marker_library is not None:
-            path_resolver = path_resolver_factory(svg_marker_library)
-            params['svg_resolver'] = path_resolver
-        if geometry_type is not None:
-            gt_qgis = _GEOM_TYPE_TO_QGIS[geometry_type]
-            params['layer_geometry_type'] = gt_qgis
 
-        style = _style_cache[key] = Style.from_string(qml, **params)
+        if qgis_style.qml_fileobj_id is None:
+            if isinstance(qgis_style, QgisVectorStyle):
+                params['color'] = rand_color(qgis_style.id) + (255, )
+            style = Style.from_defaults(**params)
+
+        else:
+            filename = env.file_storage.filename((COMP_ID, uuid))
+            if sml is not None:
+                path_resolver = path_resolver_factory(sml)
+                params['svg_resolver'] = path_resolver
+            if geometry_type is not None:
+                gt_qgis = _GEOM_TYPE_TO_QGIS[geometry_type]
+                params['layer_geometry_type'] = gt_qgis
+            style = Style.from_file(filename, **params)
+
+        _style_cache[key] = style
+
     return style
 
 

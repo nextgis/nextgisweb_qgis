@@ -3,7 +3,14 @@ import qgis_headless
 from nextgisweb.lib.config import Option, OptionAnnotations
 from nextgisweb.component import Component
 
-from .model import Base
+from .model import Base, QgisRasterStyle, QgisVectorStyle
+
+
+__all__ = [
+    'QgisComponent',
+    'QgisRasterStyle',
+    'QgisVectorStyle',
+]
 
 
 class QgisComponent(Component):
