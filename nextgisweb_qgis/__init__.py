@@ -56,6 +56,7 @@ class QgisComponent(Component):
 
     option_annotations = OptionAnnotations((
         Option('svg_path', list, doc="Search paths for SVG icons."),
+        Option('default_style', bool, default=False),
         Option('logging_level', str, default=None),
     ))
 
