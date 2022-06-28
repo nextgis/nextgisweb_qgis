@@ -1,5 +1,6 @@
+import re
 from io import BytesIO
-from os.path import normpath, isabs, sep as path_sep
+from os.path import normpath, sep as path_sep
 from shutil import copyfileobj
 
 from cachetools import LRUCache
@@ -20,7 +21,6 @@ from qgis_headless.util import to_pil as qgis_image_to_pil
 from shapely.geometry import box
 from zope.interface import implementer
 
-from nextgisweb.lib.logging import logger
 from nextgisweb import db
 from nextgisweb.core.exception import ValidationError, OperationalError
 from nextgisweb.lib.geometry import Geometry
@@ -72,9 +72,9 @@ _GEOM_TYPE_TO_QGIS = {
 
 Base = declarative_base()
 
-SKIP_PATHS = [
-    '/usr/share/qgis/svg/',
-]
+STRIP_SVG_PATH = re.compile(
+    r'^(/usr/share/qgis/svg/|/Users/[^/]+/|/home/[^/]+/|(../)+|/)',
+    re.IGNORECASE)
 
 
 def _render_bounds(extent, size, padding):
@@ -158,18 +158,8 @@ def path_resolver_factory(svg_marker_library):
         if name.startswith(('http://', 'https://')):
             return name
 
-        for skip_path in SKIP_PATHS:
-            if name.startswith(skip_path):
-                name = name[len(skip_path):]
-                break
-
         name = normpath(name)
-
-        if isabs(name) or name.startswith('..'):
-            # Absolute and backref paths aren't allowed because of security
-            # concerns. QGIS Headless doesn't support None here, so use the
-            # empty string.
-            return ''
+        name = STRIP_SVG_PATH.sub('', name)
 
         if name[-4:].lower() == '.svg':
             name = name[:-4]
