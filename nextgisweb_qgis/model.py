@@ -141,7 +141,7 @@ class QgisRasterStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(CRS.from_epsg(srs.id))
 
-        style = _read_style(self)
+        style = read_style(self)
 
         layer = Layer.from_gdal(gdal_path)
         mreq.add_layer(layer, style)
@@ -234,7 +234,7 @@ class QgisVectorStyle(Base, Resource):
         mreq.set_dpi(96)
         mreq.set_crs(crs)
 
-        style = _read_style(self)
+        style = read_style(self)
 
         style_attrs = style.used_attributes()
         if style_attrs is not None:
@@ -279,7 +279,7 @@ class QgisVectorStyle(Base, Resource):
         mreq = MapRequest()
         mreq.set_dpi(96)
 
-        style = _read_style(self)
+        style = read_style(self)
 
         layer = Layer.from_data(
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
@@ -386,7 +386,7 @@ class QgisRasterSerializer(Serializer):
 _style_cache = LRUCache(maxsize=256)
 
 
-def _read_style(qgis_style):
+def read_style(qgis_style):
     if qgis_style.qml_fileobj_id is None:
         key = qgis_style.id
 
@@ -405,7 +405,11 @@ def _read_style(qgis_style):
 
         if qgis_style.qml_fileobj_id is None:
             if isinstance(qgis_style, QgisVectorStyle):
+                params['layer_type'] = LT_VECTOR
+                params['layer_geometry_type'] = _GEOM_TYPE_TO_QGIS[qgis_style.parent.geometry_type]
                 params['color'] = rand_color(qgis_style.id) + (255, )
+            else:
+                params['layer_type'] = LT_RASTER
             style = Style.from_defaults(**params)
 
         else:

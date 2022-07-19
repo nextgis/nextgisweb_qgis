@@ -1,17 +1,19 @@
-from pyramid.response import FileResponse
+from pyramid.response import FileResponse, Response
 
-from nextgisweb.env import env
 from nextgisweb.resource import resource_factory, ResourceScope
 
-from .model import QgisVectorStyle, QgisRasterStyle
+from .model import QgisVectorStyle, QgisRasterStyle, read_style
 
 
 def style_qml(resource, request):
     request.resource_permission(ResourceScope.read)
 
-    fn = env.file_storage.filename(resource.qml_fileobj)
-
-    response = FileResponse(fn, request=request)
+    if resource.qml_fileobj_id is not None:
+        fn = request.env.file_storage.filename(resource.qml_fileobj)
+        response = FileResponse(fn, request=request)
+    else:
+        style = read_style(resource)
+        response = Response(style.to_string(), request=request)
     response.content_disposition = 'attachment; filename=%d.qml' % resource.id
 
     return response
