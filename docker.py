@@ -13,7 +13,7 @@ def on_apt(event):
         event.package('libngqgis-dev', 'ngqgis-providers-common')
     else:
         event.add_repository("deb https://qgis.org/ubuntu-ltr $(lsb_release -sc) main")
-        event.add_key("https://download.qgis.org/downloads/qgis-2021.gpg.key")
+        event.add_key("https://download.qgis.org/downloads/qgis-2022.gpg.key")
         # Package qgis-providers-common is required to get standard icons working.
         # TODO: Don't install package with its dependecies, just download it and
         # extract files to /usr/share/qgis/svg
