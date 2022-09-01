@@ -411,7 +411,7 @@ def read_style(qgis_style):
                     Layer.GT_POLYGON, Layer.GT_POLYGONZ,
                     Layer.GT_MULTIPOLYGON, Layer.GT_MULTIPOLYGONZ,
                 ):
-                    opacity = 127
+                    opacity = 63
                 else:
                     opacity = 255
                 params['color'] = rand_color(qgis_style.id) + (opacity, )
