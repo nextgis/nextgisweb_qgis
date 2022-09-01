@@ -407,7 +407,14 @@ def read_style(qgis_style):
             if isinstance(qgis_style, QgisVectorStyle):
                 params['layer_type'] = LT_VECTOR
                 params['layer_geometry_type'] = _GEOM_TYPE_TO_QGIS[qgis_style.parent.geometry_type]
-                params['color'] = rand_color(qgis_style.id) + (255, )
+                if params['layer_geometry_type'] in (
+                    Layer.GT_POLYGON, Layer.GT_POLYGONZ,
+                    Layer.GT_MULTIPOLYGON, Layer.GT_MULTIPOLYGONZ,
+                ):
+                    opacity = 127
+                else:
+                    opacity = 255
+                params['color'] = rand_color(qgis_style.id) + (opacity, )
             else:
                 params['layer_type'] = LT_RASTER
             style = Style.from_defaults(**params)
