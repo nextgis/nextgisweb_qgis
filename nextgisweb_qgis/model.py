@@ -420,7 +420,8 @@ def read_style(qgis_style):
             style = Style.from_defaults(**params)
 
         else:
-            filename = env.file_storage.filename((COMP_ID, uuid))
+            # NOTE: Some file objects can have component != 'qgis'
+            filename = env.file_storage.filename(qgis_style.qml_fileobj)
             if sml is not None:
                 path_resolver = path_resolver_factory(sml)
                 params['svg_resolver'] = path_resolver
