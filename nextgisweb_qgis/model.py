@@ -422,12 +422,9 @@ def read_style(qgis_style):
         else:
             # NOTE: Some file objects can have component != 'qgis'
             filename = env.file_storage.filename(qgis_style.qml_fileobj)
-            if sml is not None:
-                path_resolver = path_resolver_factory(sml)
-                params['svg_resolver'] = path_resolver
             if geometry_type is not None:
-                gt_qgis = _GEOM_TYPE_TO_QGIS[geometry_type]
-                params['layer_geometry_type'] = gt_qgis
+                params['layer_geometry_type'] = _GEOM_TYPE_TO_QGIS[geometry_type]
+                params['svg_resolver'] = path_resolver_factory(sml)
             style = Style.from_file(filename, **params)
 
         _style_cache[key] = style
