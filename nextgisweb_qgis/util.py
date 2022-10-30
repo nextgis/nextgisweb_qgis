@@ -1,9 +1,9 @@
 from random import Random
 
-from nextgisweb.i18n import trstring_factory
+from nextgisweb.lib.i18n import trstr_factory
 
 COMP_ID = 'qgis'
-_ = trstring_factory(COMP_ID)
+_ = trstr_factory(COMP_ID)
 
 
 def rand_color(seed=None):
