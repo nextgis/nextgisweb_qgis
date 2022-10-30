@@ -58,6 +58,8 @@ class QgisComponent(Component):
         Option('svg_path', list, doc="Search paths for SVG icons."),
         Option('default_style', bool, default=True),
         Option('logging_level', str, default=None),
+        Option('test.qgis_headless_path', str, default=None, doc=(
+            "Path to QGIS headless package for loading test data.")),
     ))
 
 

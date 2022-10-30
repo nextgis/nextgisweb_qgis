@@ -4,20 +4,30 @@ import pytest
 import transaction
 from osgeo import ogr
 
-import nextgisweb_qgis
 from nextgisweb.auth import User
 from nextgisweb.models import DBSession
 from nextgisweb.raster_layer import RasterLayer
 from nextgisweb.spatial_ref_sys import SRS
 from nextgisweb.vector_layer.test import create_feature_layer
 
-from nextgisweb_qgis.model import QgisRasterStyle, QgisVectorStyle
-
-test_data = Path(nextgisweb_qgis.__file__).parent.parent / 'qgis_headless/qgis_headless/test/data'
+import nextgisweb_qgis
+from ..model import QgisRasterStyle, QgisVectorStyle
 
 
 @pytest.fixture(scope='module')
-def polygon_layer_id(ngw_resource_group):
+def test_data(ngw_env):
+    if qgh_path := ngw_env.qgis.options['test.qgis_headless_path']:
+        base = Path(qgh_path) / 'qgis_headless'
+    else:
+        base = Path(nextgisweb_qgis.__file__).parent.parent / 'qgis_headless'
+    data_path = base / 'qgis_headless' / 'test' / 'data'
+    if not data_path.is_dir():
+        pytest.skip("Test data not found")
+    return data_path
+
+
+@pytest.fixture(scope='module')
+def polygon_layer_id(test_data, ngw_resource_group):
     data_polygon = test_data / 'landuse/landuse.geojson'
     ds = ogr.Open(str(data_polygon))
     ogrlayer = ds.GetLayer(0)
@@ -32,8 +42,10 @@ def polygon_layer_id(ngw_resource_group):
     pytest.param('point-style.qml', 422, id='wrong-geometry-type'),
     pytest.param('landuse/landuse.qml', 201, id='valid-style'),
 ))
-def test_qgis_vector_style(style, status, polygon_layer_id, ngw_webtest_app,
-                           ngw_auth_administrator):
+def test_qgis_vector_style(
+    test_data, style, status, polygon_layer_id,
+    ngw_webtest_app, ngw_auth_administrator,
+):
     style_data = (test_data / style).read_bytes()
     resp = ngw_webtest_app.put('/api/component/file_upload/', style_data)
 
@@ -60,7 +72,7 @@ def test_qgis_vector_style(style, status, polygon_layer_id, ngw_webtest_app,
 
 
 @pytest.fixture(scope='module')
-def raster_layer_id(ngw_env, ngw_resource_group):
+def raster_layer_id(test_data, ngw_env, ngw_resource_group):
     with transaction.manager:
         layer = RasterLayer(
             parent_id=ngw_resource_group,
@@ -82,8 +94,10 @@ def raster_layer_id(ngw_env, ngw_resource_group):
     pytest.param('landuse/landuse.qml', 422, id='wrong-layer-type'),
     pytest.param('raster/rounds.qml', 201, id='valid-style'),
 ))
-def test_qgis_raster_style(style, status, raster_layer_id, ngw_webtest_app,
-                           ngw_auth_administrator):
+def test_qgis_raster_style(
+    test_data, style, status, raster_layer_id,
+    ngw_webtest_app, ngw_auth_administrator,
+):
     style_data = (test_data / style).read_bytes()
     resp = ngw_webtest_app.put('/api/component/file_upload/', style_data)
 

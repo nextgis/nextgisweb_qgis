@@ -39,3 +39,4 @@ def on_virtualenv(event):
 @AppImage.on_config.handler
 def on_config(event):
     event.image.config_set('qgis', 'svg_path', '/usr/share/qgis/svg')
+    event.image.config_set('qgis', 'test.qgis_headless_path', '/opt/ngw/package/nextgisweb_qgis')
