@@ -158,13 +158,11 @@ def path_resolver_factory(svg_marker_library):
         if name.startswith(('http://', 'https://')):
             return name
 
-        name = normpath(name)
-        name = STRIP_SVG_PATH.sub('', name)
+        name_library = normpath(name)
+        name_library = STRIP_SVG_PATH.sub('', name_library)
+        name_library = re.sub(r'\.svg$', '', name_library)
 
-        if name[-4:].lower() == '.svg':
-            name = name[:-4]
-
-        items = name.split(path_sep)
+        items = name_library.split(path_sep)
         for i in range(len(items)):
             candidate = path_sep.join(items[i:])
             filename = env.svg_marker_library.lookup(candidate, svg_marker_library)
