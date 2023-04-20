@@ -47,6 +47,8 @@ from nextgisweb.render import (
     IExtentRenderRequest,
     ITileRenderRequest,
     ILegendableStyle,
+    ILegendSymbols,
+    LegendSymbol,
     on_style_change,
     on_data_change as on_data_change_renderable,
 )
@@ -174,7 +176,7 @@ def path_resolver_factory(svg_marker_library):
     return path_resolver
 
 
-@implementer((IRenderableStyle, ILegendableStyle))
+@implementer((IRenderableStyle, ILegendableStyle, ILegendSymbols))
 class QgisVectorStyle(Base, Resource):
     identity = 'qgis_vector_style'
     cls_display_name = _("QGIS style")
@@ -293,6 +295,27 @@ class QgisVectorStyle(Base, Resource):
         img.save(buf, 'png')
         buf.seek(0)
         return buf
+    
+    def legend_symbols(self, icon_size):
+        env.qgis.qgis_init()
+
+        mreq = MapRequest()
+        mreq.set_dpi(96)
+
+        style = read_style(self)
+
+        layer = Layer.from_data(
+            _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
+            CRS.from_epsg(self.parent.srs.id), (), ())
+
+        mreq.add_layer(layer, style)
+
+        return [
+            LegendSymbol(
+                display_name=s.title(),
+                icon=qgis_image_to_pil(s.icon())
+            ) for s in mreq.legend_symbols(0, (icon_size, icon_size))
+        ]
 
 
 DataScope.read.require(
