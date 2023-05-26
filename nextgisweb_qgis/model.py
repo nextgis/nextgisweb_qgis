@@ -21,11 +21,11 @@ from qgis_headless.util import to_pil as qgis_image_to_pil
 from shapely.geometry import box
 from zope.interface import implementer
 
-from nextgisweb import db
 from nextgisweb.core.exception import ValidationError, OperationalError
+from nextgisweb.lib import db
 from nextgisweb.lib.geometry import Geometry
-from nextgisweb.models import declarative_base
 from nextgisweb.env import env
+from nextgisweb.env.model import declarative_base
 from nextgisweb.resource import (
     Resource,
     ResourceScope,

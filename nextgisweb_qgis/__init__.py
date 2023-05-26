@@ -1,7 +1,7 @@
 import qgis_headless
 
+from nextgisweb.env import Component
 from nextgisweb.lib.config import Option, OptionAnnotations
-from nextgisweb.component import Component
 
 from .model import Base, QgisRasterStyle, QgisVectorStyle
 

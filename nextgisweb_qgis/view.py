@@ -1,5 +1,5 @@
+from nextgisweb.lib import dynmenu as dm
 from nextgisweb.resource import Widget, Resource
-import nextgisweb.dynmenu as dm
 
 from .model import QgisVectorStyle, QgisRasterStyle
 from .util import _

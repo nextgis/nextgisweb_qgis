@@ -5,7 +5,7 @@ import transaction
 from osgeo import ogr
 
 from nextgisweb.auth import User
-from nextgisweb.models import DBSession
+from nextgisweb.env.model import DBSession
 from nextgisweb.raster_layer import RasterLayer
 from nextgisweb.spatial_ref_sys import SRS
 from nextgisweb.vector_layer.test import create_feature_layer
