@@ -24,6 +24,7 @@ define([
     return declare([ContentPane, serialize.Mixin, _TemplatedMixin, _WidgetsInTemplateMixin], {
         templateString: i18n.renderTemplate(template),
         title: i18n.gettext("QGIS style"),
+        activateOn: { create: true },
         prefix: "qgis_vector_style",
 
         serializeInMixin: function (data) {
