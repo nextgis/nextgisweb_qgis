@@ -65,9 +65,3 @@ class QgisComponent(Component):
 
 def pkginfo():
     return dict(components=dict(qgis="nextgisweb_qgis"))
-
-
-def amd_packages():
-    return ((
-        'ngw-qgis', 'nextgisweb_qgis:amd/ngw-qgis'
-    ),)

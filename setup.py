@@ -5,16 +5,13 @@ with io.open('VERSION', 'r') as fd:
     VERSION = fd.read().rstrip()
 
 requires = (
-    'nextgisweb>=4.4.0.dev6',
+    'nextgisweb>=4.4.0.dev8',
     'qgis_headless',
 )
 
 entry_points = {
     'nextgisweb.packages': [
         'nextgisweb_qgis = nextgisweb_qgis:pkginfo',
-    ],
-    'nextgisweb.amd_packages': [
-        'nextgisweb_qgis = nextgisweb_qgis:amd_packages',
     ],
 }
 
