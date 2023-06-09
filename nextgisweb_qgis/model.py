@@ -1,9 +1,10 @@
 import re
 from io import BytesIO
 from os.path import normpath, sep as path_sep
-from shutil import copyfileobj
+from shutil import copyfile
 
 from cachetools import LRUCache
+from sqlalchemy.orm import declared_attr
 
 from .util import COMP_ID, rand_color
 
@@ -54,7 +55,7 @@ from nextgisweb.render import (
 )
 from nextgisweb.file_storage import FileObj
 
-from .util import _
+from .util import _, COMP_ID
 
 
 _GEOM_TYPE_TO_QGIS = {
@@ -108,23 +109,37 @@ def _render_bounds(extent, size, padding):
     return extended, render_size, target_box
 
 
-@implementer(IRenderableStyle)
-class QgisRasterStyle(Base, Resource):
-    identity = 'qgis_raster_style'
+class QgisStyleMixin:
     cls_display_name = _("QGIS style")
 
-    __scope__ = DataScope
+    @declared_attr
+    def qml_fileobj_id(cls):
+        return db.Column(db.ForeignKey(FileObj.id), nullable=True)
 
-    qml_fileobj_id = db.Column(db.ForeignKey(FileObj.id), nullable=True)
-    qml_fileobj = db.relationship(FileObj, cascade='all')
-
-    @classmethod
-    def check_parent(cls, parent):
-        return parent.cls == 'raster_layer'
+    @declared_attr
+    def qml_fileobj(cls):
+        return db.relationship(FileObj, cascade='all')
 
     @property
     def srs(self):
         return self.parent.srs
+
+    def from_file(self, filename):
+        self.qml_fileobj = env.file_storage.fileobj(COMP_ID)
+        dstfile = env.file_storage.filename(self.qml_fileobj, makedirs=True)
+        copyfile(filename, dstfile)
+        return self
+
+
+@implementer(IRenderableStyle)
+class QgisRasterStyle(Base, QgisStyleMixin, Resource):
+    identity = 'qgis_raster_style'
+
+    __scope__ = DataScope
+
+    @classmethod
+    def check_parent(cls, parent):
+        return parent.cls == 'raster_layer'
 
     def render_request(self, srs):
         return RenderRequest(self, srs)
@@ -181,16 +196,12 @@ def path_resolver_factory(svg_marker_library):
 
 
 @implementer((IRenderableStyle, ILegendableStyle, ILegendSymbols))
-class QgisVectorStyle(Base, Resource):
+class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     identity = 'qgis_vector_style'
-    cls_display_name = _("QGIS style")
 
     __scope__ = (DataScope, DataStructureScope)
 
-    qml_fileobj_id = db.Column(db.ForeignKey(FileObj.id), nullable=True)
     svg_marker_library_id = db.Column(db.ForeignKey(SVGMarkerLibrary.id), nullable=True)
-
-    qml_fileobj = db.relationship(FileObj, cascade='all')
     svg_marker_library = db.relationship(
         SVGMarkerLibrary, foreign_keys=svg_marker_library_id,
         cascade=False, cascade_backrefs=False,
@@ -206,10 +217,6 @@ class QgisVectorStyle(Base, Resource):
     @property
     def feature_layer(self):
         return self.parent
-
-    @property
-    def srs(self):
-        return self.parent.srs
 
     def render_request(self, srs, cond=None):
         return RenderRequest(self, srs, cond)
@@ -387,8 +394,7 @@ class _file_upload_attr(SP):  # NOQA
         srlzr.obj.qml_fileobj = fileobj
         dstfile = env.file_storage.filename(fileobj, makedirs=True)
 
-        with open(srcfile, 'rb') as fs, open(dstfile, 'wb') as fd:
-            copyfileobj(fs, fd)
+        copyfile(srcfile, dstfile)
 
         on_style_change.fire(srlzr.obj)
 
