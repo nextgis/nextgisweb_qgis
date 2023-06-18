@@ -172,7 +172,7 @@ class QgisRasterStyle(Base, QgisStyleMixin, Resource):
 def path_resolver_factory(svg_marker_library):
 
     def path_resolver(name):
-        if name.startswith(('http://', 'https://')):
+        if name.startswith(('http://', 'https://', 'base64:')):
             return name
 
         name_library = normpath(name)
