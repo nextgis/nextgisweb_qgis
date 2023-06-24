@@ -1,8 +1,9 @@
 from nextgisweb.lib import dynmenu as dm
-from nextgisweb.resource import Widget, Resource
+
+from nextgisweb.resource import Resource, Widget
 from nextgisweb.resource.view import resource_sections
 
-from .model import QgisVectorStyle, QgisRasterStyle
+from .model import QgisRasterStyle, QgisVectorStyle
 from .util import _
 
 
@@ -37,6 +38,5 @@ def setup_pyramid(comp, config):
     @resource_sections(priority=40, template='nextgisweb_qgis:template/default_style.mako')
     def resource_section_default_style(obj):
         return comp.options['default_style'] and len(obj.children) == 0 and (
-            QgisRasterStyle.check_parent(obj) or
-            QgisVectorStyle.check_parent(obj)
+            QgisRasterStyle.check_parent(obj) or QgisVectorStyle.check_parent(obj)
         )

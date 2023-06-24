@@ -1,11 +1,11 @@
 import io
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with io.open('VERSION', 'r') as fd:
     VERSION = fd.read().rstrip()
 
 requires = (
-    'nextgisweb>=4.4.0.dev11',
+    'nextgisweb>=4.4.0.dev13',
     'qgis_headless',
 )
 

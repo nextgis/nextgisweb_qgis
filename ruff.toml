@@ -1,0 +1,23 @@
+line-length = 99
+select = ["E", "F", "W", "I"]
+exclude = ["./docker.py", "./qgis_headless"]
+
+[per-file-ignores]
+"__init__.py" = ["F401"]
+
+[isort]
+
+extra-standard-library = ["packaging", "pkg_resources", "setuptools"]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "nextgisweb-env-lib",
+    "nextgisweb-comp",
+    "first-party",
+    "local-folder",
+]
+
+[isort.sections]
+"nextgisweb-env-lib" = ["nextgisweb.env", "nextgisweb.lib"]
+"nextgisweb-comp" = ["nextgisweb"]

@@ -1,62 +1,56 @@
 import re
 from io import BytesIO
-from os.path import normpath, sep as path_sep
+from os.path import normpath
+from os.path import sep as path_sep
 from shutil import copyfile
 
 from cachetools import LRUCache
+from shapely.geometry import box
 from sqlalchemy.orm import declared_attr
+from zope.interface import implementer
 
-from .util import COMP_ID, rand_color
+from nextgisweb.env import declarative_base, env
+from nextgisweb.lib import db
+from nextgisweb.lib.geometry import Geometry
+
+from nextgisweb.core.exception import OperationalError, ValidationError
+from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE, IFeatureLayer
+from nextgisweb.feature_layer import on_data_change as on_data_change_feature_layer
+from nextgisweb.file_storage import FileObj
+from nextgisweb.render import (
+    IExtentRenderRequest,
+    ILegendableStyle,
+    ILegendSymbols,
+    IRenderableStyle,
+    ITileRenderRequest,
+    LegendSymbol,
+    on_style_change,
+)
+from nextgisweb.render import on_data_change as on_data_change_renderable
+from nextgisweb.resource import (
+    DataScope,
+    DataStructureScope,
+    Resource,
+    ResourceScope,
+    Serializer,
+)
+from nextgisweb.resource import SerializedProperty as SP
+from nextgisweb.resource import SerializedResourceRelationship as SRR
+from nextgisweb.svg_marker_library import SVGMarkerLibrary
 
 from qgis_headless import (
     CRS,
-    StyleTypeMismatch,
     LT_RASTER,
     LT_VECTOR,
     Layer,
     MapRequest,
     Style,
+    StyleTypeMismatch,
     StyleValidationError,
 )
 from qgis_headless.util import to_pil as qgis_image_to_pil
-from shapely.geometry import box
-from zope.interface import implementer
 
-from nextgisweb.core.exception import ValidationError, OperationalError
-from nextgisweb.lib import db
-from nextgisweb.lib.geometry import Geometry
-from nextgisweb.env import env
-from nextgisweb.env.model import declarative_base
-from nextgisweb.resource import (
-    Resource,
-    ResourceScope,
-    DataScope,
-    DataStructureScope,
-    Serializer,
-    SerializedProperty as SP,
-    SerializedResourceRelationship as SRR,
-)
-from nextgisweb.feature_layer import (
-    IFeatureLayer,
-    FIELD_TYPE as FIELD_TYPE,
-    GEOM_TYPE as GEOM_TYPE,
-    on_data_change as on_data_change_feature_layer,
-)
-from nextgisweb.svg_marker_library import SVGMarkerLibrary
-from nextgisweb.render import (
-    IRenderableStyle,
-    IExtentRenderRequest,
-    ITileRenderRequest,
-    ILegendableStyle,
-    ILegendSymbols,
-    LegendSymbol,
-    on_style_change,
-    on_data_change as on_data_change_renderable,
-)
-from nextgisweb.file_storage import FileObj
-
-from .util import _, COMP_ID
-
+from .util import COMP_ID, _, rand_color
 
 _GEOM_TYPE_TO_QGIS = {
     GEOM_TYPE.POINT: Layer.GT_POINT,
@@ -306,7 +300,7 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
         img.save(buf, 'png')
         buf.seek(0)
         return buf
-    
+
     def legend_symbols(self, icon_size):
         env.qgis.qgis_init()
 

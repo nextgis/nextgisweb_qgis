@@ -1,8 +1,8 @@
 from pyramid.response import FileResponse, Response
 
-from nextgisweb.resource import resource_factory, ResourceScope
+from nextgisweb.resource import ResourceScope, resource_factory
 
-from .model import QgisVectorStyle, QgisRasterStyle, read_style
+from .model import QgisRasterStyle, QgisVectorStyle, read_style
 
 
 def style_qml(resource, request):
