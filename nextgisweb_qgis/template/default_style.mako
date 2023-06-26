@@ -1,6 +1,6 @@
 <%
     from nextgisweb_qgis import QgisRasterStyle, QgisVectorStyle
-    from nextgisweb_qgis.qgis.util import _
+    from nextgisweb_qgis.util import _
 
     cls = QgisRasterStyle.identity if QgisRasterStyle.check_parent(obj) \
         else QgisVectorStyle.identity
