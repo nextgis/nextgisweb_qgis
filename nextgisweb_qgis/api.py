@@ -8,7 +8,9 @@ from .model import QgisRasterStyle, QgisVectorStyle, read_style
 def style_qml(resource, request):
     request.resource_permission(ResourceScope.read)
 
-    if resource.qml_fileobj_id is not None:
+    original = request.GET.get('original', 'yes') in ('true', 'yes', '1')
+
+    if original and resource.qml_fileobj_id is not None:
         fn = request.env.file_storage.filename(resource.qml_fileobj)
         response = FileResponse(fn, request=request)
     else:
