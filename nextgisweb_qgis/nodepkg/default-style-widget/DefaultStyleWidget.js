@@ -1,7 +1,7 @@
 import { Button } from "@nextgisweb/gui/antd";
 import { errorModal } from "@nextgisweb/gui/error";
 import { route, routeURL } from "@nextgisweb/pyramid/api";
-import i18n from "@nextgisweb/pyramid/i18n!qgis";
+import i18n from "@nextgisweb/pyramid/i18n";
 
 async function create({ cls, parentId, displayName }) {
     let data;
