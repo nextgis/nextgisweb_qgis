@@ -9,7 +9,7 @@ from shapely.geometry import box
 from sqlalchemy.orm import declared_attr
 from zope.interface import implementer
 
-from nextgisweb.env import declarative_base, env
+from nextgisweb.env import COMP_ID, _, declarative_base, env
 from nextgisweb.lib import db
 from nextgisweb.lib.geometry import Geometry
 
@@ -50,7 +50,7 @@ from qgis_headless import (
 )
 from qgis_headless.util import to_pil as qgis_image_to_pil
 
-from .util import COMP_ID, _, rand_color
+from .util import rand_color
 
 _GEOM_TYPE_TO_QGIS = {
     GEOM_TYPE.POINT: Layer.GT_POINT,
