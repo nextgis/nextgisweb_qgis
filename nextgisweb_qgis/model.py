@@ -9,7 +9,7 @@ from shapely.geometry import box
 from sqlalchemy.orm import declared_attr
 from zope.interface import implementer
 
-from nextgisweb.env import COMP_ID, _, declarative_base, env
+from nextgisweb.env import COMP_ID, Base, _, env
 from nextgisweb.lib import db
 from nextgisweb.lib.geometry import Geometry
 
@@ -66,8 +66,6 @@ _GEOM_TYPE_TO_QGIS = {
     GEOM_TYPE.MULTILINESTRINGZ: Layer.GT_MULTILINESTRINGZ,
     GEOM_TYPE.MULTIPOLYGONZ: Layer.GT_MULTIPOLYGONZ,
 }
-
-Base = declarative_base()
 
 STRIP_SVG_PATH = re.compile(
     r'^(/usr/share/qgis/svg/|/Users/[^/]+/|/home/[^/]+/|(../)+|/)',

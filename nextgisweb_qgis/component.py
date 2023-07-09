@@ -3,12 +3,8 @@ from nextgisweb.lib.config import Option, OptionAnnotations
 
 import qgis_headless
 
-from .model import Base
-
 
 class QgisComponent(Component):
-    identity = 'qgis'
-    metadata = Base.metadata
 
     def initialize(self):
         super(QgisComponent, self).initialize()
