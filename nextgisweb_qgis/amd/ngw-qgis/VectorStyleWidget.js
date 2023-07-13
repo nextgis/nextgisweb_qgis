@@ -10,7 +10,8 @@ define([
     "dojo/text!./template/QgisVectorStyleWidget.hbs",
     // template
     "dojox/layout/TableContainer",
-    "ngw-file-upload/Uploader"
+    "ngw-file-upload/Uploader",
+    "ngw-resource/ResourceBox",
 ], function (
     declare,
     lang,
