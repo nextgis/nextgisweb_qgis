@@ -16,7 +16,7 @@ class VectorStyleWidget(Widget):
 class RasterStyleWidget(Widget):
     resource = QgisRasterStyle
     operation = ('create', 'update')
-    amdmod = 'ngw-qgis/RasterStyleWidget'
+    amdmod = '@nextgisweb/qgis/raster-editor-widget'
 
 
 def setup_pyramid(comp, config):
