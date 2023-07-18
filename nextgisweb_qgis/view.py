@@ -10,7 +10,7 @@ from .model import QgisRasterStyle, QgisVectorStyle
 class VectorStyleWidget(Widget):
     resource = QgisVectorStyle
     operation = ('create', 'update')
-    amdmod = 'ngw-qgis/VectorStyleWidget'
+    amdmod = '@nextgisweb/qgis/vector-editor-widget'
 
 
 class RasterStyleWidget(Widget):

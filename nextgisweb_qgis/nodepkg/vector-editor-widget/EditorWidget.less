@@ -1,0 +1,18 @@
+.ngw-qgis-vector-editor-widget {
+    padding: 1em;
+
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1em;
+
+    & > span:first-child {
+        grid-column: 1 / span 2;
+    }
+
+    & > label {
+        align-self: center;
+        &::after {
+            content: ":";
+        }
+    }
+}
