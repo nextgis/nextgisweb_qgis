@@ -1,6 +1,10 @@
 import { makeAutoObservable, toJS } from "mobx";
 
-import { EditorStore as IEditorStore, Operations, EditorStoreOptions } from '@nextgisweb/resource/type/EditorStore'
+import type {
+    EditorStore as IEditorStore,
+    Operations,
+    EditorStoreOptions,
+} from "@nextgisweb/resource/type/EditorStore";
 
 export class EditorStore implements IEditorStore {
     readonly identity = "qgis_raster_style";
@@ -12,7 +16,11 @@ export class EditorStore implements IEditorStore {
     composite: unknown;
 
     constructor({ composite, operation }: EditorStoreOptions) {
-        makeAutoObservable(this, { identity: false, operation: false, composite: false });
+        makeAutoObservable(this, {
+            identity: false,
+            operation: false,
+            composite: false,
+        });
         this.operation = operation;
         this.composite = composite;
     }
