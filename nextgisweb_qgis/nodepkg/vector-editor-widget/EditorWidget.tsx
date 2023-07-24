@@ -13,7 +13,7 @@ import type { EditorStore } from "./EditorStore";
 
 import "./EditorWidget.less";
 
-const mUploadText = i18n.gettext("Select a QML file");
+const mUploadText = i18n.gettext("Select QML file");
 const mSvgMarkerLibrary = i18n.gettext("SVG marker library");
 
 export const EditorWidget: EditorWidgetComponent = observer(

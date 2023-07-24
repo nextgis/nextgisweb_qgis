@@ -1,24 +1,15 @@
-#: amd/ngw-qgis/RasterStyleWidget.js:26 amd/ngw-qgis/VectorStyleWidget.js:26
-#: model.py:112 model.py:182 view.py:25
+#: model.py:105 nodepkg/raster-editor-widget/EditorWidget.tsx:36
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:53 view.py:27
 msgid "QGIS style"
 msgstr "Стиль QGIS"
 
-#: model.py:447
+#: model.py:479
 msgid "Layer type mismatch."
 msgstr "Несоответствие типу слоя."
 
-#: model.py:449
+#: model.py:481
 msgid "QML file is not valid."
 msgstr "Некорректный QML файл."
-
-#: amd/ngw-qgis/template/QgisRasterStyleWidget.hbs:7
-#: amd/ngw-qgis/template/QgisVectorStyleWidget.hbs:7 view.py:28
-msgid "QML file"
-msgstr "Файл QML"
-
-#: amd/ngw-qgis/template/QgisVectorStyleWidget.hbs:13
-msgid "SVG marker library"
-msgstr "Библиотека маркеров SVG"
 
 #: nodepkg/default-style-widget/DefaultStyleWidget.js:29
 msgid ""
@@ -31,4 +22,17 @@ msgstr ""
 #: nodepkg/default-style-widget/DefaultStyleWidget.js:34
 msgid "Create default QGIS style"
 msgstr "Создать стиль QGIS по умолчанию"
+
+#: nodepkg/raster-editor-widget/EditorWidget.tsx:15
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:16
+msgid "Select QML file"
+msgstr "Выберите QML-файл"
+
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:17
+msgid "SVG marker library"
+msgstr "Библиотека маркеров SVG"
+
+#: view.py:30
+msgid "QML file"
+msgstr "Файл QML"
 

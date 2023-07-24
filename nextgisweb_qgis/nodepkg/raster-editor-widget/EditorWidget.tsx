@@ -12,7 +12,7 @@ import i18n from "@nextgisweb/pyramid/i18n";
 
 import "./EditorWidget.less";
 
-const mUploadText = i18n.gettext("Select a QML file");
+const mUploadText = i18n.gettext("Select QML file");
 
 export const EditorWidget: EditorWidgetComponent = observer(
     ({ store }: EditorWidgetProps<EditorStore>) => {
