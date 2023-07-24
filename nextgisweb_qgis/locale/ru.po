@@ -1,13 +1,16 @@
-#: model.py:105 nodepkg/raster-editor-widget/EditorWidget.tsx:36
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:53 view.py:27
-msgid "QGIS style"
-msgstr "Стиль QGIS"
+#: model.py:128
+msgid "QGIS raster style"
+msgstr "Растровый стиль QGIS"
 
-#: model.py:479
+#: model.py:193
+msgid "QGIS vector style"
+msgstr "Векторный стиль QGIS"
+
+#: model.py:480
 msgid "Layer type mismatch."
 msgstr "Несоответствие типу слоя."
 
-#: model.py:481
+#: model.py:482
 msgid "QML file is not valid."
 msgstr "Некорректный QML файл."
 
@@ -27,6 +30,11 @@ msgstr "Создать стиль QGIS по умолчанию"
 #: nodepkg/vector-editor-widget/EditorWidget.tsx:16
 msgid "Select QML file"
 msgstr "Выберите QML-файл"
+
+#: nodepkg/raster-editor-widget/EditorWidget.tsx:36
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:53 view.py:27
+msgid "QGIS style"
+msgstr "Стиль QGIS"
 
 #: nodepkg/vector-editor-widget/EditorWidget.tsx:17
 msgid "SVG marker library"

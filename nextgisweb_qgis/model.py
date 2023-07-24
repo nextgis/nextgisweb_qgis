@@ -102,7 +102,6 @@ def _render_bounds(extent, size, padding):
 
 
 class QgisStyleMixin:
-    cls_display_name = _("QGIS style")
 
     @declared_attr
     def qml_fileobj_id(cls):
@@ -126,6 +125,7 @@ class QgisStyleMixin:
 @implementer(IRenderableStyle)
 class QgisRasterStyle(Base, QgisStyleMixin, Resource):
     identity = 'qgis_raster_style'
+    cls_display_name = _("QGIS raster style")
 
     __scope__ = DataScope
 
@@ -190,6 +190,7 @@ def path_resolver_factory(svg_marker_library):
 @implementer((IRenderableStyle, ILegendableStyle, ILegendSymbols))
 class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     identity = 'qgis_vector_style'
+    cls_display_name = _("QGIS vector style")
 
     __scope__ = (DataScope, DataStructureScope)
 
