@@ -5,11 +5,14 @@ import type {
     Operations,
     EditorStoreOptions,
 } from "@nextgisweb/resource/type/EditorStore";
+import type { UploaderMeta } from "@nextgisweb/file-upload/file-uploader/type";
+
+type Value = UploaderMeta;
 
 export class EditorStore implements IEditorStore {
     readonly identity = "qgis_raster_style";
 
-    source = null;
+    source: UploaderMeta | null = null;
     uploading = false;
 
     operation: Operations;
@@ -30,7 +33,7 @@ export class EditorStore implements IEditorStore {
     }
 
     dump() {
-        const result = {} as { file_upload: Record<string, any> };
+        const result = {} as { file_upload: Value };
         if (this.source) {
             result.file_upload = this.source;
         }
