@@ -12,10 +12,10 @@ type Value = UploaderMeta;
 export class EditorStore implements IEditorStore {
     readonly identity = "qgis_raster_style";
 
-    source: UploaderMeta | null = null;
+    source?: UploaderMeta;
     uploading = false;
 
-    operation: Operations;
+    operation?: Operations;
     composite: unknown;
 
     constructor({ composite, operation }: EditorStoreOptions) {

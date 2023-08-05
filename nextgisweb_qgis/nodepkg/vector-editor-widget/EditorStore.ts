@@ -9,17 +9,17 @@ import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
 
 interface Value {
     file_upload?: FileMeta;
-    svg_marker_library?: { id: number };
+    svg_marker_library?: { id: number } | null;
 }
 
-export class EditorStore implements IEditorStore {
+export class EditorStore implements IEditorStore<Value> {
     readonly identity = "qgis_vector_style";
 
-    svgMarkerLibrary: number | null = null;
-    source: FileMeta | null = null;
+    svgMarkerLibrary?: number;
+    source?: FileMeta;
     uploading = false;
 
-    operation: Operations;
+    operation?: Operations;
     composite: unknown;
 
     constructor({ composite, operation }: EditorStoreOptions) {

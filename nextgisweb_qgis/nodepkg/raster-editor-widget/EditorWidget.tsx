@@ -14,24 +14,24 @@ import "./EditorWidget.less";
 
 const mUploadText = i18n.gettext("Select QML file");
 
-export const EditorWidget: EditorWidgetComponent = observer(
-    ({ store }: EditorWidgetProps<EditorStore>) => {
-        return (
-            <div className="ngw-qgis-raster-editor-widget">
-                <FileUploader
-                    accept=".qml"
-                    onChange={(value) => {
-                        store.source = value;
-                    }}
-                    onUploading={(value) => {
-                        store.uploading = value;
-                    }}
-                    uploadText={mUploadText}
-                />
-            </div>
-        );
-    }
-);
+export const EditorWidget: EditorWidgetComponent<
+    EditorWidgetProps<EditorStore>
+> = observer(({ store }: EditorWidgetProps<EditorStore>) => {
+    return (
+        <div className="ngw-qgis-raster-editor-widget">
+            <FileUploader
+                accept=".qml"
+                onChange={(value) => {
+                    store.source = value;
+                }}
+                onUploading={(value) => {
+                    store.uploading = value;
+                }}
+                uploadText={mUploadText}
+            />
+        </div>
+    );
+});
 
 EditorWidget.title = i18n.gettext("QGIS style");
 EditorWidget.activateOn = { create: true };

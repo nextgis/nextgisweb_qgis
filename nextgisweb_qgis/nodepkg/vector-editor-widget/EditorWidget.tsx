@@ -16,39 +16,39 @@ import "./EditorWidget.less";
 const mUploadText = i18n.gettext("Select QML file");
 const mSvgMarkerLibrary = i18n.gettext("SVG marker library");
 
-export const EditorWidget: EditorWidgetComponent = observer(
-    ({ store }: EditorWidgetProps<EditorStore>) => {
-        return (
-            <div className="ngw-qgis-vector-editor-widget">
-                <FileUploader
-                    accept=".qml"
-                    onChange={(value) => {
-                        if (Array.isArray(value)) throw "unreachable";
-                        store.source = value;
-                    }}
-                    onUploading={(value) => {
-                        store.uploading = value;
-                    }}
-                    uploadText={mUploadText}
-                />
-                <label>{mSvgMarkerLibrary}</label>
-                <ResourceSelect
-                    value={store.svgMarkerLibrary}
-                    onChange={(value) => {
-                        if (Array.isArray(value)) throw "unreachable";
-                        store.svgMarkerLibrary = value;
-                    }}
-                    pickerOptions={{
-                        traverseClasses: ["resource_group"],
-                        requireClass: "svg_marker_library",
-                        hideUnavailable: true,
-                    }}
-                    allowClear
-                />
-            </div>
-        );
-    }
-);
+export const EditorWidget: EditorWidgetComponent<
+    EditorWidgetProps<EditorStore>
+> = observer(({ store }: EditorWidgetProps<EditorStore>) => {
+    return (
+        <div className="ngw-qgis-vector-editor-widget">
+            <FileUploader
+                accept=".qml"
+                onChange={(value) => {
+                    if (Array.isArray(value)) throw "unreachable";
+                    store.source = value;
+                }}
+                onUploading={(value) => {
+                    store.uploading = value;
+                }}
+                uploadText={mUploadText}
+            />
+            <label>{mSvgMarkerLibrary}</label>
+            <ResourceSelect
+                value={store.svgMarkerLibrary}
+                onChange={(value) => {
+                    if (Array.isArray(value)) throw "unreachable";
+                    store.svgMarkerLibrary = value;
+                }}
+                pickerOptions={{
+                    traverseClasses: ["resource_group"],
+                    requireClass: "svg_marker_library",
+                    hideUnavailable: true,
+                }}
+                allowClear
+            />
+        </div>
+    );
+});
 
 EditorWidget.title = i18n.gettext("QGIS style");
 EditorWidget.activateOn = { create: true };
