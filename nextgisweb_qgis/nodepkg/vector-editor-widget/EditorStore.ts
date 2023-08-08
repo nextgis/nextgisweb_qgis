@@ -53,8 +53,6 @@ export class EditorStore implements IEditorStore<Value> {
     }
 
     get isValid() {
-        return (
-            !this.uploading && (this.operation === "update" || !!this.source)
-        );
+        return !this.uploading;
     }
 }
