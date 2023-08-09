@@ -8,11 +8,12 @@ import type {
 } from "@nextgisweb/resource/type";
 import type { EditorStore } from "./EditorStore";
 
-import i18n from "@nextgisweb/pyramid/i18n";
+import { gettext } from "@nextgisweb/pyramid/i18n";
 
 import "./EditorWidget.less";
 
-const mUploadText = i18n.gettext("Select QML file");
+const mUploadText = gettext("Select a style");
+const mHelpText = gettext("QML or SLD formats are supported.")
 
 export const EditorWidget: EditorWidgetComponent<
     EditorWidgetProps<EditorStore>
@@ -20,7 +21,7 @@ export const EditorWidget: EditorWidgetComponent<
     return (
         <div className="ngw-qgis-raster-editor-widget">
             <FileUploader
-                accept=".qml"
+                accept=".qml,.sld"
                 onChange={(value) => {
                     store.source = value;
                 }}
@@ -28,11 +29,12 @@ export const EditorWidget: EditorWidgetComponent<
                     store.uploading = value;
                 }}
                 uploadText={mUploadText}
+                helpText={mHelpText}
             />
         </div>
     );
 });
 
-EditorWidget.title = i18n.gettext("QGIS style");
+EditorWidget.title = gettext("QGIS style");
 EditorWidget.activateOn = { create: true };
 EditorWidget.order = -50;

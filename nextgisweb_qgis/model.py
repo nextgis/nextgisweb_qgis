@@ -1,8 +1,10 @@
 import re
+from enum import Enum
 from io import BytesIO
 from os.path import normpath
 from os.path import sep as path_sep
 from shutil import copyfile
+from warnings import warn
 
 from cachetools import LRUCache
 from shapely.geometry import box
@@ -45,6 +47,7 @@ from qgis_headless import (
     Layer,
     MapRequest,
     Style,
+    StyleFormat,
     StyleTypeMismatch,
     StyleValidationError,
 )
@@ -70,6 +73,18 @@ _GEOM_TYPE_TO_QGIS = {
 STRIP_SVG_PATH = re.compile(
     r'^(/usr/share/qgis/svg/|/Users/[^/]+/|/home/[^/]+/|(../)+|/)',
     re.IGNORECASE)
+
+class FormatEnum(Enum):
+    DEFAULT = 'default'
+    QML_FILE = 'qml_file'
+    SLD_FILE = 'sld_file'
+
+
+_FORMAT_2_HEADLESS = {
+    FormatEnum.QML_FILE: StyleFormat.QML,
+    FormatEnum.SLD_FILE: StyleFormat.SLD,
+}
+_HEADLESS_2_FORMAT = { v: k for k, v in _FORMAT_2_HEADLESS.items() }
 
 
 def _render_bounds(extent, size, padding):
@@ -104,22 +119,41 @@ def _render_bounds(extent, size, padding):
 class QgisStyleMixin:
 
     @declared_attr
-    def qml_fileobj_id(cls):
+    def qgis_format(cls):
+        return db.Column(db.Enum(FormatEnum), nullable=False, default=FormatEnum.DEFAULT)
+
+    @declared_attr
+    def qgis_fileobj_id(cls):
         return db.Column(db.ForeignKey(FileObj.id), nullable=True)
 
     @declared_attr
-    def qml_fileobj(cls):
+    def qgis_fileobj(cls):
         return db.relationship(FileObj, cascade='all')
 
     @property
     def srs(self):
         return self.parent.srs
 
-    def from_file(self, filename):
-        self.qml_fileobj = env.file_storage.fileobj(COMP_ID)
-        dstfile = env.file_storage.filename(self.qml_fileobj, makedirs=True)
+    def from_file(self, filename, *, format_=FormatEnum.QML_FILE):
+        self.qgis_format = format_
+        self.qgis_fileobj = env.file_storage.fileobj(COMP_ID)
+        dstfile = env.file_storage.filename(self.qgis_fileobj, makedirs=True)
         copyfile(filename, dstfile)
         return self
+
+    @property
+    def qml_fileobj_id(self):
+        warn(
+            "Since nextgisweb_gis 2.9.0.dev1 use qgis_style.qgis_fileobj_id "
+            "instead of qgis_style.qml_fileobj_id", DeprecationWarning, 2)
+        return self.qgis_fileobj_id
+
+    @property
+    def qml_fileobj(self):
+        warn(
+            "Since nextgisweb_gis 2.9.0.dev1 use qgis_style.qgis_fileobj "
+            "instead of qgis_style.qml_fileobj", DeprecationWarning, 2)
+        return self.qgis_fileobj
 
 
 @implementer(IRenderableStyle)
@@ -360,7 +394,22 @@ class RenderRequest:
             _reraise_qgis_exception(exc, OperationalError)
 
 
-class _file_upload_attr(SP):  # NOQA
+class _format_attr(SP):
+
+    def getter(self, srlzr):
+        return srlzr.obj.qgis_format
+
+    def setter(self, srlzr, value):
+        if value is None:
+            value = FormatEnum.DEFAULT
+        else:
+            value = FormatEnum(value)
+        if 'file_upload' not in srlzr.data and value != FormatEnum.DEFAULT:
+            raise ValidationError(message=_("Style format mismatch."))
+        srlzr.obj.qgis_format = value
+
+
+class _file_upload_attr(SP):
 
     def setter(self, srlzr, value):
         env.qgis.qgis_init()
@@ -368,6 +417,23 @@ class _file_upload_attr(SP):  # NOQA
         srcfile, meta = env.file_upload.get_filename(value['id'])
 
         params = dict()
+
+        if srlzr.obj.qgis_format in _FORMAT_2_HEADLESS:
+            params['format'] = _FORMAT_2_HEADLESS[srlzr.obj.qgis_format]
+        elif srlzr.obj.qgis_format is None:
+            for fmt in (StyleFormat.QML, StyleFormat.SLD):
+                try:
+                    Style.from_file(srcfile, format=fmt)
+                except StyleValidationError:
+                    pass
+                else:
+                    params['format'] = fmt
+                    srlzr.obj.qgis_format = _HEADLESS_2_FORMAT[fmt]
+                    break
+            else:
+                raise ValidationError(message=_("Style file is not valid."))
+        else:
+            raise ValidationError(message=_("Style format mismatch."))
 
         layer = srlzr.obj.parent
         if IFeatureLayer.providedBy(layer):
@@ -384,7 +450,7 @@ class _file_upload_attr(SP):  # NOQA
             _reraise_qgis_exception(exc, ValidationError)
 
         fileobj = env.file_storage.fileobj(component=COMP_ID)
-        srlzr.obj.qml_fileobj = fileobj
+        srlzr.obj.qgis_fileobj = fileobj
         dstfile = env.file_storage.filename(fileobj, makedirs=True)
 
         copyfile(srcfile, dstfile)
@@ -396,6 +462,7 @@ class QgisVectorStyleSerializer(Serializer):
     identity = QgisVectorStyle.identity
     resclass = QgisVectorStyle
 
+    format = _format_attr(read=ResourceScope.read, write=ResourceScope.update)
     file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
     svg_marker_library = SRR(read=DataStructureScope.read, write=DataStructureScope.write)
 
@@ -404,6 +471,7 @@ class QgisRasterSerializer(Serializer):
     identity = QgisRasterStyle.identity
     resclass = QgisRasterStyle
 
+    format = _format_attr(read=ResourceScope.read, write=ResourceScope.update)
     file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
 
 
@@ -411,11 +479,11 @@ _style_cache = LRUCache(maxsize=256)
 
 
 def read_style(qgis_style):
-    if qgis_style.qml_fileobj_id is None:
+    if qgis_style.qgis_fileobj_id is None:
         key = qgis_style.id
 
     else:
-        uuid = qgis_style.qml_fileobj.uuid
+        uuid = qgis_style.qgis_fileobj.uuid
         if isinstance(qgis_style, QgisVectorStyle):
             sml = qgis_style.svg_marker_library
             geometry_type = qgis_style.parent.geometry_type
@@ -427,7 +495,7 @@ def read_style(qgis_style):
     if (style := _style_cache.get(key)) is None:
         params = dict()
 
-        if qgis_style.qml_fileobj_id is None:
+        if qgis_style.qgis_format == FormatEnum.DEFAULT:
             if isinstance(qgis_style, QgisVectorStyle):
                 params['layer_type'] = LT_VECTOR
                 params['layer_geometry_type'] = _GEOM_TYPE_TO_QGIS[qgis_style.parent.geometry_type]
@@ -444,8 +512,9 @@ def read_style(qgis_style):
             style = Style.from_defaults(**params)
 
         else:
+            params['format'] = _FORMAT_2_HEADLESS[qgis_style.qgis_format]
             # NOTE: Some file objects can have component != 'qgis'
-            filename = env.file_storage.filename(qgis_style.qml_fileobj)
+            filename = env.file_storage.filename(qgis_style.qgis_fileobj)
             if geometry_type is not None:
                 params['layer_geometry_type'] = _GEOM_TYPE_TO_QGIS[geometry_type]
                 params['svg_resolver'] = path_resolver_factory(sml)
@@ -479,7 +548,7 @@ def _reraise_qgis_exception(exc, cls):
     if isinstance(exc, StyleTypeMismatch):
         raise cls(message=_("Layer type mismatch.")) from exc
     elif isinstance(exc, StyleValidationError):
-        raise cls(message=_("QML file is not valid.")) from exc
+        raise cls(message=_("Style file is not valid.")) from exc
     else:
         raise exc
 

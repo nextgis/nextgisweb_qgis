@@ -10,8 +10,8 @@ def style_qml(resource, request):
 
     original = request.GET.get('original', 'yes') in ('true', 'yes', '1')
 
-    if original and resource.qml_fileobj_id is not None:
-        fn = request.env.file_storage.filename(resource.qml_fileobj)
+    if original and resource.qgis_fileobj_id is not None:
+        fn = request.env.file_storage.filename(resource.qgis_fileobj)
         response = FileResponse(fn, request=request)
     else:
         style = read_style(resource)

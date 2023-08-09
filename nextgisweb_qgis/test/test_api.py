@@ -123,3 +123,61 @@ def test_qgis_raster_style(
 
     with transaction.manager:
         DBSession.delete(res)
+
+
+@pytest.fixture(scope='module')
+def contour_layer_id(test_data, ngw_resource_group):
+    data_polygon = test_data / 'contour.geojson'
+    ds = ogr.Open(str(data_polygon))
+    ogrlayer = ds.GetLayer(0)
+
+    with create_feature_layer(ogrlayer, ngw_resource_group) as layer:
+        yield layer.id
+
+
+@pytest.mark.parametrize('style, format_, expected', (
+    ('contour-rgb.qml', 'qml_file', 'qml_file'),
+    ('contour-rgb.qml', None, 'qml_file'),
+    ('contour-rgb.qml', 'default', None),
+    ('contour-rgb.qml', 'sld_file', None),
+
+    ('contour-red.sld', 'sld_file', 'sld_file'),
+    ('contour-red.sld', None, 'sld_file'),
+    ('contour-red.sld', 'default', None),
+    ('contour-red.sld', 'qml_file', None),
+
+    (None, 'default', 'default'),
+    (None, None, 'default'),
+    (None, 'qml_file', None),
+    (None, 'sld_file', None),
+))
+def test_format(
+    style, format_, expected, test_data, contour_layer_id,
+    ngw_webtest_app, ngw_auth_administrator,
+):
+    body = dict(
+        resource=dict(
+            cls='qgis_vector_style',
+            parent=dict(id=contour_layer_id),
+            display_name=f"Test style ({style if style is not None else 'default'})"
+        ),
+    )
+    if format_ is not None or style is not None:
+        body['qgis_vector_style'] = dict()
+        if format_ is not None:
+            body['qgis_vector_style']['format'] = format_
+        if style is not None:
+            style_data = (test_data / style).read_bytes()
+            resp = ngw_webtest_app.put('/api/component/file_upload/', style_data)
+            body['qgis_vector_style']['file_upload'] = resp.json
+
+    resp = ngw_webtest_app.post_json('/api/resource/', body, status='*')
+    if expected is None:
+        assert resp.status_code == 422
+        return
+
+    qgis_style = QgisVectorStyle.filter_by(id=resp.json['id']).one()
+    assert qgis_style.qgis_format.value == expected
+
+    with transaction.manager:
+        DBSession.delete(qgis_style)

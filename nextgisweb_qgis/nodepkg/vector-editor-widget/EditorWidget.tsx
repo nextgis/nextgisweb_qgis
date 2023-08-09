@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { FileUploader } from "@nextgisweb/file-upload/file-uploader";
 import { ResourceSelect } from "@nextgisweb/resource/component/resource-select";
 
-import i18n from "@nextgisweb/pyramid/i18n";
+import { gettext } from "@nextgisweb/pyramid/i18n";
 
 import type {
     EditorWidgetComponent,
@@ -13,8 +13,9 @@ import type { EditorStore } from "./EditorStore";
 
 import "./EditorWidget.less";
 
-const mUploadText = i18n.gettext("Select QML file");
-const mSvgMarkerLibrary = i18n.gettext("SVG marker library");
+const mUploadText = gettext("Select a style");
+const mHelpText = gettext("QML or SLD formats are supported.")
+const mSvgMarkerLibrary = gettext("SVG marker library");
 
 export const EditorWidget: EditorWidgetComponent<
     EditorWidgetProps<EditorStore>
@@ -22,7 +23,7 @@ export const EditorWidget: EditorWidgetComponent<
     return (
         <div className="ngw-qgis-vector-editor-widget">
             <FileUploader
-                accept=".qml"
+                accept=".qml,.sld"
                 onChange={(value) => {
                     if (Array.isArray(value)) throw "unreachable";
                     store.source = value;
@@ -31,6 +32,7 @@ export const EditorWidget: EditorWidgetComponent<
                     store.uploading = value;
                 }}
                 uploadText={mUploadText}
+                helpText={mHelpText}
             />
             <label>{mSvgMarkerLibrary}</label>
             <ResourceSelect
@@ -50,6 +52,6 @@ export const EditorWidget: EditorWidgetComponent<
     );
 });
 
-EditorWidget.title = i18n.gettext("QGIS style");
+EditorWidget.title = gettext("QGIS style");
 EditorWidget.activateOn = { create: true };
 EditorWidget.order = -50;
