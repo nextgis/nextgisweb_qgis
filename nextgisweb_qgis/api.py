@@ -24,7 +24,8 @@ def style_qml(resource, request):
 def setup_pyramid(comp, config):
     config.add_route(
         'qgis.style_qml', '/api/resource/{id:uint}/qml',
-        factory=resource_factory
+        factory=resource_factory,
+        overloaded=True,
     ) \
         .add_view(style_qml, context=QgisVectorStyle, request_method='GET') \
         .add_view(style_qml, context=QgisRasterStyle, request_method='GET')
