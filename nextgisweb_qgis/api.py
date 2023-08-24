@@ -1,31 +1,57 @@
+from enum import Enum
+
 from pyramid.response import FileResponse, Response
 
+from nextgisweb.env import gettext
+
+from nextgisweb.core.exception import ValidationError
 from nextgisweb.resource import ResourceScope, resource_factory
 
-from .model import QgisRasterStyle, QgisVectorStyle, read_style
+from .model import FormatEnum, QgisRasterStyle, QgisVectorStyle, read_style
 
 
-def style_qml(resource, request):
+class OriginalEnum(Enum):
+    PREFER = "prefer"
+    REQUIRE = "require"
+    PROCESS = "process"
+
+
+def style_qml(
+    resource,
+    request,
+    *,
+    original: OriginalEnum = OriginalEnum.PREFER,
+):
+    """Read style in QML format"""
     request.resource_permission(ResourceScope.read)
 
-    original = request.GET.get('original', 'yes') in ('true', 'yes', '1')
-
-    if original and resource.qgis_fileobj_id is not None:
+    if (original == OriginalEnum.PROCESS) or (
+        original == OriginalEnum.PREFER and resource.qgis_format != FormatEnum.QML_FILE
+    ):
+        style = read_style(resource)
+        response = Response(style.to_string(), request=request)
+    elif resource.qgis_format == FormatEnum.QML_FILE:
         fn = request.env.file_storage.filename(resource.qgis_fileobj)
         response = FileResponse(fn, request=request)
     else:
-        style = read_style(resource)
-        response = Response(style.to_string(), request=request)
-    response.content_disposition = 'attachment; filename=%d.qml' % resource.id
+        raise ValidationError(
+            message=gettext(
+                "The original QML was requested but the style has '{}' format. "
+                "Use other values of the 'original' parameter."
+            ).format(resource.qgis_format.value)
+        )
 
+    response.content_disposition = "attachment; filename=%d.qml" % resource.id
     return response
 
 
 def setup_pyramid(comp, config):
-    config.add_route(
-        'qgis.style_qml', '/api/resource/{id:uint}/qml',
+    route = config.add_route(
+        "qgis.style_qml",
+        "/api/resource/{id:uint}/qml",
         factory=resource_factory,
         overloaded=True,
-    ) \
-        .add_view(style_qml, context=QgisVectorStyle, request_method='GET') \
-        .add_view(style_qml, context=QgisRasterStyle, request_method='GET')
+    )
+
+    route.add_view(style_qml, context=QgisVectorStyle, request_method="GET")
+    route.add_view(style_qml, context=QgisRasterStyle, request_method="GET")
