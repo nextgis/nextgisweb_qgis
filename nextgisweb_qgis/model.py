@@ -412,6 +412,10 @@ class _format_attr(SP):
 class _file_upload_attr(SP):
 
     def setter(self, srlzr, value):
+        # Force style format autodetection
+        if 'format' not in srlzr.data:
+            srlzr.obj.qgis_format = None
+
         env.qgis.qgis_init()
 
         srcfile, meta = env.file_upload.get_filename(value['id'])
