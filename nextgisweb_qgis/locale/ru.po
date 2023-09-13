@@ -6,37 +6,37 @@ msgstr ""
 "Запрошен орингинальный QML, но этот стиль имеет формат '{}'. Используйте "
 "другие значения параметра 'original'."
 
-#: model.py:162
+#: model.py:176
 msgid "QGIS raster style"
 msgstr "Растровый стиль QGIS"
 
-#: model.py:227
+#: model.py:241
 msgid "QGIS vector style"
 msgstr "Векторный стиль QGIS"
 
-#: model.py:408 model.py:440
+#: model.py:422 model.py:454
 msgid "Style format mismatch."
 msgstr "Несоответствие формата стиля."
 
-#: model.py:438 model.py:555
+#: model.py:452 model.py:569
 msgid "Style file is not valid."
 msgstr "Некорректный стиль."
 
-#: model.py:553
+#: model.py:567
 msgid "Layer type mismatch."
 msgstr "Несоответствие типу слоя."
 
-#: nodepkg/default-style-widget/DefaultStyleWidget.js:29
+#: nodepkg/default-style-widget/DefaultStyleWidget.tsx:10
+msgid "Create default QGIS style"
+msgstr "Создать стиль QGIS по умолчанию"
+
+#: nodepkg/default-style-widget/DefaultStyleWidget.tsx:11
 msgid ""
 "Layer created. You need a style to add it to a web map. Use the button bellow"
 " to create a default QGIS style or create a style resource using sidebar."
 msgstr ""
 "Слой создан, но для добавления на веб-карту нужен стиль. Используйте кнопку "
 "ниже для создания стиля по умолчанию или создайте стиль в боковой панели."
-
-#: nodepkg/default-style-widget/DefaultStyleWidget.js:34
-msgid "Create default QGIS style"
-msgstr "Создать стиль QGIS по умолчанию"
 
 #: nodepkg/raster-editor-widget/EditorWidget.tsx:15
 #: nodepkg/vector-editor-widget/EditorWidget.tsx:16

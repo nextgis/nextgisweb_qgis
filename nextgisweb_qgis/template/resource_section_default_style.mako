@@ -1,8 +1,15 @@
-<%! from nextgisweb_qgis import QgisRasterStyle, QgisVectorStyle %>
+<%!
+    from nextgisweb.resource import Resource
+    from nextgisweb_qgis import QgisRasterStyle, QgisVectorStyle
+%>
+
+<%page args="section, cls" />
+<% section.content_box = False %>
 
 <%
-    cls = QgisRasterStyle.identity if QgisRasterStyle.check_parent(obj) \
-        else QgisVectorStyle.identity
+    child = Resource.registry[cls](parent=obj, owner_user=request.user)
+    sdn = child.suggest_display_name(request.localizer.translate)
+    payload = dict(resource=dict(cls=cls, parent=dict(id=obj.id), display_name=sdn))
 %>
 
 <div id="DefaultStyleWidget"></div>
@@ -11,13 +18,10 @@
     require([
         "@nextgisweb/qgis/default-style-widget",
         "@nextgisweb/gui/react-app",
-    ], function (comp, reactApp) {
-        reactApp.default(
-            comp.default, {
-                cls: "${cls}",
-                parentId: ${obj.id},
-                displayName: "${obj.display_name}",
-            }, document.getElementById('DefaultStyleWidget')
+    ], function ({ default: comp}, { default: reactApp }) {
+        reactApp(
+            comp, {payload: ${json_js(payload)}},
+            document.getElementById('DefaultStyleWidget')
         );
     });
 </script>

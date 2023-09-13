@@ -9,18 +9,17 @@ from .model import QgisRasterStyle, QgisVectorStyle
 
 class VectorStyleWidget(Widget):
     resource = QgisVectorStyle
-    operation = ('create', 'update')
-    amdmod = '@nextgisweb/qgis/vector-editor-widget'
+    operation = ("create", "update")
+    amdmod = "@nextgisweb/qgis/vector-editor-widget"
 
 
 class RasterStyleWidget(Widget):
     resource = QgisRasterStyle
-    operation = ('create', 'update')
-    amdmod = '@nextgisweb/qgis/raster-editor-widget'
+    operation = ("create", "update")
+    amdmod = "@nextgisweb/qgis/raster-editor-widget"
 
 
 def setup_pyramid(comp, config):
-
     class LayerMenuExt(dm.DynItem):
         def build(self, args):
             if isinstance(args.obj, (QgisVectorStyle, QgisRasterStyle)):
@@ -28,15 +27,14 @@ def setup_pyramid(comp, config):
                 yield dm.Link(
                     "qgis_style/qml",
                     _("QML file"),
-                    lambda args: args.request.route_url(
-                        "qgis.style_qml", id=args.obj.id
-                    ),
+                    lambda args: args.request.route_url("qgis.style_qml", id=args.obj.id),
                 )
 
     Resource.__dynmenu__.add(LayerMenuExt())
 
     @resource_sections(priority=40)
     def resource_section_default_style(obj):
-        return comp.options['default_style'] and len(obj.children) == 0 and (
-            QgisRasterStyle.check_parent(obj) or QgisVectorStyle.check_parent(obj)
-        )
+        if comp.options["default_style"] and len(obj.children) == 0:
+            for cls in (QgisVectorStyle, QgisRasterStyle):
+                if cls.check_parent(obj):
+                    return dict(cls=cls.identity)
