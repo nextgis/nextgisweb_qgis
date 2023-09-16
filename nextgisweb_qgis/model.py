@@ -76,7 +76,7 @@ STRIP_SVG_PATH = re.compile(
     r'^(/usr/share/qgis/svg/|/Users/[^/]+/|/home/[^/]+/|(../)+|/)',
     re.IGNORECASE)
 
-class FormatEnum(Enum):
+class QgisStyleFormat(Enum):
     DEFAULT = 'default'
     QML_FILE = 'qml_file'
     SLD_FILE = 'sld_file'
@@ -84,8 +84,8 @@ class FormatEnum(Enum):
 
 
 _FILE_FORMAT_2_HEADLESS = {
-    FormatEnum.QML_FILE: StyleFormat.QML,
-    FormatEnum.SLD_FILE: StyleFormat.SLD,
+    QgisStyleFormat.QML_FILE: StyleFormat.QML,
+    QgisStyleFormat.SLD_FILE: StyleFormat.SLD,
 }
 _HEADLESS_2_FILE_FORMAT = { v: k for k, v in _FILE_FORMAT_2_HEADLESS.items() }
 
@@ -123,7 +123,7 @@ class QgisStyleMixin:
 
     @declared_attr
     def qgis_format(cls):
-        return db.Column(db.Enum(FormatEnum), nullable=False, default=FormatEnum.DEFAULT)
+        return db.Column(db.Enum(QgisStyleFormat), nullable=False, default=QgisStyleFormat.DEFAULT)
 
     @declared_attr
     def qgis_fileobj_id(cls):
@@ -145,7 +145,7 @@ class QgisStyleMixin:
     def srs(self):
         return self.parent.srs
 
-    def from_file(self, filename, *, format_=FormatEnum.QML_FILE):
+    def from_file(self, filename, *, format_=QgisStyleFormat.QML_FILE):
         self.qgis_format = format_
         self.qgis_fileobj = env.file_storage.fileobj(COMP_ID)
         dstfile = env.file_storage.filename(self.qgis_fileobj, makedirs=True)
@@ -439,10 +439,10 @@ class _format_attr(SP):
 
     def setter(self, srlzr, value):
         if value is None:
-            value = FormatEnum.DEFAULT
+            value = QgisStyleFormat.DEFAULT
         else:
-            value = FormatEnum(value)
-        if 'file_upload' not in srlzr.data and value in (FormatEnum.QML_FILE, FormatEnum.SLD_FILE):
+            value = QgisStyleFormat(value)
+        if 'file_upload' not in srlzr.data and value in (QgisStyleFormat.QML_FILE, QgisStyleFormat.SLD_FILE):
             raise ValidationError(message=_("Style format mismatch."))
         srlzr.obj.qgis_format = value
 
@@ -450,11 +450,11 @@ class _format_attr(SP):
 class _sld_attr(SP):
 
     def getter(self, srlzr):
-        if srlzr.obj.qgis_format == FormatEnum.SLD:
+        if srlzr.obj.qgis_format == QgisStyleFormat.SLD:
             return srlzr.obj.qgis_sld.value
 
     def setter(self, srlzr, value):
-        if srlzr.obj.qgis_format != FormatEnum.SLD:
+        if srlzr.obj.qgis_format != QgisStyleFormat.SLD:
             raise ValidationError(message=_("Style format mismatch."))
         srlzr.obj.qgis_sld = SLD(value=value)
 
@@ -535,11 +535,11 @@ _style_cache = LRUCache(maxsize=256)
 
 
 def read_style(qgis_style):
-    if qgis_style.qgis_format == FormatEnum.DEFAULT:
+    if qgis_style.qgis_format == QgisStyleFormat.DEFAULT:
         key = qgis_style.id
 
     else:
-        if qgis_style.qgis_format == FormatEnum.SLD:
+        if qgis_style.qgis_format == QgisStyleFormat.SLD:
             uuid = UUID(int=qgis_style.qgis_sld_id, version=4).hex
         else:
             uuid = qgis_style.qgis_fileobj.uuid
@@ -555,7 +555,7 @@ def read_style(qgis_style):
     if (style := _style_cache.get(key)) is None:
         params = dict()
 
-        if qgis_style.qgis_format == FormatEnum.DEFAULT:
+        if qgis_style.qgis_format == QgisStyleFormat.DEFAULT:
             if isinstance(qgis_style, QgisVectorStyle):
                 params['layer_type'] = LT_VECTOR
                 params['layer_geometry_type'] = _GEOM_TYPE_TO_QGIS[qgis_style.parent.geometry_type]
@@ -576,7 +576,7 @@ def read_style(qgis_style):
                 params['layer_geometry_type'] = _GEOM_TYPE_TO_QGIS[geometry_type]
                 params['svg_resolver'] = path_resolver_factory(sml)
 
-            if qgis_style.qgis_format == FormatEnum.SLD:
+            if qgis_style.qgis_format == QgisStyleFormat.SLD:
                 params['format'] = StyleFormat.SLD
                 xml = qgis_style.qgis_sld.to_xml()
                 style = Style.from_string(xml, **params)

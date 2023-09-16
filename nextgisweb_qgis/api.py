@@ -7,7 +7,7 @@ from nextgisweb.env import gettext
 from nextgisweb.core.exception import ValidationError
 from nextgisweb.resource import ResourceScope, resource_factory
 
-from .model import FormatEnum, QgisRasterStyle, QgisVectorStyle, read_style
+from .model import QgisRasterStyle, QgisStyleFormat, QgisVectorStyle, read_style
 
 
 class OriginalEnum(Enum):
@@ -26,11 +26,11 @@ def style_qml(
     request.resource_permission(ResourceScope.read)
 
     if (original == OriginalEnum.PROCESS) or (
-        original == OriginalEnum.PREFER and resource.qgis_format != FormatEnum.QML_FILE
+        original == OriginalEnum.PREFER and resource.qgis_format != QgisStyleFormat.QML_FILE
     ):
         style = read_style(resource)
         response = Response(style.to_string(), request=request)
-    elif resource.qgis_format == FormatEnum.QML_FILE:
+    elif resource.qgis_format == QgisStyleFormat.QML_FILE:
         fn = request.env.file_storage.filename(resource.qgis_fileobj)
         response = FileResponse(fn, request=request)
     else:

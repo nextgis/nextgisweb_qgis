@@ -1,2 +1,2 @@
 from .component import QgisComponent
-from .model import QgisRasterStyle, QgisVectorStyle
+from .model import QgisRasterStyle, QgisStyleFormat, QgisVectorStyle

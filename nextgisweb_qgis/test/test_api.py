@@ -13,7 +13,7 @@ from nextgisweb.vector_layer import VectorLayer
 
 import nextgisweb_qgis
 
-from ..model import FormatEnum, QgisRasterStyle, QgisVectorStyle
+from ..model import QgisRasterStyle, QgisStyleFormat, QgisVectorStyle
 
 pytestmark = pytest.mark.usefixtures("ngw_resource_defaults", "ngw_auth_administrator")
 
@@ -208,7 +208,7 @@ def test_sld(point_layer_id, ngw_webtest_app):
                 parent=dict(id=point_layer_id),
                 display_name=token_hex(8),
             ),
-            qgis_vector_style=dict(format=FormatEnum.SLD.value, sld=sld),
+            qgis_vector_style=dict(format=QgisStyleFormat.SLD.value, sld=sld),
         ),
         status=201,
     )
