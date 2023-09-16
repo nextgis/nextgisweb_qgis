@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 
 import { StyleEditor } from "@nextgisweb/sld/style-editor";
 import { SymbolizerCard } from "@nextgisweb/sld/style-editor/component/SymbolizerCard";
-import { LoadingWrapper } from "@nextgisweb/gui/component";
 
 import type { EditorWidgetProps } from "@nextgisweb/resource/type";
 import type {
@@ -40,10 +39,6 @@ export const SldModeComponent = observer(
 
             [store]
         );
-
-        if (!store.ready) {
-            return <LoadingWrapper />;
-        }
 
         const initType: SymbolizerType = store.geometryType
             ? GeometryToStyleTypeMap[store.geometryType]

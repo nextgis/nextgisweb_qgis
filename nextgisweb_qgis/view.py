@@ -12,6 +12,11 @@ class VectorStyleWidget(Widget):
     operation = ("create", "update")
     amdmod = "@nextgisweb/qgis/vector-editor-widget"
 
+    def config(self):
+        result = super().config()
+        result['geometryType'] = self.obj.parent.geometry_type
+        return result
+
 
 class RasterStyleWidget(Widget):
     resource = QgisRasterStyle

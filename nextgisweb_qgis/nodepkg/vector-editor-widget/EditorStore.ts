@@ -1,17 +1,13 @@
-import { makeAutoObservable, toJS, runInAction } from "mobx";
-
-import { route } from "@nextgisweb/pyramid/api";
-import { AbortControllerHelper } from "@nextgisweb/pyramid/util/abort";
+import { makeAutoObservable, toJS } from "mobx";
 
 import type {
     EditorStore as IEditorStore,
     Operations,
-    EditorStoreOptions,
+    EditorStoreOptions as EditorStoreOptionsBase,
 } from "@nextgisweb/resource/type/EditorStore";
 import type { GeometryType } from "@nextgisweb/feature-layer/type";
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
 import type { Style } from "@nextgisweb/sld/style-editor/type/Style";
-import type { ResourceItem } from "@nextgisweb/resource/type/Resource";
 
 interface Value {
     file_upload?: FileMeta;
@@ -26,35 +22,32 @@ interface Composite {
     parent: number;
 }
 
+interface EditorStoreOptions extends EditorStoreOptionsBase {
+    geometryType: GeometryType;
+}
+
 export class EditorStore implements IEditorStore<Value> {
     readonly identity = "qgis_vector_style";
 
+    mode: Mode = "file";
     svgMarkerLibrary?: number = undefined;
     source?: FileMeta = undefined;
     uploading = false;
-
-    ready = false;
-    geometryType: GeometryType | null = null;
-
     sld: Style | null = null;
-
-    mode: Mode = "file";
 
     operation?: Operations;
     composite: Composite;
+    geometryType: GeometryType;
 
-    private _resourceAbort = new AbortControllerHelper();
-
-    constructor({ composite, operation }: EditorStoreOptions) {
-        makeAutoObservable<EditorStore, "_resourceAbort">(this, {
+    constructor({ composite, operation, geometryType }: EditorStoreOptions) {
+        makeAutoObservable<EditorStore>(this, {
             identity: false,
             operation: false,
             composite: false,
-            _resourceAbort: false,
         });
         this.operation = operation;
         this.composite = composite as Composite;
-        this._init();
+        this.geometryType = geometryType;
     }
 
     get isValid() {
@@ -114,29 +107,5 @@ export class EditorStore implements IEditorStore<Value> {
         }
 
         return toJS(result);
-    }
-
-    private _init() {
-        const parentResourceId = this.composite.parent;
-        if (parentResourceId !== undefined) {
-            route("resource.item", { id: parentResourceId })
-                .get<ResourceItem>({
-                    cache: true,
-                    signal: this._resourceAbort.makeSignal(),
-                })
-                .then((res) => {
-                    const vectorLayer = res.vector_layer;
-                    if (vectorLayer) {
-                        runInAction(() => {
-                            this.geometryType = vectorLayer.geometry_type;
-                        });
-                    }
-                })
-                .finally(() => {
-                    runInAction(() => {
-                        this.ready = true;
-                    });
-                });
-        }
     }
 }

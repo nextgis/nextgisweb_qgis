@@ -8,9 +8,9 @@ import { gettext } from "@nextgisweb/pyramid/i18n";
 import type { EditorWidgetProps } from "@nextgisweb/resource/type";
 import type { EditorStore } from "../EditorStore";
 
-const mUploadText = gettext("Select a style");
-const mHelpText = gettext("QML or SLD formats are supported.");
-const mSvgMarkerLibrary = gettext("SVG marker library");
+const msgUploadText = gettext("Select a style");
+const msgHelpText = gettext("QML or SLD formats are supported.");
+const msgSvgMarkerLibrary = gettext("SVG marker library");
 
 export const FileModeComponent = observer(
     ({ store }: EditorWidgetProps<EditorStore>) => {
@@ -25,10 +25,10 @@ export const FileModeComponent = observer(
                     onUploading={(value) => {
                         store.setUploading(value);
                     }}
-                    uploadText={mUploadText}
-                    helpText={mHelpText}
+                    uploadText={msgUploadText}
+                    helpText={msgHelpText}
                 />
-                <label>{mSvgMarkerLibrary}</label>
+                <label>{msgSvgMarkerLibrary}</label>
                 <ResourceSelect
                     value={store.svgMarkerLibrary}
                     onChange={(value) => {
