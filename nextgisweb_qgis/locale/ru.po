@@ -6,23 +6,23 @@ msgstr ""
 "Запрошен орингинальный QML, но этот стиль имеет формат '{}'. Используйте "
 "другие значения параметра 'original'."
 
-#: model.py:176
+#: model.py:200
 msgid "QGIS raster style"
 msgstr "Растровый стиль QGIS"
 
-#: model.py:241
+#: model.py:265
 msgid "QGIS vector style"
 msgstr "Векторный стиль QGIS"
 
-#: model.py:422 model.py:454
+#: model.py:446 model.py:458 model.py:490
 msgid "Style format mismatch."
 msgstr "Несоответствие формата стиля."
 
-#: model.py:452 model.py:569
+#: model.py:488 model.py:617
 msgid "Style file is not valid."
 msgstr "Некорректный стиль."
 
-#: model.py:567
+#: model.py:615
 msgid "Layer type mismatch."
 msgstr "Несоответствие типу слоя."
 
@@ -39,25 +39,37 @@ msgstr ""
 "ниже для создания стиля по умолчанию или создайте стиль в боковой панели."
 
 #: nodepkg/raster-editor-widget/EditorWidget.tsx:15
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:16
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:11
 msgid "Select a style"
 msgstr "Выберите стиль"
 
 #: nodepkg/raster-editor-widget/EditorWidget.tsx:16
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:17
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:12
 msgid "QML or SLD formats are supported."
 msgstr "Поддерживаются форматы QML и SLD."
 
 #: nodepkg/raster-editor-widget/EditorWidget.tsx:38
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:55 view.py:27
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:61 view.py:26
 msgid "QGIS style"
 msgstr "Стиль QGIS"
 
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:18
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:29
+msgid "Style from file"
+msgstr "Стиль из файла"
+
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:30
+msgid "User-defined style"
+msgstr "Пользовательский стиль"
+
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:31
+msgid "Default style"
+msgstr "Стиль по умолчанию"
+
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:13
 msgid "SVG marker library"
 msgstr "Библиотека маркеров SVG"
 
-#: view.py:30
+#: view.py:29
 msgid "QML file"
 msgstr "Файл QML"
 

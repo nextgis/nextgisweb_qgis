@@ -1,18 +1,26 @@
 .ngw-qgis-vector-editor-widget {
     padding: 1em;
-
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 1em;
 
-    & > span:first-child {
+    & > label {
+        align-self: flex-start;
+        line-height: 32px;
+
+        &::after {
+            content: ":";
+        }
+    }
+
+    & > .mode,
+    & > span {
         grid-column: 1 / span 2;
     }
 
-    & > label {
-        align-self: center;
-        &::after {
-            content: ":";
+    & > .ngw-sld-style-editor {
+        .ant-form-item {
+            margin-bottom: 12px;
         }
     }
 }

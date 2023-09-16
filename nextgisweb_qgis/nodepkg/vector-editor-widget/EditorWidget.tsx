@@ -1,53 +1,59 @@
+import { useMemo } from "react";
 import { observer } from "mobx-react-lite";
 
-import { FileUploader } from "@nextgisweb/file-upload/file-uploader";
-import { ResourceSelect } from "@nextgisweb/resource/component/resource-select";
-
+import { Select } from "@nextgisweb/gui/antd";
 import { gettext } from "@nextgisweb/pyramid/i18n";
+
+import { FileModeComponent } from "./component/FileModeComponent";
+import { SldModeComponent } from "./component/SldModeComponent";
 
 import type {
     EditorWidgetComponent,
     EditorWidgetProps,
 } from "@nextgisweb/resource/type";
-import type { EditorStore } from "./EditorStore";
+import type { EditorStore, Mode } from "./EditorStore";
 
 import "./EditorWidget.less";
 
-const mUploadText = gettext("Select a style");
-const mHelpText = gettext("QML or SLD formats are supported.")
-const mSvgMarkerLibrary = gettext("SVG marker library");
+type SelectProps = Parameters<typeof Select>[0];
+type Option = NonNullable<SelectProps["options"]>[0] & {
+    value: Mode;
+};
 
 export const EditorWidget: EditorWidgetComponent<
     EditorWidgetProps<EditorStore>
 > = observer(({ store }: EditorWidgetProps<EditorStore>) => {
+    const { mode } = store;
+    const modeOpts = useMemo(() => {
+        const result: Option[] = [
+            { value: "file", label: gettext("Style from file") },
+            { value: "sld", label: gettext("User-defined style") },
+            { value: "default", label: gettext("Default style") },
+        ];
+
+        return result;
+    }, []);
+
+    const modeComponent = useMemo(() => {
+        switch (mode) {
+            case "file":
+                return <FileModeComponent store={store} />;
+            case "sld":
+                return <SldModeComponent store={store}></SldModeComponent>;
+            default:
+                <>Default</>;
+        }
+    }, [store, mode]);
+
     return (
         <div className="ngw-qgis-vector-editor-widget">
-            <FileUploader
-                accept=".qml,.sld"
-                onChange={(value) => {
-                    if (Array.isArray(value)) throw "unreachable";
-                    store.source = value;
-                }}
-                onUploading={(value) => {
-                    store.uploading = value;
-                }}
-                uploadText={mUploadText}
-                helpText={mHelpText}
+            <Select
+                className="mode"
+                options={modeOpts}
+                value={store.mode}
+                onChange={store.setMode}
             />
-            <label>{mSvgMarkerLibrary}</label>
-            <ResourceSelect
-                value={store.svgMarkerLibrary}
-                onChange={(value) => {
-                    if (Array.isArray(value)) throw "unreachable";
-                    store.svgMarkerLibrary = value;
-                }}
-                pickerOptions={{
-                    traverseClasses: ["resource_group"],
-                    requireClass: "svg_marker_library",
-                    hideUnavailable: true,
-                }}
-                allowClear
-            />
+            {modeComponent}
         </div>
     );
 });
