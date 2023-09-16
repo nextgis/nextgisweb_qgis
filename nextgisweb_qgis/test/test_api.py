@@ -5,6 +5,7 @@ import pytest
 import transaction
 
 from nextgisweb.env import DBSession
+from nextgisweb.lib.json import loadb
 
 from nextgisweb.raster_layer import RasterLayer
 from nextgisweb.spatial_ref_sys import SRS
@@ -12,7 +13,7 @@ from nextgisweb.vector_layer import VectorLayer
 
 import nextgisweb_qgis
 
-from ..model import QgisRasterStyle, QgisVectorStyle
+from ..model import FormatEnum, QgisRasterStyle, QgisVectorStyle
 
 pytestmark = pytest.mark.usefixtures("ngw_resource_defaults", "ngw_auth_administrator")
 
@@ -27,6 +28,16 @@ def test_data(ngw_env):
     if not data_path.is_dir():
         pytest.skip("Test data not found")
     return data_path
+
+
+@pytest.fixture(scope="module")
+def point_layer_id(test_data):
+    with transaction.manager:
+        source = test_data / "zero.geojson"
+        res = VectorLayer().persist().from_ogr(source)
+        DBSession.flush()
+
+    yield res.id
 
 
 @pytest.fixture(scope="module")
@@ -165,3 +176,47 @@ def test_format(style, format_, expected, test_data, contour_layer_id, ngw_webte
 
     qgis_style = QgisVectorStyle.filter_by(id=resp.json["id"]).one()
     assert qgis_style.qgis_format.value == expected
+
+
+def test_sld(point_layer_id, ngw_webtest_app):
+    sld = dict(
+        rules=[
+            dict(
+                symbolizers=[
+                    dict(
+                        type="point",
+                        graphic=dict(
+                            opacity=0.75,
+                            mark=dict(
+                                well_known_name="square",
+                                fill=dict(opacity=0.25, color="#00FF00"),
+                                stroke=dict(opacity=0.75, color="#FF0000", width=2),
+                            ),
+                            size=16,
+                        ),
+                    ),
+                ],
+            ),
+        ],
+    )
+
+    resp = ngw_webtest_app.post_json(
+        "/api/resource/",
+        dict(
+            resource=dict(
+                cls="qgis_vector_style",
+                parent=dict(id=point_layer_id),
+                display_name=token_hex(8),
+            ),
+            qgis_vector_style=dict(format=FormatEnum.SLD.value, sld=sld),
+        ),
+        status=201,
+    )
+
+    res = QgisVectorStyle.filter_by(id=resp.json["id"]).one()
+    srs = SRS.filter_by(id=3857).one()
+    req = res.render_request(srs)
+    img = req.render_tile((0, 0, 0), 256)
+
+    pixel = img.getpixel((128, 128))
+    assert pixel == (0, 255, 0, 63)
