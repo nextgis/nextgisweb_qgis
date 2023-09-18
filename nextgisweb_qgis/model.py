@@ -444,6 +444,9 @@ class _format_attr(SP):
             value = QgisStyleFormat(value)
         if 'file_upload' not in srlzr.data and value in (QgisStyleFormat.QML_FILE, QgisStyleFormat.SLD_FILE):
             raise ValidationError(message=_("Style format mismatch."))
+        if value == QgisStyleFormat.DEFAULT:
+            srlzr.obj.qgis_fileobj = None
+            srlzr.obj.qgis_sld = None
         srlzr.obj.qgis_format = value
 
 
@@ -457,6 +460,7 @@ class _sld_attr(SP):
         if srlzr.obj.qgis_format != QgisStyleFormat.SLD:
             raise ValidationError(message=_("Style format mismatch."))
         srlzr.obj.qgis_sld = SLD(value=value)
+        srlzr.obj.qgis_fileobj = None
 
 
 class _file_upload_attr(SP):
@@ -504,10 +508,11 @@ class _file_upload_attr(SP):
             _reraise_qgis_exception(exc, ValidationError)
 
         fileobj = env.file_storage.fileobj(component=COMP_ID)
-        srlzr.obj.qgis_fileobj = fileobj
         dstfile = env.file_storage.filename(fileobj, makedirs=True)
-
         copyfile(srcfile, dstfile)
+
+        srlzr.obj.qgis_fileobj = fileobj
+        srlzr.obj.qgis_sld = None
 
         on_style_change.fire(srlzr.obj)
 
