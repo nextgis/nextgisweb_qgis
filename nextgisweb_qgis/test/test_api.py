@@ -5,7 +5,6 @@ import pytest
 import transaction
 
 from nextgisweb.env import DBSession
-from nextgisweb.lib.json import loadb
 
 from nextgisweb.raster_layer import RasterLayer
 from nextgisweb.spatial_ref_sys import SRS

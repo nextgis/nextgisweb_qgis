@@ -13,7 +13,7 @@ import { gettext } from "@nextgisweb/pyramid/i18n";
 import "./EditorWidget.less";
 
 const mUploadText = gettext("Select a style");
-const mHelpText = gettext("QML or SLD formats are supported.")
+const mHelpText = gettext("QML or SLD formats are supported.");
 
 export const EditorWidget: EditorWidgetComponent<
     EditorWidgetProps<EditorStore>
