@@ -14,7 +14,7 @@ class VectorStyleWidget(Widget):
 
     def config(self):
         result = super().config()
-        result['geometryType'] = self.obj.parent.geometry_type
+        result["geometryType"] = self.obj.parent.geometry_type
         return result
 
 
