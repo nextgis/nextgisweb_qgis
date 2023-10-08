@@ -1,12 +1,12 @@
 import { makeAutoObservable, toJS } from "mobx";
 
-import type {
-    EditorStore as IEditorStore,
-    Operations,
-    EditorStoreOptions as EditorStoreOptionsBase,
-} from "@nextgisweb/resource/type/EditorStore";
 import type { GeometryType } from "@nextgisweb/feature-layer/type";
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
+import type {
+    EditorStoreOptions as EditorStoreOptionsBase,
+    EditorStore as IEditorStore,
+    Operations,
+} from "@nextgisweb/resource/type/EditorStore";
 import type { Style } from "@nextgisweb/sld/style-editor/type/Style";
 
 interface Value {

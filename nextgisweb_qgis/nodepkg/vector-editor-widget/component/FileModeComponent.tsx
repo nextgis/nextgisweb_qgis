@@ -1,11 +1,10 @@
 import { observer } from "mobx-react-lite";
 
 import { FileUploader } from "@nextgisweb/file-upload/file-uploader";
-import { ResourceSelect } from "@nextgisweb/resource/component/resource-select";
-
 import { gettext } from "@nextgisweb/pyramid/i18n";
-
+import { ResourceSelect } from "@nextgisweb/resource/component/resource-select";
 import type { EditorWidgetProps } from "@nextgisweb/resource/type";
+
 import type { EditorStore } from "../EditorStore";
 
 const msgUploadText = gettext("Select a style");

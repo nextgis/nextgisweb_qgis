@@ -1,11 +1,11 @@
 import { makeAutoObservable, toJS } from "mobx";
 
+import type { UploaderMeta } from "@nextgisweb/file-upload/file-uploader/type";
 import type {
+    EditorStoreOptions,
     EditorStore as IEditorStore,
     Operations,
-    EditorStoreOptions,
 } from "@nextgisweb/resource/type/EditorStore";
-import type { UploaderMeta } from "@nextgisweb/file-upload/file-uploader/type";
 
 type Value = UploaderMeta;
 

@@ -2,11 +2,11 @@ import { observer } from "mobx-react-lite";
 
 import { FileUploader } from "@nextgisweb/file-upload/file-uploader";
 import { gettext } from "@nextgisweb/pyramid/i18n";
-
 import type {
     EditorWidgetComponent,
     EditorWidgetProps,
 } from "@nextgisweb/resource/type";
+
 import type { EditorStore } from "./EditorStore";
 
 import "./EditorWidget.less";

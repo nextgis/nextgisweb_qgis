@@ -1,15 +1,15 @@
-import { useMemo, useCallback } from "react";
 import { observer } from "mobx-react-lite";
+import { useCallback, useMemo } from "react";
 
+import type { GeometryType } from "@nextgisweb/feature-layer/type";
+import type { EditorWidgetProps } from "@nextgisweb/resource/type";
 import { StyleEditor } from "@nextgisweb/sld/style-editor";
 import { SymbolizerCard } from "@nextgisweb/sld/style-editor/component/SymbolizerCard";
-
-import type { EditorWidgetProps } from "@nextgisweb/resource/type";
 import type {
     Symbolizer,
     SymbolizerType,
 } from "@nextgisweb/sld/style-editor/type/Style";
-import type { GeometryType } from "@nextgisweb/feature-layer/type";
+
 import type { EditorStore } from "../EditorStore";
 
 const GeometryToStyleTypeMap: Record<GeometryType, SymbolizerType> = {

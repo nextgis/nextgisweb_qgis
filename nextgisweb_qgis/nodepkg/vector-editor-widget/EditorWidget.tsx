@@ -1,17 +1,16 @@
-import { useMemo } from "react";
 import { observer } from "mobx-react-lite";
+import { useMemo } from "react";
 
 import { Select } from "@nextgisweb/gui/antd";
 import { gettext } from "@nextgisweb/pyramid/i18n";
-
-import { FileModeComponent } from "./component/FileModeComponent";
-import { SldModeComponent } from "./component/SldModeComponent";
-
 import type {
     EditorWidgetComponent,
     EditorWidgetProps,
 } from "@nextgisweb/resource/type";
+
 import type { EditorStore, Mode } from "./EditorStore";
+import { FileModeComponent } from "./component/FileModeComponent";
+import { SldModeComponent } from "./component/SldModeComponent";
 
 import "./EditorWidget.less";
 
