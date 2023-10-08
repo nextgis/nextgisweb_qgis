@@ -1,19 +1,18 @@
 import { observer } from "mobx-react-lite";
 
 import { FileUploader } from "@nextgisweb/file-upload/file-uploader";
+import { gettext } from "@nextgisweb/pyramid/i18n";
 
 import type {
-    EditorWidgetProps,
     EditorWidgetComponent,
+    EditorWidgetProps,
 } from "@nextgisweb/resource/type";
 import type { EditorStore } from "./EditorStore";
 
-import { gettext } from "@nextgisweb/pyramid/i18n";
-
 import "./EditorWidget.less";
 
-const mUploadText = gettext("Select a style");
-const mHelpText = gettext("QML or SLD formats are supported.");
+const msgUploadText = gettext("Select a style");
+const msgHelpText = gettext("QML or SLD formats are supported.");
 
 export const EditorWidget: EditorWidgetComponent<
     EditorWidgetProps<EditorStore>
@@ -28,8 +27,8 @@ export const EditorWidget: EditorWidgetComponent<
                 onUploading={(value) => {
                     store.uploading = value;
                 }}
-                uploadText={mUploadText}
-                helpText={mHelpText}
+                uploadText={msgUploadText}
+                helpText={msgHelpText}
             />
         </div>
     );
