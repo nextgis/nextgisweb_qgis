@@ -32,7 +32,7 @@ def test_data(ngw_env):
 @pytest.fixture(scope="module")
 def point_layer_id(test_data):
     with transaction.manager:
-        source = test_data / "zero.geojson"
+        source = test_data / "zero/data.geojson"
         res = VectorLayer().persist().from_ogr(source)
         DBSession.flush()
 
@@ -52,7 +52,7 @@ def polygon_layer_id(test_data):
 @pytest.fixture(scope="module")
 def contour_layer_id(test_data):
     with transaction.manager:
-        source = test_data / "contour.geojson"
+        source = test_data / "contour/data.geojson"
         res = VectorLayer().persist().from_ogr(source)
         DBSession.flush()
 
@@ -135,15 +135,15 @@ def test_qgis_raster_style(test_data, style, status, raster_layer_id, ngw_webtes
     "style, format_, expected",
     (
         # QML
-        ("contour-rgb.qml", "qml_file", "qml_file"),
-        ("contour-rgb.qml", None, "qml_file"),
-        ("contour-rgb.qml", "default", None),
-        ("contour-rgb.qml", "sld_file", None),
+        ("contour/rgb.qml", "qml_file", "qml_file"),
+        ("contour/rgb.qml", None, "qml_file"),
+        ("contour/rgb.qml", "default", None),
+        ("contour/rgb.qml", "sld_file", None),
         # SLD
-        ("contour-red.sld", "sld_file", "sld_file"),
-        ("contour-red.sld", None, "sld_file"),
-        ("contour-red.sld", "default", None),
-        ("contour-red.sld", "qml_file", None),
+        ("contour/red.sld", "sld_file", "sld_file"),
+        ("contour/red.sld", None, "sld_file"),
+        ("contour/red.sld", "default", None),
+        ("contour/red.sld", "qml_file", None),
         # Default
         (None, "default", "default"),
         (None, None, "default"),
