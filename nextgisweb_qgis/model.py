@@ -274,8 +274,7 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     svg_marker_library = db.relationship(
         SVGMarkerLibrary,
         foreign_keys=svg_marker_library_id,
-        cascade=False,
-        cascade_backrefs=False,
+        cascade="save-update, merge",
         # Backref is just for cleaning up QgisVectorStyle -> SVGMarkerLibrary
         # reference. SQLAlchemy does this automatically.
         backref=db.backref("_backref_qgis_vector_style"),
