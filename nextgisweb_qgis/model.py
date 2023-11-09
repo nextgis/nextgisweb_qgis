@@ -55,7 +55,7 @@ from qgis_headless import (
 )
 from qgis_headless.util import to_pil as qgis_image_to_pil
 
-from .util import rand_color
+from .util import rand_color, sld_to_qml_raster
 
 _GEOM_TYPE_TO_QGIS = {
     GEOM_TYPE.POINT: Layer.GT_POINT,
@@ -593,8 +593,13 @@ def read_style(qgis_style):
                 params["svg_resolver"] = path_resolver_factory(sml)
 
             if qgis_style.qgis_format == QgisStyleFormat.SLD:
-                params["format"] = StyleFormat.SLD
                 xml = qgis_style.qgis_sld.to_xml()
+                if isinstance(qgis_style, QgisRasterStyle):
+                    # We have to convert to QML until QGIS supports raster SLD import
+                    xml = sld_to_qml_raster(xml)
+                    params["format"] = StyleFormat.QML
+                else:
+                    params["format"] = StyleFormat.SLD
                 style = Style.from_string(xml, **params)
             else:
                 params["format"] = _FILE_FORMAT_2_HEADLESS[qgis_style.qgis_format]

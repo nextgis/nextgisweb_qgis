@@ -177,27 +177,20 @@ def test_format(style, format_, expected, test_data, contour_layer_id, ngw_webte
     assert qgis_style.qgis_format.value == expected
 
 
-def test_sld(point_layer_id, ngw_webtest_app):
-    sld = dict(
-        rules=[
-            dict(
-                symbolizers=[
-                    dict(
-                        type="point",
-                        graphic=dict(
-                            opacity=0.75,
-                            mark=dict(
-                                well_known_name="square",
-                                fill=dict(opacity=0.25, color="#00FF00"),
-                                stroke=dict(opacity=0.75, color="#FF0000", width=2),
-                            ),
-                            size=16,
-                        ),
-                    ),
-                ],
+def test_sld_vector(point_layer_id, ngw_webtest_app):
+    symbolizer = dict(
+        type="point",
+        graphic=dict(
+            opacity=0.75,
+            mark=dict(
+                well_known_name="square",
+                fill=dict(opacity=0.25, color="#00FF00"),
+                stroke=dict(opacity=0.75, color="#FF0000", width=2),
             ),
-        ],
+            size=16,
+        ),
     )
+    sld = dict(rules=[dict(symbolizers=[symbolizer])])
 
     resp = ngw_webtest_app.post_json(
         "/api/resource/",
@@ -219,3 +212,43 @@ def test_sld(point_layer_id, ngw_webtest_app):
 
     pixel = img.getpixel((128, 128))
     assert pixel == (0, 255, 0, 63)
+
+
+def test_sld_raster(raster_layer_id, ngw_webtest_app):
+    symbolizer = dict(
+        type="raster",
+        opacity=0.5,
+        channels=dict(
+            red=dict(source_channel=1),
+            green=dict(source_channel=2),
+        ),
+    )
+    sld = dict(rules=[dict(symbolizers=[symbolizer])])
+
+    resp = ngw_webtest_app.post_json(
+        "/api/resource/",
+        dict(
+            resource=dict(
+                cls="qgis_raster_style",
+                parent=dict(id=raster_layer_id),
+                display_name=token_hex(8),
+            ),
+            qgis_raster_style=dict(format=QgisStyleFormat.SLD.value, sld=sld),
+        ),
+        status=201,
+    )
+
+    res = QgisRasterStyle.filter_by(id=resp.json["id"]).one()
+    srs = SRS.filter_by(id=3857).one()
+    req = res.render_request(srs)
+
+    for (x, y), color in (
+        ((1090690, 6614045), (255, 0, 0, 127)),
+        ((4596481, 6491394), (0, 255, 0, 127)),
+        ((1158830, 3377406), (0, 0, 0)),
+    ):
+        extent = (x - 10, y - 10, x + 10, y + 10)
+        img = req.render_extent(extent, (256, 256))
+
+        pixel = img.getpixel((128, 128))
+        assert pixel[:len(color)] == color
