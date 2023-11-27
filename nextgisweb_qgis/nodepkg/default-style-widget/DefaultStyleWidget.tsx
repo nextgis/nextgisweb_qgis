@@ -2,8 +2,13 @@ import { Balancer } from "react-wrap-balancer";
 
 import { Button, Card } from "@nextgisweb/gui/antd";
 import { errorModal } from "@nextgisweb/gui/error";
+import type { ApiError } from "@nextgisweb/gui/error/type";
 import { route, routeURL } from "@nextgisweb/pyramid/api";
 import { gettext } from "@nextgisweb/pyramid/i18n";
+import type {
+    ResourceItem,
+    ResourceItemCreationResponse,
+} from "@nextgisweb/resource/type/Resource";
 
 // prettier-ignore
 const [msgButton, msgText] = [
@@ -11,15 +16,21 @@ const [msgButton, msgText] = [
     gettext("Layer created. You need a style to add it to a web map. Use the button bellow to create a default QGIS style or create a style resource using sidebar."),
 ]
 
-export function DefaultStyleWidget({ payload }: { payload: unknown }) {
+export function DefaultStyleWidget({
+    payload,
+}: {
+    payload: Partial<ResourceItem>;
+}) {
     const create = async () => {
         try {
-            const { id } = (await route("resource.collection").post({
+            const { id } = await route(
+                "resource.collection"
+            ).post<ResourceItemCreationResponse>({
                 json: payload,
-            })) as { id: number };
+            });
             window.open(routeURL("resource.show", { id }), "_self");
         } catch (error) {
-            errorModal(error);
+            errorModal(error as ApiError);
             return;
         }
     };
