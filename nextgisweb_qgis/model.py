@@ -217,20 +217,19 @@ class QgisRasterStyle(Base, QgisStyleMixin, Resource):
     def _render_image(self, srs, extent, size, cond=None, padding=0):
         extended, render_size, target_box = _render_bounds(extent, size, padding)
 
+        env.qgis.qgis_init()
+
+        style = read_style(self)
+        if not check_scale_range(style, extent, size, dpi=96):
+            return None
+
         # We need raster pyramids so use working directory filename
         # instead of original filename.
         gdal_path = env.raster_layer.workdir_filename(self.parent.fileobj)
 
-        env.qgis.qgis_init()
-
         mreq = MapRequest()
         mreq.set_dpi(96)
         mreq.set_crs(CRS.from_epsg(srs.id))
-
-        style = read_style(self)
-
-        if not check_scale_range(style, extent, size, dpi=96):
-            return None
 
         layer = Layer.from_gdal(gdal_path)
         mreq.add_layer(layer, style)
@@ -297,6 +296,12 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     def _render_image(self, srs, extent, size, cond, padding=0):
         extended, render_size, target_box = _render_bounds(extent, size, padding)
 
+        env.qgis.qgis_init()
+
+        style = read_style(self)
+        if not check_scale_range(style, extent, size, dpi=96):
+            return None
+
         feature_query = self.parent.feature_query()
 
         # Apply filter condition
@@ -309,18 +314,11 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
         feature_query.intersects(bbox)
         feature_query.geom()
 
-        env.qgis.qgis_init()
-
         crs = CRS.from_epsg(srs.id)
 
         mreq = MapRequest()
         mreq.set_dpi(96)
         mreq.set_crs(crs)
-
-        style = read_style(self)
-
-        if not check_scale_range(style, extent, size, dpi=96):
-            return None
 
         style_attrs = style.used_attributes()
         if style_attrs is not None:
