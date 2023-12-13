@@ -229,6 +229,9 @@ class QgisRasterStyle(Base, QgisStyleMixin, Resource):
 
         style = read_style(self)
 
+        if not check_scale_range(style, extent, size, dpi=96):
+            return None
+
         layer = Layer.from_gdal(gdal_path)
         mreq.add_layer(layer, style)
 
@@ -315,6 +318,9 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
         mreq.set_crs(crs)
 
         style = read_style(self)
+
+        if not check_scale_range(style, extent, size, dpi=96):
+            return None
 
         style_attrs = style.used_attributes()
         if style_attrs is not None:
@@ -610,6 +616,15 @@ def read_style(qgis_style):
         _style_cache[key] = style
 
     return style
+
+
+def check_scale_range(style, extent, size, *, dpi):
+    min_denom, max_denom = style.scale_range()
+    if min_denom is None and max_denom is None:
+        return True
+
+    denom = (extent[2] - extent[0]) * dpi / (size[0] * 0.0254)
+    return (min_denom is None or min_denom > denom) and (max_denom is None or max_denom < denom)
 
 
 def _convert_none(v):
