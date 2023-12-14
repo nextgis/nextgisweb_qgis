@@ -2,7 +2,6 @@ import { observer } from "mobx-react-lite";
 
 import { FileUploader } from "@nextgisweb/file-upload/file-uploader";
 import { gettext } from "@nextgisweb/pyramid/i18n";
-import { ResourceSelect } from "@nextgisweb/resource/component/resource-select";
 import type { EditorWidgetProps } from "@nextgisweb/resource/type";
 
 import type { EditorStore } from "../EditorStore";
