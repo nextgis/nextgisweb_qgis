@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 
-import { Form, InputNumber, Select, Space } from "@nextgisweb/gui/antd";
+import { Form, InputNumber, Select } from "@nextgisweb/gui/antd";
 import type { InputNumberProps } from "@nextgisweb/gui/antd";
 import { route } from "@nextgisweb/pyramid/api";
 import { gettext } from "@nextgisweb/pyramid/i18n";
@@ -14,6 +14,8 @@ import type {
 
 import type { EditorStore } from "../EditorStore";
 import { getSymbolizerValues } from "../util/getSymbolizerValues";
+
+import "./SldModeComponent.less";
 
 interface BandOptions {
     label: string;
@@ -50,7 +52,11 @@ export const SldModeComponent = observer(
                         bands_.map((value, index) => ({
                             key: index,
                             value: index,
-                            label: `${index + 1}: ${value}`,
+                            label:
+                                gettext("Band {}").replace(
+                                    "{}",
+                                    `${index + 1}`
+                                ) + (value ? ` (${value})` : ""),
                         }))
                     );
                 }
@@ -112,51 +118,45 @@ export const SldModeComponent = observer(
                 form={form}
                 initialValues={initialValues}
                 onValuesChange={onChange}
+                className="ngw-qgis-raster-editor-widget-sld"
             >
-                <Form.Item>
-                    <Form.Item name="redChannel" label={gettext("Red channel")}>
-                        <Select options={bands} />
-                    </Form.Item>
-                    <Space>
-                        <Form.Item label="Min" name="redChannelMin">
-                            <InputNumber {...defInputProps} />
-                        </Form.Item>
-                        <Form.Item label="Max" name="redChannelMax">
-                            <InputNumber {...defInputProps} />
-                        </Form.Item>
-                    </Space>
+                <label>{gettext("Red channel")}</label>
+                <Form.Item noStyle name="redChannel">
+                    <Select options={bands} />
                 </Form.Item>
-                <Form.Item>
-                    <Form.Item
-                        name="greenChannel"
-                        label={gettext("Green channel")}
-                    >
-                        <Select options={bands} />
-                    </Form.Item>
-                    <Space>
-                        <Form.Item label="Min" name="greenChannelMin">
-                            <InputNumber {...defInputProps} />
-                        </Form.Item>
-                        <Form.Item label="Max" name="greenChannelMax">
-                            <InputNumber {...defInputProps} />
-                        </Form.Item>
-                    </Space>
+                <label className="min">{gettext("Min")}</label>
+                <Form.Item noStyle name="redChannelMin">
+                    <InputNumber {...defInputProps} />
                 </Form.Item>
-                <Form.Item>
-                    <Form.Item
-                        name="blueChannel"
-                        label={gettext("Blue channel")}
-                    >
-                        <Select options={bands} />
-                    </Form.Item>
-                    <Space>
-                        <Form.Item label="Min" name="blueChannelMin">
-                            <InputNumber {...defInputProps} />
-                        </Form.Item>
-                        <Form.Item label="Max" name="blueChannelMax">
-                            <InputNumber {...defInputProps} />
-                        </Form.Item>
-                    </Space>
+                <label className="max">{gettext("Max")}</label>
+                <Form.Item noStyle name="redChannelMax">
+                    <InputNumber {...defInputProps} />
+                </Form.Item>
+
+                <label>{gettext("Green channel")}</label>
+                <Form.Item noStyle name="greenChannel">
+                    <Select options={bands} />
+                </Form.Item>
+                <label className="min">{gettext("Min")}</label>
+                <Form.Item noStyle name="greenChannelMin">
+                    <InputNumber {...defInputProps} />
+                </Form.Item>
+                <label className="max">{gettext("Max")}</label>
+                <Form.Item noStyle name="greenChannelMax">
+                    <InputNumber {...defInputProps} />
+                </Form.Item>
+
+                <label>{gettext("Blue channel")}</label>
+                <Form.Item noStyle name="blueChannel">
+                    <Select options={bands} />
+                </Form.Item>
+                <label className="min">{gettext("Min")}</label>
+                <Form.Item noStyle name="blueChannelMin">
+                    <InputNumber {...defInputProps} />
+                </Form.Item>
+                <label className="max">{gettext("Max")}</label>
+                <Form.Item noStyle name="blueChannelMax">
+                    <InputNumber {...defInputProps} />
                 </Form.Item>
             </Form>
         );
