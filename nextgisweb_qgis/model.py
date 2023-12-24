@@ -24,6 +24,7 @@ from nextgisweb.render import (
     IExtentRenderRequest,
     ILegendableStyle,
     ILegendSymbols,
+    IRenderableScaleRange,
     IRenderableStyle,
     ITileRenderRequest,
     LegendSymbol,
@@ -200,7 +201,7 @@ class QgisStyleMixin:
         self.qgis_fileobj = value
 
 
-@implementer(IRenderableStyle)
+@implementer(IRenderableStyle, IRenderableScaleRange)
 class QgisRasterStyle(Base, QgisStyleMixin, Resource):
     identity = "qgis_raster_style"
     cls_display_name = _("QGIS raster style")
@@ -239,6 +240,10 @@ class QgisRasterStyle(Base, QgisStyleMixin, Resource):
 
         return img
 
+    def scale_range(self):
+        env.qgis.qgis_init()
+        return read_style(self).scale_range()
+
 
 def path_resolver_factory(svg_marker_library):
     def path_resolver(name):
@@ -265,7 +270,7 @@ def path_resolver_factory(svg_marker_library):
     return path_resolver
 
 
-@implementer((IRenderableStyle, ILegendableStyle, ILegendSymbols))
+@implementer(IRenderableStyle, ILegendableStyle, ILegendSymbols, IRenderableScaleRange)
 class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     identity = "qgis_vector_style"
     cls_display_name = _("QGIS vector style")
@@ -408,6 +413,10 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
             LegendSymbol(display_name=s.title(), icon=qgis_image_to_pil(s.icon()))
             for s in mreq.legend_symbols(0, (icon_size, icon_size))
         ]
+
+    def scale_range(self):
+        env.qgis.qgis_init()
+        return read_style(self).scale_range()
 
 
 DataScope.read.require(
