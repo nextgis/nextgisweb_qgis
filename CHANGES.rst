@@ -1,6 +1,12 @@
 Changes
 =======
 
+3.0.0
+-----
+
+- Extraction of scale ranges from QML styles.
+
+
 2.9.0
 -----
 
