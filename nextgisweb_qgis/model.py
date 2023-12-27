@@ -160,46 +160,6 @@ class QgisStyleMixin:
         ),
     )
 
-    @property
-    def qml_fileobj_id(self):
-        warn(
-            "Since nextgisweb_gis 2.9.0.dev1 use qgis_style.qgis_fileobj_id "
-            "instead of qgis_style.qml_fileobj_id",
-            DeprecationWarning,
-            2,
-        )
-        return self.qgis_fileobj_id
-
-    @qml_fileobj_id.setter
-    def qml_fileobj_id(self, value):
-        warn(
-            "Since nextgisweb_gis 2.9.0.dev1 use qgis_style.qgis_fileobj_id "
-            "instead of qgis_style.qml_fileobj_id",
-            DeprecationWarning,
-            2,
-        )
-        self.qgis_fileobj_id = value
-
-    @property
-    def qml_fileobj(self):
-        warn(
-            "Since nextgisweb_gis 2.9.0.dev1 use qgis_style.qgis_fileobj "
-            "instead of qgis_style.qml_fileobj",
-            DeprecationWarning,
-            2,
-        )
-        return self.qgis_fileobj
-
-    @qml_fileobj.setter
-    def qml_fileobj(self, value):
-        warn(
-            "Since nextgisweb_gis 2.9.0.dev1 use qgis_style.qgis_fileobj "
-            "instead of qgis_style.qml_fileobj",
-            DeprecationWarning,
-            2,
-        )
-        self.qgis_fileobj = value
-
 
 @implementer(IRenderableStyle, IRenderableScaleRange)
 class QgisRasterStyle(Base, QgisStyleMixin, Resource):
