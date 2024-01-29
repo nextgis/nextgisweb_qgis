@@ -5,7 +5,7 @@ import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
 import type {
     EditorStoreOptions as EditorStoreOptionsBase,
     EditorStore as IEditorStore,
-    Operations,
+    Operation,
 } from "@nextgisweb/resource/type/EditorStore";
 import type { Style } from "@nextgisweb/sld/style-editor/type/Style";
 
@@ -35,7 +35,7 @@ export class EditorStore implements IEditorStore<Value> {
     uploading = false;
     sld: Style | null = null;
 
-    operation?: Operations;
+    operation?: Operation;
     composite: Composite;
     geometryType: GeometryType;
 

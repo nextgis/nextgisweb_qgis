@@ -4,7 +4,7 @@ import type { UploaderMeta } from "@nextgisweb/file-upload/file-uploader/type";
 import type {
     EditorStoreOptions,
     EditorStore as IEditorStore,
-    Operations,
+    Operation,
 } from "@nextgisweb/resource/type/EditorStore";
 
 type Value = UploaderMeta;
@@ -15,7 +15,7 @@ export class EditorStore implements IEditorStore {
     source?: UploaderMeta;
     uploading = false;
 
-    operation?: Operations;
+    operation?: Operation;
     composite: unknown;
 
     constructor({ composite, operation }: EditorStoreOptions) {
