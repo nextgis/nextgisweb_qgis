@@ -185,13 +185,13 @@ class QgisRasterStyle(Base, QgisStyleMixin, Resource):
 
         # We need raster pyramids so use working directory filename
         # instead of original filename.
-        gdal_path = env.raster_layer.workdir_filename(self.parent.fileobj)
+        gdal_path = env.raster_layer.workdir_path(self.parent.fileobj)
 
         mreq = MapRequest()
         mreq.set_dpi(96)
         mreq.set_crs(CRS.from_epsg(srs.id))
 
-        layer = Layer.from_gdal(gdal_path)
+        layer = Layer.from_gdal(str(gdal_path))
         mreq.add_layer(layer, style)
 
         res = mreq.render_image(extent, size)
