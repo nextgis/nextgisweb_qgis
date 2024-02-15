@@ -2,6 +2,7 @@ import { makeAutoObservable, toJS } from "mobx";
 
 import type { GeometryType } from "@nextgisweb/feature-layer/type";
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
+import type { Composite } from "@nextgisweb/resource/type/Composite";
 import type {
     EditorStoreOptions as EditorStoreOptionsBase,
     EditorStore as IEditorStore,
@@ -17,10 +18,6 @@ interface Value {
 }
 
 export type Mode = "file" | "sld" | "default";
-
-interface Composite {
-    parent: number;
-}
 
 interface EditorStoreOptions extends EditorStoreOptionsBase {
     geometryType: GeometryType;

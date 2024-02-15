@@ -1,6 +1,7 @@
 import { makeAutoObservable, toJS } from "mobx";
 
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
+import type { Composite } from "@nextgisweb/resource/type/Composite";
 import type {
     EditorStoreOptions,
     EditorStore as IEditorStore,
@@ -14,10 +15,6 @@ interface Value {
     file_upload?: FileMeta;
     format?: "default" | "sld";
     sld?: Style;
-}
-
-interface Composite {
-    parent: number;
 }
 
 export class EditorStore implements IEditorStore<Value> {
