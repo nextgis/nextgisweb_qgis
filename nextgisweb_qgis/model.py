@@ -3,7 +3,6 @@ from enum import Enum
 from io import BytesIO
 from os.path import normpath
 from os.path import sep as path_sep
-from shutil import copyfile
 from uuid import UUID
 
 from cachetools import LRUCache
@@ -11,7 +10,7 @@ from shapely.geometry import box
 from sqlalchemy.orm import declared_attr
 from zope.interface import implementer
 
-from nextgisweb.env import COMP_ID, Base, _, env
+from nextgisweb.env import Base, _, env
 from nextgisweb.lib import db
 from nextgisweb.lib.geometry import Geometry
 
@@ -19,6 +18,7 @@ from nextgisweb.core.exception import OperationalError, ValidationError
 from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE, IFeatureLayer
 from nextgisweb.feature_layer import on_data_change as on_data_change_feature_layer
 from nextgisweb.file_storage import FileObj
+from nextgisweb.file_upload import FileUpload
 from nextgisweb.render import (
     IExtentRenderRequest,
     ILegendableStyle,
@@ -139,9 +139,7 @@ class QgisStyleMixin:
 
     def from_file(self, filename, *, format_=QgisStyleFormat.QML_FILE):
         self.qgis_format = format_
-        self.qgis_fileobj = env.file_storage.fileobj(COMP_ID)
-        dstfile = env.file_storage.filename(self.qgis_fileobj, makedirs=True)
-        copyfile(filename, dstfile)
+        self.qgis_fileobj = FileObj().copy_from(filename)
         return self
 
     __table_args__ = (
@@ -453,7 +451,8 @@ class _file_upload_attr(SP):
 
         env.qgis.qgis_init()
 
-        srcfile, meta = env.file_upload.get_filename(value["id"])
+        fupload = FileUpload(id=value["id"])
+        srcfile = str(fupload.data_path)
 
         params = dict()
 
@@ -488,11 +487,7 @@ class _file_upload_attr(SP):
         except Exception as exc:
             _reraise_qgis_exception(exc, ValidationError)
 
-        fileobj = env.file_storage.fileobj(component=COMP_ID)
-        dstfile = env.file_storage.filename(fileobj, makedirs=True)
-        copyfile(srcfile, dstfile)
-
-        srlzr.obj.qgis_fileobj = fileobj
+        srlzr.obj.qgis_fileobj = fupload.to_fileobj()
         srlzr.obj.qgis_sld = None
 
         on_style_change.fire(srlzr.obj)
