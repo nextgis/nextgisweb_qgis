@@ -439,7 +439,9 @@ class _sld_attr(SP):
     def setter(self, srlzr, value):
         if srlzr.obj.qgis_format != QgisStyleFormat.SLD:
             raise ValidationError(message=_("Style format mismatch."))
-        srlzr.obj.qgis_sld = SLD(value=value)
+        sld = SLD()
+        sld.deserialize(value)
+        srlzr.obj.qgis_sld = sld
         srlzr.obj.qgis_fileobj = None
 
 
