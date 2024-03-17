@@ -49,7 +49,3 @@ class QgisComponent(Component):
             "Path to QGIS headless package for loading test data.")),
     ))
     # fmt: on
-
-
-def pkginfo():
-    return dict(components=dict(qgis="nextgisweb_qgis"))
