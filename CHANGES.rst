@@ -1,6 +1,12 @@
 Changes
 =======
 
+3.1.0
+-----
+
+- Fix permission dependencies on parent resources.
+
+
 3.0.0
 -----
 

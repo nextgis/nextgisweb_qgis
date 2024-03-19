@@ -376,8 +376,13 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
         return read_style(self).scale_range()
 
 
+DataScope.read.require(DataScope.read, attr="parent", cls=QgisRasterStyle)
+DataScope.read.require(DataScope.read, attr="parent", cls=QgisVectorStyle)
 DataScope.read.require(
-    ResourceScope.read, cls=QgisVectorStyle, attr="svg_marker_library", attr_empty=True
+    ResourceScope.read,
+    attr="svg_marker_library",
+    attr_empty=True,
+    cls=QgisVectorStyle,
 )
 
 
