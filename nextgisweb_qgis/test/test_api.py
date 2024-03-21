@@ -95,7 +95,7 @@ def test_qgis_vector_style(test_data, style, status, polygon_layer_id, ngw_webte
 def raster_layer_id(test_data, ngw_env):
     with transaction.manager:
         layer = RasterLayer().persist()
-        layer.load_file(str(test_data / "raster/rounds.tif"), ngw_env)
+        layer.load_file(str(test_data / "raster/rounds.tif"))
 
     yield layer.id
 
