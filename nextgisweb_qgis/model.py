@@ -169,12 +169,10 @@ class QgisRasterStyle(Base, QgisStyleMixin, Resource):
     def check_parent(cls, parent):
         return parent.cls == "raster_layer"
 
-    def render_request(self, srs):
+    def render_request(self, srs, cond=None):
         return RenderRequest(self, srs)
 
-    def _render_image(self, srs, extent, size, cond=None, padding=0):
-        extended, render_size, target_box = _render_bounds(extent, size, padding)
-
+    def _render_image(self, srs, extent, size):
         env.qgis.qgis_init()
 
         style = read_style(self)
@@ -255,7 +253,7 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     def render_request(self, srs, cond=None):
         return RenderRequest(self, srs, cond)
 
-    def _render_image(self, srs, extent, size, cond, padding=0):
+    def _render_image(self, srs, extent, size, *, symbols=None, padding=0):
         extended, render_size, target_box = _render_bounds(extent, size, padding)
 
         env.qgis.qgis_init()
@@ -265,11 +263,6 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
             return None
 
         feature_query = self.parent.feature_query()
-
-        # Apply filter condition
-        if cond is not None:
-            feature_query.filter_by(**cond)
-
         feature_query.srs(srs)
 
         bbox = Geometry.from_shape(box(*extended), srid=srs.id)
@@ -318,9 +311,12 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
             _GEOM_TYPE_TO_QGIS[self.parent.geometry_type], crs, tuple(qhl_fields), tuple(features)
         )
 
-        mreq.add_layer(layer, style)
+        idx = mreq.add_layer(layer, style)
 
-        res = mreq.render_image(extent, size)
+        render_params = dict()
+        if symbols is not None:
+            render_params["symbols"] = ((idx, symbols),)
+        res = mreq.render_image(extent, size, **render_params)
         return qgis_image_to_pil(res)
 
     def render_legend(self):
@@ -367,7 +363,12 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
         mreq.add_layer(layer, style)
 
         return [
-            LegendSymbol(display_name=s.title(), icon=qgis_image_to_pil(s.icon()))
+            LegendSymbol(
+                index=s.index(),
+                render=s.render(),
+                display_name=s.title(),
+                icon=qgis_image_to_pil(s.icon()),
+            )
             for s in mreq.legend_symbols(0, (icon_size, icon_size))
         ]
 
@@ -398,20 +399,24 @@ class RenderRequest:
     def __init__(self, style, srs, cond=None):
         self.style = style
         self.srs = srs
-        self.cond = cond
+        self.params = dict()
+        if isinstance(style, QgisVectorStyle):
+            if cond is not None and "symbols" in cond:
+                self.params["symbols"] = tuple(cond["symbols"])
 
     def render_extent(self, extent, size):
         try:
-            return self.style._render_image(self.srs, extent, size, self.cond)
+            return self.style._render_image(self.srs, extent, size, **self.params)
         except Exception as exc:
             _reraise_qgis_exception(exc, OperationalError)
 
     def render_tile(self, tile, size):
         extent = self.srs.tile_extent(tile)
+        params = dict(self.params)
+        if isinstance(self.style, QgisVectorStyle):
+            params["padding"] = size / 2
         try:
-            return self.style._render_image(
-                self.srs, extent, (size, size), self.cond, padding=size / 2
-            )
+            return self.style._render_image(self.srs, extent, (size, size), **params)
         except Exception as exc:
             _reraise_qgis_exception(exc, OperationalError)
 
