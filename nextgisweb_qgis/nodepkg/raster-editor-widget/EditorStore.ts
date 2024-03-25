@@ -90,8 +90,7 @@ export class EditorStore implements IEditorStore<Value> {
             }
         } else if (this.mode === "default") {
             result.format = "default";
-        }
-        else if (this.mode === "copy") {
+        } else if (this.mode === "copy") {
             result.copy_from = this.copy_from;
         }
         return toJS(result);

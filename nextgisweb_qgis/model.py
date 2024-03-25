@@ -502,6 +502,7 @@ class _file_upload_attr(SP):
 
 class _copy_from(SP):
     def setter(self, srlzr, value):
+        copy_id = value["id"]
         if copy_id := value["id"]:
             with DBSession.no_autoflush:
                 style = srlzr.resclass.filter_by(id=copy_id).one()
@@ -512,15 +513,16 @@ class _copy_from(SP):
                         setattr(srlzr.obj, attr, getattr(style, attr))
 
 
-
 class QgisVectorStyleSerializer(Serializer):
     identity = QgisVectorStyle.identity
     resclass = QgisVectorStyle
 
     format = _format_attr(read=ResourceScope.read, write=ResourceScope.update)
     sld = _sld_attr(read=ResourceScope.read, write=ResourceScope.update)
-    file_upload = _file_upload_attr(read=ResourceScope.read, write=ResourceScope.update)
+    file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
     svg_marker_library = SRR(read=ResourceScope.read, write=ResourceScope.update)
+    copy_from = _copy_from(read=None, write=ResourceScope.update)
+
 
 class QgisRasterStyleSerializer(Serializer):
     identity = QgisRasterStyle.identity
