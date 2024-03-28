@@ -199,6 +199,12 @@ class QgisRasterStyle(Base, QgisStyleMixin, Resource):
         env.qgis.qgis_init()
         return read_style(self).scale_range()
 
+    def _headless_kwargs(self):
+        return dict(
+            format=_FILE_FORMAT_2_HEADLESS[self.qgis_format],
+            layer_type=LT_RASTER,
+        )
+
 
 def path_resolver_factory(svg_marker_library):
     def path_resolver(name):
@@ -376,6 +382,13 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
         env.qgis.qgis_init()
         return read_style(self).scale_range()
 
+    def _headless_kwargs(self):
+        return dict(
+            format=_FILE_FORMAT_2_HEADLESS[self.qgis_format],
+            layer_type=LT_VECTOR,
+            layer_geometry_type=_GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
+        )
+
 
 DataScope.read.require(DataScope.read, attr="parent", cls=QgisRasterStyle)
 DataScope.read.require(DataScope.read, attr="parent", cls=QgisVectorStyle)
@@ -466,10 +479,8 @@ class _file_upload_attr(SP):
         fupload = FileUpload(id=value["id"])
         srcfile = str(fupload.data_path)
 
-        params = dict()
-
         if srlzr.obj.qgis_format in _FILE_FORMAT_2_HEADLESS:
-            params["format"] = _FILE_FORMAT_2_HEADLESS[srlzr.obj.qgis_format]
+            pass  # Already set in format attribute
         elif srlzr.obj.qgis_format is None:
             for fmt in (StyleFormat.QML, StyleFormat.SLD):
                 try:
@@ -477,7 +488,6 @@ class _file_upload_attr(SP):
                 except StyleValidationError:
                     pass
                 else:
-                    params["format"] = fmt
                     srlzr.obj.qgis_format = _HEADLESS_2_FILE_FORMAT[fmt]
                     break
             else:
@@ -485,17 +495,8 @@ class _file_upload_attr(SP):
         else:
             raise ValidationError(message=_("Style format mismatch."))
 
-        layer = srlzr.obj.parent
-        if IFeatureLayer.providedBy(layer):
-            params["layer_type"] = LT_VECTOR
-            gt = layer.geometry_type
-            gt_qgis = _GEOM_TYPE_TO_QGIS[gt]
-            params["layer_geometry_type"] = gt_qgis
-        else:
-            params["layer_type"] = LT_RASTER
-
         try:
-            Style.from_file(srcfile, **params)
+            Style.from_file(srcfile, **srlzr.obj._headless_kwargs())
         except Exception as exc:
             _reraise_qgis_exception(exc, ValidationError)
 
@@ -514,6 +515,16 @@ class _copy_from(SP):
             for attr in ("qgis_format", "qgis_fileobj", "qgis_sld", "svg_marker_library"):
                 if hasattr(style, attr):
                     setattr(srlzr.obj, attr, getattr(style, attr))
+
+            if (fobj := srlzr.obj.qgis_fileobj) is not None:
+                env.qgis.qgis_init()
+                try:
+                    Style.from_file(
+                        str(fobj.filename()),
+                        **srlzr.obj._headless_kwargs(),
+                    )
+                except Exception as exc:
+                    _reraise_qgis_exception(exc, ValidationError)
 
 
 class QgisVectorStyleSerializer(Serializer):
