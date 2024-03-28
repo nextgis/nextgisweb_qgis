@@ -123,7 +123,7 @@ class QgisStyleMixin:
 
     @declared_attr
     def qgis_fileobj(cls):
-        return db.relationship(FileObj, cascade="all")
+        return db.relationship(FileObj, cascade="save-update, merge")
 
     @declared_attr
     def qgis_sld_id(cls):
