@@ -10,11 +10,11 @@ from shapely.geometry import box
 from sqlalchemy.orm import declared_attr
 from zope.interface import implementer
 
-from nextgisweb.env import Base, _, env
+from nextgisweb.env import Base, DBSession, _, env
 from nextgisweb.lib import db
 from nextgisweb.lib.geometry import Geometry
 
-from nextgisweb.core.exception import OperationalError, ValidationError
+from nextgisweb.core.exception import InsufficientPermissions, OperationalError, ValidationError
 from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE, IFeatureLayer
 from nextgisweb.feature_layer import on_data_change as on_data_change_feature_layer
 from nextgisweb.file_storage import FileObj
@@ -505,6 +505,17 @@ class _file_upload_attr(SP):
         on_style_change.fire(srlzr.obj)
 
 
+class _copy_from(SP):
+    def setter(self, srlzr, value):
+        with DBSession.no_autoflush:
+            style = srlzr.resclass.filter_by(id=value["id"]).one()
+            if not style.has_permission(ResourceScope.read, srlzr.user):
+                raise InsufficientPermissions()  # TODO: Add more details
+            for attr in ("qgis_format", "qgis_fileobj", "qgis_sld", "svg_marker_library"):
+                if hasattr(style, attr):
+                    setattr(srlzr.obj, attr, getattr(style, attr))
+
+
 class QgisVectorStyleSerializer(Serializer):
     identity = QgisVectorStyle.identity
     resclass = QgisVectorStyle
@@ -513,6 +524,7 @@ class QgisVectorStyleSerializer(Serializer):
     sld = _sld_attr(read=ResourceScope.read, write=ResourceScope.update)
     file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
     svg_marker_library = SRR(read=ResourceScope.read, write=ResourceScope.update)
+    copy_from = _copy_from(read=None, write=ResourceScope.update)
 
 
 class QgisRasterStyleSerializer(Serializer):
@@ -522,6 +534,7 @@ class QgisRasterStyleSerializer(Serializer):
     format = _format_attr(read=ResourceScope.read, write=ResourceScope.update)
     sld = _sld_attr(read=ResourceScope.read, write=ResourceScope.update)
     file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
+    copy_from = _copy_from(read=None, write=ResourceScope.update)
 
 
 _style_cache = LRUCache(maxsize=256)

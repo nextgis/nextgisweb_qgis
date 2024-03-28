@@ -9,12 +9,17 @@ import type {
 } from "@nextgisweb/resource/type/EditorStore";
 import type { Style } from "@nextgisweb/sld/style-editor/type/Style";
 
-export type Mode = "file" | "sld" | "default";
+export type Mode = "file" | "sld" | "copy" | "default";
+
+export interface CopyValue {
+    id: number;
+}
 
 interface Value {
     file_upload?: FileMeta;
     format?: "default" | "sld";
     sld?: Style;
+    copy_from?: CopyValue;
 }
 
 export class EditorStore implements IEditorStore<Value> {
@@ -24,6 +29,7 @@ export class EditorStore implements IEditorStore<Value> {
     source?: FileMeta = undefined;
     uploading = false;
     sld: Style | null = null;
+    copy_from?: CopyValue | undefined = undefined;
 
     operation?: Operation;
     composite: Composite;
@@ -58,6 +64,10 @@ export class EditorStore implements IEditorStore<Value> {
         this.sld = val;
     };
 
+    setCopy = (val: CopyValue) => {
+        this.copy_from = val;
+    };
+
     load(value: Value) {
         if (value.sld) {
             this.sld = value.sld;
@@ -80,6 +90,8 @@ export class EditorStore implements IEditorStore<Value> {
             }
         } else if (this.mode === "default") {
             result.format = "default";
+        } else if (this.mode === "copy") {
+            result.copy_from = this.copy_from;
         }
         return toJS(result);
     }

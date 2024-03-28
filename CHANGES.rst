@@ -5,6 +5,7 @@ Changes
 -----
 
 - Fix permission dependencies on parent resources.
+- Copying styles from one to another.
 
 
 3.0.0
