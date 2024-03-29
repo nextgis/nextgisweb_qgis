@@ -8,8 +8,9 @@ import type {
     EditorWidgetProps,
 } from "@nextgisweb/resource/type";
 
+import { CopyFromComponent } from "../CopyFromComponent";
+
 import type { EditorStore, Mode } from "./EditorStore";
-import { CopyModeComponent } from "./component/CopyModeComponent";
 import { FileModeComponent } from "./component/FileModeComponent";
 import { SldModeComponent } from "./component/SldModeComponent";
 
@@ -41,7 +42,9 @@ export const EditorWidget: EditorWidgetComponent<
             case "sld":
                 return <SldModeComponent store={store} />;
             case "copy":
-                return <CopyModeComponent store={store} />;
+                return (
+                    <CopyFromComponent store={store} cls="qgis_raster_style" />
+                );
             default:
                 <>Default</>;
         }
