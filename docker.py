@@ -37,6 +37,12 @@ def on_virtualenv(event):
     event.before_install(
         "$NGWROOT/env/bin/pip install --no-cache-dir package/nextgisweb_qgis/qgis_headless"
     )
+    if event.image.context.is_development():
+        event.after_install(
+            "cp "
+            "package/nextgisweb_qgis/qgis_headless/qgis_headless/_qgis_headless.pyi "
+            "$($NGWROOT/env/bin/python -c 'import site; print(site.getsitepackages()[0])')"
+        )
 
 
 @AppImage.on_config.handler
