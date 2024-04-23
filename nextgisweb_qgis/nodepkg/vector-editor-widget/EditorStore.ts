@@ -2,26 +2,15 @@ import { makeAutoObservable, toJS } from "mobx";
 
 import type { GeometryType } from "@nextgisweb/feature-layer/type";
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
-import type { Composite } from "@nextgisweb/resource/type/Composite";
-import type {
-    EditorStoreOptions as EditorStoreOptionsBase,
-    EditorStore as IEditorStore,
-    Operation,
-} from "@nextgisweb/resource/type/EditorStore";
+import type { EditorStore as IEditorStore } from "@nextgisweb/resource/type/EditorStore";
+import type { EditorStoreOptions as EditorStoreOptionsBase } from "@nextgisweb/resource/type/EditorStore";
 import type { ResourceRef } from "@nextgisweb/resource/type/api";
 import type { Style } from "@nextgisweb/sld/style-editor/type/Style";
 
-interface Value {
-    file_upload?: FileMeta;
-    svg_marker_library?: ResourceRef | null;
-    format?: "default" | "sld";
-    sld?: Style;
-    copy_from?: ResourceRef;
-}
+import type { Mode, Value } from "../type";
 
-export type Mode = "file" | "sld" | "copy" | "default";
-
-interface EditorStoreOptions extends EditorStoreOptionsBase {
+export interface VectorEditorStoreOptions
+    extends Omit<EditorStoreOptionsBase, "composite"> {
     geometryType: GeometryType;
 }
 
@@ -34,19 +23,13 @@ export class EditorStore implements IEditorStore<Value> {
     uploading = false;
     sld: Style | null = null;
     copy_from?: ResourceRef = undefined;
-
-    operation?: Operation;
-    composite: Composite;
     geometryType: GeometryType;
 
-    constructor({ composite, operation, geometryType }: EditorStoreOptions) {
+    constructor({ geometryType }: VectorEditorStoreOptions) {
         makeAutoObservable<EditorStore>(this, {
             identity: false,
-            operation: false,
-            composite: false,
+            geometryType: false,
         });
-        this.operation = operation;
-        this.composite = composite as Composite;
         this.geometryType = geometryType;
     }
 
