@@ -9,11 +9,11 @@ import type {
 } from "@nextgisweb/resource/type";
 
 import { CopyFromComponent } from "../CopyFromComponent";
+import type { Mode } from "../type";
 
-import type { EditorStore, Mode } from "./EditorStore";
+import type { EditorStore } from "./EditorStore";
 import { FileModeComponent } from "./component/FileModeComponent";
 import { SldModeComponent } from "./component/SldModeComponent";
-
 import "./EditorWidget.less";
 
 type SelectProps = Parameters<typeof Select>[0];

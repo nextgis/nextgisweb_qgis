@@ -23,6 +23,13 @@ class RasterStyleWidget(Widget):
     operation = ("create", "update")
     amdmod = "@nextgisweb/qgis/raster-editor-widget"
 
+    def config(self):
+        result = super().config()
+        parent =  self.obj.parent
+        result["dtype"] = parent.dtype
+        result["band_count"] = parent.band_count
+        result["parent_id"] = parent.id
+        return result
 
 def setup_pyramid(comp, config):
     class LayerMenuExt(dm.DynItem):

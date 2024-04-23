@@ -18,7 +18,6 @@ export const SldModeComponent = observer(
             () => sld?.rules[0]?.symbolizers[0],
             [sld]
         ) as RasterSymbolizer;
-        const resourceId = store.composite.parent;
 
         const onChange = useCallback(
             (val: Symbolizer) =>
@@ -30,7 +29,7 @@ export const SldModeComponent = observer(
             <RasterStyleEditor
                 initSymbolizer={symbolizer_}
                 onChange={onChange}
-                resourceId={resourceId}
+                resourceId={store.parent_id}
             />
         );
     }

@@ -1,22 +1,21 @@
 import { makeAutoObservable, toJS } from "mobx";
 
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
-import type { Composite } from "@nextgisweb/resource/type/Composite";
 import type {
-    EditorStoreOptions,
+    EditorStoreOptions as EditorStoreOptionsBase,
     EditorStore as IEditorStore,
-    Operation,
 } from "@nextgisweb/resource/type/EditorStore";
 import type { ResourceRef } from "@nextgisweb/resource/type/api";
 import type { Style } from "@nextgisweb/sld/style-editor/type/Style";
 
-export type Mode = "file" | "sld" | "copy" | "default";
+import type { Mode, Value } from "../type";
 
-interface Value {
-    file_upload?: FileMeta;
-    format?: "default" | "sld";
-    sld?: Style;
-    copy_from?: ResourceRef;
+type Dtype = "Int16" | "Int32" | "UInt16" | "UInt32" | "Byte";
+export interface RasterEditorStoreOptions
+    extends Omit<EditorStoreOptionsBase, "composite"> {
+    dtype: Dtype;
+    parent_id: number;
+    band_count: number;
 }
 
 export class EditorStore implements IEditorStore<Value> {
@@ -28,17 +27,20 @@ export class EditorStore implements IEditorStore<Value> {
     sld: Style | null = null;
     copy_from?: ResourceRef = undefined;
 
-    operation?: Operation;
-    composite: Composite;
+    parent_id: number;
+    band_count: number;
+    dtype: Dtype;
 
-    constructor({ composite, operation }: EditorStoreOptions) {
+    constructor({ parent_id, band_count, dtype }: RasterEditorStoreOptions) {
         makeAutoObservable(this, {
             identity: false,
-            operation: false,
-            composite: false,
+            dtype: false,
+            parent_id: false,
+            band_count: false,
         });
-        this.operation = operation;
-        this.composite = composite as Composite;
+        this.parent_id = parent_id;
+        this.band_count = band_count;
+        this.dtype = dtype;
     }
 
     get isValid() {
