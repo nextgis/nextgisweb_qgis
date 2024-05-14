@@ -34,9 +34,10 @@ layers one-by-one (or even tile-by-tile) and stacks them together on a client
 side. That's why, NextGIS Web rendering of QGIS styles may differ in the
 following ways:
 
--   Blending options won't work. some of them may be implemented in future;
--   Laybels from diffenent layer may overlap;
--   Masking won't work at all, as it part of a project, not of a layer.
+-   Blending options don't work;
+-   Labels from diffenent layers may overlap;
+-   Expression-driven SVG markers don't work;
+-   Masking doesn't work at all, as it part of a project, not of a layer.
 
 Some rendering features require special handling on QGIS Headless library side
 and aren't implemented yet:
