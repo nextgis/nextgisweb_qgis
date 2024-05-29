@@ -158,7 +158,7 @@ class QgisStyleMixin:
     )
 
 
-@implementer(IRenderableStyle, IRenderableScaleRange)
+@implementer(IRenderableStyle, ILegendSymbols, IRenderableScaleRange)
 class QgisRasterStyle(Base, QgisStyleMixin, Resource):
     identity = "qgis_raster_style"
     cls_display_name = _("QGIS raster style")
@@ -172,6 +172,12 @@ class QgisRasterStyle(Base, QgisStyleMixin, Resource):
     def render_request(self, srs, cond=None):
         return RenderRequest(self, srs)
 
+    def _qgis_layer(self):
+        # We need raster pyramids so use working directory filename
+        # instead of original filename.
+        gdal_path = env.raster_layer.workdir_path(self.parent.fileobj)
+        return Layer.from_gdal(str(gdal_path))
+
     def _render_image(self, srs, extent, size):
         env.qgis.qgis_init()
 
@@ -179,21 +185,43 @@ class QgisRasterStyle(Base, QgisStyleMixin, Resource):
         if not check_scale_range(style, extent, size, dpi=96):
             return None
 
-        # We need raster pyramids so use working directory filename
-        # instead of original filename.
-        gdal_path = env.raster_layer.workdir_path(self.parent.fileobj)
-
         mreq = MapRequest()
         mreq.set_dpi(96)
         mreq.set_crs(CRS.from_epsg(srs.id))
 
-        layer = Layer.from_gdal(str(gdal_path))
+        layer = self._qgis_layer()
         mreq.add_layer(layer, style)
 
         res = mreq.render_image(extent, size)
         img = qgis_image_to_pil(res)
 
         return img
+
+    def legend_symbols(self, icon_size):
+        env.qgis.qgis_init()
+
+        mreq = MapRequest()
+        mreq.set_dpi(96)
+
+        style = read_style(self)
+        layer = self._qgis_layer()
+        mreq.add_layer(layer, style)
+
+        result = []
+        for s in mreq.legend_symbols(0, (icon_size, icon_size)):
+            if title := s.title():
+                dn = title
+            else:
+                dn = _("Band {}").format(s.raster_band())
+            result.append(
+                LegendSymbol(
+                    index=s.index(),
+                    render=None,
+                    display_name=dn,
+                    icon=qgis_image_to_pil(s.icon()),
+                )
+            )
+        return result
 
     def scale_range(self):
         env.qgis.qgis_init()

@@ -1,6 +1,12 @@
 Changes
 =======
 
+3.2.0
+-----
+
+- Support for legends of raster styles.
+
+
 3.1.0
 -----
 
