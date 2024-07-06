@@ -16,7 +16,6 @@ from nextgisweb.lib.geometry import Geometry
 
 from nextgisweb.core.exception import InsufficientPermissions, OperationalError, ValidationError
 from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE, IFeatureLayer
-from nextgisweb.feature_layer import on_data_change as on_data_change_feature_layer
 from nextgisweb.file_storage import FileObj
 from nextgisweb.file_upload import FileUpload
 from nextgisweb.render import (
@@ -27,16 +26,8 @@ from nextgisweb.render import (
     IRenderableStyle,
     ITileRenderRequest,
     LegendSymbol,
-    on_style_change,
 )
-from nextgisweb.render import on_data_change as on_data_change_renderable
-from nextgisweb.resource import (
-    DataScope,
-    DataStructureScope,
-    Resource,
-    ResourceScope,
-    Serializer,
-)
+from nextgisweb.resource import DataScope, DataStructureScope, Resource, ResourceScope, Serializer
 from nextgisweb.resource import SerializedProperty as SP
 from nextgisweb.resource import SerializedResourceRelationship as SRR
 from nextgisweb.sld import SLD
@@ -428,13 +419,6 @@ DataScope.read.require(
 )
 
 
-@on_data_change_feature_layer.connect
-def on_data_change_feature_layer(resource, geom):
-    for child in resource.children:
-        if isinstance(child, QgisVectorStyle):
-            on_data_change_renderable.fire(child, geom)
-
-
 @implementer(IExtentRenderRequest, ITileRenderRequest)
 class RenderRequest:
     def __init__(self, style, srs, cond=None):
@@ -530,8 +514,6 @@ class _file_upload_attr(SP):
 
         srlzr.obj.qgis_fileobj = fupload.to_fileobj()
         srlzr.obj.qgis_sld = None
-
-        on_style_change.fire(srlzr.obj)
 
 
 class _copy_from(SP):
