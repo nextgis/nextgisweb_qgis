@@ -45,3 +45,4 @@ and aren't implemented yet:
 -   Variables, like `@mascale`
 -   Gradients-based fills
 -   Labels with external SVG markers
+-   Feature rendering order
