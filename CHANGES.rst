@@ -4,7 +4,7 @@ Changes
 3.2.0
 -----
 
-- Support for legends of raster styles.
+- Support for raster style legends.
 
 
 3.1.0
