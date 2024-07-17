@@ -1,4 +1,4 @@
-from nextgisweb.env import _
+from nextgisweb.env import gettext
 from nextgisweb.lib import dynmenu as dm
 
 from nextgisweb.resource import Resource, Widget
@@ -25,20 +25,21 @@ class RasterStyleWidget(Widget):
 
     def config(self):
         result = super().config()
-        parent =  self.obj.parent
+        parent = self.obj.parent
         result["dtype"] = parent.dtype
         result["band_count"] = parent.band_count
         result["parent_id"] = parent.id
         return result
 
+
 def setup_pyramid(comp, config):
     class LayerMenuExt(dm.DynItem):
         def build(self, args):
             if isinstance(args.obj, (QgisVectorStyle, QgisRasterStyle)):
-                yield dm.Label("qgis_style", _("QGIS style"))
+                yield dm.Label("qgis_style", gettext("QGIS style"))
                 yield dm.Link(
                     "qgis_style/qml",
-                    _("QML file"),
+                    gettext("QML file"),
                     lambda args: args.request.route_url("qgis.style_qml", id=args.obj.id),
                 )
 

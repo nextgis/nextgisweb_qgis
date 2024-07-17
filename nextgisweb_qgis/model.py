@@ -10,7 +10,7 @@ from shapely.geometry import box
 from sqlalchemy.orm import declared_attr
 from zope.interface import implementer
 
-from nextgisweb.env import Base, DBSession, _, env
+from nextgisweb.env import Base, DBSession, env, gettext
 from nextgisweb.lib import db
 from nextgisweb.lib.geometry import Geometry
 
@@ -152,7 +152,7 @@ class QgisStyleMixin:
 @implementer(IRenderableStyle, ILegendSymbols, IRenderableScaleRange)
 class QgisRasterStyle(Base, QgisStyleMixin, Resource):
     identity = "qgis_raster_style"
-    cls_display_name = _("QGIS raster style")
+    cls_display_name = gettext("QGIS raster style")
 
     __scope__ = DataScope
 
@@ -203,7 +203,7 @@ class QgisRasterStyle(Base, QgisStyleMixin, Resource):
             if title := s.title():
                 dn = title
             else:
-                dn = _("Band {}").format(s.raster_band())
+                dn = gettext("Band {}").format(s.raster_band())
             result.append(
                 LegendSymbol(
                     index=s.index(),
@@ -253,7 +253,7 @@ def path_resolver_factory(svg_marker_library):
 @implementer(IRenderableStyle, ILegendableStyle, ILegendSymbols, IRenderableScaleRange)
 class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     identity = "qgis_vector_style"
-    cls_display_name = _("QGIS vector style")
+    cls_display_name = gettext("QGIS vector style")
 
     __scope__ = (DataScope, DataStructureScope)
 
@@ -459,7 +459,7 @@ class _format_attr(SP):
             QgisStyleFormat.QML_FILE,
             QgisStyleFormat.SLD_FILE,
         ):
-            raise ValidationError(message=_("Style format mismatch."))
+            raise ValidationError(message=gettext("Style format mismatch."))
         if value == QgisStyleFormat.DEFAULT:
             srlzr.obj.qgis_fileobj = None
             srlzr.obj.qgis_sld = None
@@ -473,7 +473,7 @@ class _sld_attr(SP):
 
     def setter(self, srlzr, value):
         if srlzr.obj.qgis_format != QgisStyleFormat.SLD:
-            raise ValidationError(message=_("Style format mismatch."))
+            raise ValidationError(message=gettext("Style format mismatch."))
         sld = SLD()
         sld.deserialize(value)
         srlzr.obj.qgis_sld = sld
@@ -503,9 +503,9 @@ class _file_upload_attr(SP):
                     srlzr.obj.qgis_format = _HEADLESS_2_FILE_FORMAT[fmt]
                     break
             else:
-                raise ValidationError(message=_("Style file is not valid."))
+                raise ValidationError(message=gettext("Style file is not valid."))
         else:
-            raise ValidationError(message=_("Style format mismatch."))
+            raise ValidationError(message=gettext("Style format mismatch."))
 
         try:
             Style.from_file(srcfile, **srlzr.obj._headless_kwargs())
@@ -655,9 +655,9 @@ def _convert_datetime(v):
 
 def _reraise_qgis_exception(exc, cls):
     if isinstance(exc, StyleTypeMismatch):
-        raise cls(message=_("Layer type mismatch.")) from exc
+        raise cls(message=gettext("Layer type mismatch.")) from exc
     elif isinstance(exc, StyleValidationError):
-        raise cls(message=_("Style file is not valid.")) from exc
+        raise cls(message=gettext("Style file is not valid.")) from exc
     else:
         raise exc
 
