@@ -27,7 +27,7 @@ from nextgisweb.render import (
     ITileRenderRequest,
     LegendSymbol,
 )
-from nextgisweb.resource import DataScope, DataStructureScope, Resource, ResourceScope, Serializer
+from nextgisweb.resource import DataScope, Resource, ResourceScope, Serializer
 from nextgisweb.resource import SerializedProperty as SP
 from nextgisweb.resource import SerializedResourceRelationship as SRR
 from nextgisweb.sld import SLD
@@ -255,7 +255,7 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     identity = "qgis_vector_style"
     cls_display_name = gettext("QGIS vector style")
 
-    __scope__ = (DataScope, DataStructureScope)
+    __scope__ = DataScope
 
     svg_marker_library_id = db.Column(db.ForeignKey(SVGMarkerLibrary.id), nullable=True)
     svg_marker_library = db.relationship(
