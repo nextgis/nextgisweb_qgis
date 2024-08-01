@@ -153,6 +153,7 @@ class QgisStyleMixin:
 class QgisRasterStyle(Base, QgisStyleMixin, Resource):
     identity = "qgis_raster_style"
     cls_display_name = gettext("QGIS raster style")
+    cls_order = 60
 
     __scope__ = DataScope
 
@@ -254,6 +255,7 @@ def path_resolver_factory(svg_marker_library):
 class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     identity = "qgis_vector_style"
     cls_display_name = gettext("QGIS vector style")
+    cls_order = 60
 
     __scope__ = DataScope
 
