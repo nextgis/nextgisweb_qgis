@@ -43,7 +43,11 @@ export const EditorWidget: EditorWidgetComponent<
                 return <SldModeComponent store={store} />;
             case "copy":
                 return (
-                    <CopyFromComponent store={store} cls="qgis_raster_style" />
+                    <CopyFromComponent
+                        store={store}
+                        cls="qgis_raster_style"
+                        pickerOptions={{ initParentId: store.parent_id }}
+                    />
                 );
             default:
                 <>Default</>;
@@ -63,6 +67,7 @@ export const EditorWidget: EditorWidgetComponent<
     );
 });
 
+EditorWidget.displayName = "EditorWidget";
 EditorWidget.title = gettext("QGIS style");
 EditorWidget.activateOn = { create: true };
 EditorWidget.order = -50;

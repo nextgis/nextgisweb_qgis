@@ -45,7 +45,11 @@ export const EditorWidget: EditorWidgetComponent<
                 return <SldModeComponent store={store}></SldModeComponent>;
             case "copy":
                 return (
-                    <CopyFromComponent store={store} cls="qgis_vector_style" />
+                    <CopyFromComponent
+                        store={store}
+                        cls="qgis_vector_style"
+                        pickerOptions={{ initParentId: store.composite.parent }}
+                    />
                 );
             default:
                 <>Default</>;
@@ -65,6 +69,7 @@ export const EditorWidget: EditorWidgetComponent<
     );
 });
 
+EditorWidget.displayName = "EditorWidget";
 EditorWidget.title = gettext("QGIS style");
 EditorWidget.activateOn = { create: true };
 EditorWidget.order = -50;

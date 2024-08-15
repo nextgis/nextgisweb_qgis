@@ -2,15 +2,17 @@ import { makeAutoObservable, toJS } from "mobx";
 
 import type { GeometryType } from "@nextgisweb/feature-layer/type";
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
-import type { EditorStore as IEditorStore } from "@nextgisweb/resource/type/EditorStore";
-import type { EditorStoreOptions as EditorStoreOptionsBase } from "@nextgisweb/resource/type/EditorStore";
+import type { Composite } from "@nextgisweb/resource/type";
+import type {
+    EditorStoreOptions as EditorStoreOptionsBase,
+    EditorStore as IEditorStore,
+} from "@nextgisweb/resource/type/EditorStore";
 import type { ResourceRef } from "@nextgisweb/resource/type/api";
 import type { Style } from "@nextgisweb/sld/style-editor/type/Style";
 
 import type { Mode, Value } from "../type";
 
-export interface VectorEditorStoreOptions
-    extends Omit<EditorStoreOptionsBase, "composite"> {
+export interface VectorEditorStoreOptions extends EditorStoreOptionsBase {
     geometryType: GeometryType;
 }
 
@@ -25,12 +27,15 @@ export class EditorStore implements IEditorStore<Value> {
     copy_from?: ResourceRef = undefined;
     geometryType: GeometryType;
 
-    constructor({ geometryType }: VectorEditorStoreOptions) {
+    readonly composite: Composite;
+
+    constructor({ geometryType, composite }: VectorEditorStoreOptions) {
         makeAutoObservable<EditorStore>(this, {
             identity: false,
             geometryType: false,
         });
         this.geometryType = geometryType;
+        this.composite = composite;
     }
 
     get isValid() {
