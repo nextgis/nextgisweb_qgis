@@ -27,15 +27,12 @@ export class EditorStore implements IEditorStore<Value> {
     copy_from?: ResourceRef = undefined;
     geometryType: GeometryType;
 
-    readonly composite: Composite;
-
     constructor({ geometryType, composite }: VectorEditorStoreOptions) {
         makeAutoObservable<EditorStore>(this, {
             identity: false,
             geometryType: false,
         });
         this.geometryType = geometryType;
-        this.composite = composite;
     }
 
     get isValid() {

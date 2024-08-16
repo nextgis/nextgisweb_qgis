@@ -38,7 +38,6 @@ export const FileModeComponent = observer(
                         traverseClasses: ["resource_group"],
                         requireClass: "svg_marker_library",
                         hideUnavailable: true,
-                        initParentId: store.composite.parent,
                     }}
                     allowClear
                 />

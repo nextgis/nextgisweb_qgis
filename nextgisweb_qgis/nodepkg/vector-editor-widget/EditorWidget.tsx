@@ -48,7 +48,6 @@ export const EditorWidget: EditorWidgetComponent<
                     <CopyFromComponent
                         store={store}
                         cls="qgis_vector_style"
-                        pickerOptions={{ initParentId: store.composite.parent }}
                     />
                 );
             default:
