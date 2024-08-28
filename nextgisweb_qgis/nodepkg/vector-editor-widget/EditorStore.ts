@@ -2,7 +2,6 @@ import { makeAutoObservable, toJS } from "mobx";
 
 import type { GeometryType } from "@nextgisweb/feature-layer/type";
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
-import type { Composite } from "@nextgisweb/resource/type";
 import type {
     EditorStoreOptions as EditorStoreOptionsBase,
     EditorStore as IEditorStore,
@@ -27,7 +26,7 @@ export class EditorStore implements IEditorStore<Value> {
     copy_from?: ResourceRef = undefined;
     geometryType: GeometryType;
 
-    constructor({ geometryType, composite }: VectorEditorStoreOptions) {
+    constructor({ geometryType }: VectorEditorStoreOptions) {
         makeAutoObservable<EditorStore>(this, {
             identity: false,
             geometryType: false,
