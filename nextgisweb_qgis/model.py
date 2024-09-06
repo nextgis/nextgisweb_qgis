@@ -27,6 +27,7 @@ from nextgisweb.render import (
     ITileRenderRequest,
     LegendSymbol,
 )
+from nextgisweb.resmeta import ResourceMetadataItem
 from nextgisweb.resource import DataScope, Resource, ResourceScope, Serializer
 from nextgisweb.resource import SerializedProperty as SP
 from nextgisweb.resource import SerializedResourceRelationship as SRR
@@ -46,7 +47,7 @@ from qgis_headless import (
 )
 from qgis_headless.util import to_pil as qgis_image_to_pil
 
-from .util import rand_color, sld_to_qml_raster
+from .util import MD5_NULL_HEXDIGEST, file_md5_hexdigest, rand_color, sld_to_qml_raster
 
 _GEOM_TYPE_TO_QGIS = {
     GEOM_TYPE.POINT: Layer.GT_POINT,
@@ -147,6 +148,60 @@ class QgisStyleMixin:
             name="qgis_format_check",
         ),
     )
+
+
+def update_not_modified(
+    resource,
+    source,
+    resmeta,
+    *,
+    format=QgisStyleFormat.QML_FILE,
+    hash_default=MD5_NULL_HEXDIGEST,
+):
+    for rmi in resource.resmeta:
+        if rmi.key == resmeta:
+            hash_expected = rmi.value
+            break
+    else:
+        hash_expected = None
+
+    if hash_expected is None:
+        update = resource.qgis_format is None
+        hash_existing = None
+    else:
+        if resource.qgis_format == QgisStyleFormat.DEFAULT:
+            hash_existing = hash_default
+        elif resource.qgis_format != format:
+            return False
+        else:
+            hash_existing = file_md5_hexdigest(resource.qgis_fileobj.filename())
+        update = hash_existing == hash_expected
+
+    if not update:
+        return False
+
+    if source is None:
+        resource.qgis_format = QgisStyleFormat.DEFAULT
+        resource.qgis_fileobj = None
+        hash_new = hash_default
+    else:
+        hash_new = file_md5_hexdigest(source)
+        if hash_new == hash_existing:
+            return True
+
+        resource.qgis_format = format
+        resource.qgis_fileobj = FileObj().copy_from(source)
+
+    for rmi in resource.resmeta:
+        if rmi.key == resmeta:
+            rmi.value = hash_new
+            break
+    else:
+        rmi = ResourceMetadataItem(key=resmeta)
+        rmi.value = hash_new
+        resource.resmeta.append(rmi)
+
+    return True
 
 
 @implementer(IRenderableStyle, ILegendSymbols, IRenderableScaleRange)
