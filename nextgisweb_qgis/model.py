@@ -6,6 +6,8 @@ from os.path import sep as path_sep
 from typing import Union
 from uuid import UUID
 
+import sqlalchemy as sa
+import sqlalchemy.orm as orm
 from cachetools import LRUCache
 from msgspec import UNSET, UnsetType
 from shapely.geometry import box
@@ -13,7 +15,7 @@ from sqlalchemy.orm import declared_attr
 from zope.interface import implementer
 
 from nextgisweb.env import Base, env, gettext
-from nextgisweb.lib import db
+from nextgisweb.lib import saext
 from nextgisweb.lib.geometry import Geometry
 
 from nextgisweb.core.exception import InsufficientPermissions, OperationalError, ValidationError
@@ -116,23 +118,25 @@ def _render_bounds(extent, size, padding):
 class QgisStyleMixin:
     @declared_attr
     def qgis_format(cls):
-        return db.Column(db.Enum(QgisStyleFormat), nullable=False, default=QgisStyleFormat.DEFAULT)
+        return sa.Column(
+            saext.Enum(QgisStyleFormat), nullable=False, default=QgisStyleFormat.DEFAULT
+        )
 
     @declared_attr
     def qgis_fileobj_id(cls):
-        return db.Column(db.ForeignKey(FileObj.id), nullable=True)
+        return sa.Column(sa.ForeignKey(FileObj.id), nullable=True)
 
     @declared_attr
     def qgis_fileobj(cls):
-        return db.relationship(FileObj, cascade="save-update, merge")
+        return orm.relationship(FileObj, cascade="save-update, merge")
 
     @declared_attr
     def qgis_sld_id(cls):
-        return db.Column(db.ForeignKey(SLD.id), nullable=True)
+        return sa.Column(sa.ForeignKey(SLD.id), nullable=True)
 
     @declared_attr
     def qgis_sld(cls):
-        return db.relationship(SLD, cascade="save-update, merge")
+        return orm.relationship(SLD, cascade="save-update, merge")
 
     @property
     def srs(self):
@@ -144,7 +148,7 @@ class QgisStyleMixin:
         return self
 
     __table_args__ = (
-        db.CheckConstraint(
+        sa.CheckConstraint(
             """
             CASE qgis_format
                 WHEN 'default' THEN qgis_sld_id IS NULL AND qgis_fileobj_id IS NULL
@@ -323,14 +327,15 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
 
     __scope__ = DataScope
 
-    svg_marker_library_id = db.Column(db.ForeignKey(SVGMarkerLibrary.id), nullable=True)
-    svg_marker_library = db.relationship(
+    svg_marker_library_id = sa.Column(sa.ForeignKey(SVGMarkerLibrary.id), nullable=True)
+
+    svg_marker_library = orm.relationship(
         SVGMarkerLibrary,
         foreign_keys=svg_marker_library_id,
         cascade="save-update, merge",
         # Backref is just for cleaning up QgisVectorStyle -> SVGMarkerLibrary
         # reference. SQLAlchemy does this automatically.
-        backref=db.backref("_backref_qgis_vector_style", cascade_backrefs=False),
+        backref=orm.backref("_backref_qgis_vector_style", cascade_backrefs=False),
     )
 
     @classmethod
