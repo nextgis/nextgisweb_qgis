@@ -3,21 +3,23 @@ from enum import Enum
 from io import BytesIO
 from os.path import normpath
 from os.path import sep as path_sep
+from typing import Union
 from uuid import UUID
 
 from cachetools import LRUCache
+from msgspec import UNSET, UnsetType
 from shapely.geometry import box
 from sqlalchemy.orm import declared_attr
 from zope.interface import implementer
 
-from nextgisweb.env import Base, DBSession, env, gettext
+from nextgisweb.env import Base, env, gettext
 from nextgisweb.lib import db
 from nextgisweb.lib.geometry import Geometry
 
 from nextgisweb.core.exception import InsufficientPermissions, OperationalError, ValidationError
 from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE, IFeatureLayer
 from nextgisweb.file_storage import FileObj
-from nextgisweb.file_upload import FileUpload
+from nextgisweb.file_upload import FileUploadRef
 from nextgisweb.render import (
     IExtentRenderRequest,
     ILegendableStyle,
@@ -28,10 +30,17 @@ from nextgisweb.render import (
     LegendSymbol,
 )
 from nextgisweb.resmeta import ResourceMetadataItem
-from nextgisweb.resource import DataScope, Resource, ResourceScope, Serializer
-from nextgisweb.resource import SerializedProperty as SP
-from nextgisweb.resource import SerializedResourceRelationship as SRR
+from nextgisweb.resource import (
+    DataScope,
+    Resource,
+    ResourceScope,
+    SAttribute,
+    Serializer,
+    SResource,
+)
+from nextgisweb.resource.model import ResourceRef
 from nextgisweb.sld import SLD
+from nextgisweb.sld.model import Style as SLDStyle
 from nextgisweb.svg_marker_library import SVGMarkerLibrary
 
 from qgis_headless import (
@@ -503,50 +512,52 @@ class RenderRequest:
             _reraise_qgis_exception(exc, OperationalError)
 
 
-class _format_attr(SP):
-    def getter(self, srlzr):
+class FormatAttr(SAttribute, apitype=True):
+    def get(self, srlzr: Serializer) -> QgisStyleFormat:
         return srlzr.obj.qgis_format
 
-    def setter(self, srlzr, value):
-        if value is None:
-            value = QgisStyleFormat.DEFAULT
-        else:
-            value = QgisStyleFormat(value)
-        if "file_upload" not in srlzr.data and value in (
+    def set(self, srlzr: Serializer, value: QgisStyleFormat, *, create: bool):
+        if (srlzr.data.file_upload is UNSET) and value in (
             QgisStyleFormat.QML_FILE,
             QgisStyleFormat.SLD_FILE,
         ):
-            raise ValidationError(message=gettext("Style format mismatch."))
+            raise ValidationError(gettext("Style format mismatch."))
+
         if value == QgisStyleFormat.DEFAULT:
             srlzr.obj.qgis_fileobj = None
             srlzr.obj.qgis_sld = None
         srlzr.obj.qgis_format = value
 
 
-class _sld_attr(SP):
-    def getter(self, srlzr):
+class SldAttr(SAttribute, apitype=True):
+    def get(self, srlzr: Serializer) -> Union[SLDStyle, UnsetType]:
         if srlzr.obj.qgis_format == QgisStyleFormat.SLD:
             return srlzr.obj.qgis_sld.value
+        else:
+            return UNSET
 
-    def setter(self, srlzr, value):
+    def set(self, srlzr: Serializer, value: SLDStyle, *, create: bool):
         if srlzr.obj.qgis_format != QgisStyleFormat.SLD:
-            raise ValidationError(message=gettext("Style format mismatch."))
+            raise ValidationError(gettext("Style format mismatch."))
+
         sld = SLD()
         sld.deserialize(value)
         srlzr.obj.qgis_sld = sld
         srlzr.obj.qgis_fileobj = None
 
 
-class _file_upload_attr(SP):
-    def setter(self, srlzr, value):
-        # Force style format autodetection
-        if "format" not in srlzr.data:
+class FileUploadAttr(SAttribute, apitype=True):
+    def get(self, srlzr: Serializer) -> UnsetType:
+        return UNSET
+
+    def set(self, srlzr: Serializer, value: FileUploadRef, *, create: bool):
+        if srlzr.data.format is UNSET:
+            # Force style format autodetection
             srlzr.obj.qgis_format = None
 
         env.qgis.qgis_init()
 
-        fupload = FileUpload(id=value["id"])
-        srcfile = str(fupload.data_path)
+        srcfile = str(value().data_path)
 
         if srlzr.obj.qgis_format in _FILE_FORMAT_2_HEADLESS:
             pass  # Already set in format attribute
@@ -569,50 +580,47 @@ class _file_upload_attr(SP):
         except Exception as exc:
             _reraise_qgis_exception(exc, ValidationError)
 
-        srlzr.obj.qgis_fileobj = fupload.to_fileobj()
+        srlzr.obj.qgis_fileobj = value().to_fileobj()
         srlzr.obj.qgis_sld = None
 
 
-class _copy_from(SP):
-    def setter(self, srlzr, value):
-        with DBSession.no_autoflush:
-            style = srlzr.resclass.filter_by(id=value["id"]).one()
-            if not style.has_permission(ResourceScope.read, srlzr.user):
-                raise InsufficientPermissions()  # TODO: Add more details
-            for attr in ("qgis_format", "qgis_fileobj", "qgis_sld", "svg_marker_library"):
-                if hasattr(style, attr):
-                    setattr(srlzr.obj, attr, getattr(style, attr))
+class CopyFromAttr(SAttribute, apitype=True):
+    def get(self, srlzr: Serializer) -> UnsetType:
+        return UNSET
 
-            if (fobj := srlzr.obj.qgis_fileobj) is not None:
-                env.qgis.qgis_init()
-                try:
-                    Style.from_file(
-                        str(fobj.filename()),
-                        **srlzr.obj._headless_kwargs(),
-                    )
-                except Exception as exc:
-                    _reraise_qgis_exception(exc, ValidationError)
+    def set(self, srlzr: Serializer, value: ResourceRef, *, create: bool):
+        style = srlzr.resclass.filter_by(id=value.id).one()
+        if not style.has_permission(ResourceScope.read, srlzr.user):
+            raise InsufficientPermissions()  # TODO: Add more details
 
+        for attr in ("qgis_format", "qgis_fileobj", "qgis_sld", "svg_marker_library"):
+            if hasattr(style, attr):
+                setattr(srlzr.obj, attr, getattr(style, attr))
 
-class QgisVectorStyleSerializer(Serializer):
-    identity = QgisVectorStyle.identity
-    resclass = QgisVectorStyle
-
-    format = _format_attr(read=ResourceScope.read, write=ResourceScope.update)
-    sld = _sld_attr(read=ResourceScope.read, write=ResourceScope.update)
-    file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
-    svg_marker_library = SRR(read=ResourceScope.read, write=ResourceScope.update)
-    copy_from = _copy_from(read=None, write=ResourceScope.update)
+        if (fobj := srlzr.obj.qgis_fileobj) is not None:
+            env.qgis.qgis_init()
+            try:
+                Style.from_file(
+                    str(fobj.filename()),
+                    **srlzr.obj._headless_kwargs(),
+                )
+            except Exception as exc:
+                _reraise_qgis_exception(exc, ValidationError)
 
 
-class QgisRasterStyleSerializer(Serializer):
-    identity = QgisRasterStyle.identity
-    resclass = QgisRasterStyle
+class QgisVectorStyleSerializer(Serializer, resource=QgisVectorStyle):
+    format = FormatAttr(read=ResourceScope.read, write=ResourceScope.update)
+    sld = SldAttr(read=ResourceScope.read, write=ResourceScope.update)
+    file_upload = FileUploadAttr(read=None, write=ResourceScope.update)
+    copy_from = CopyFromAttr(read=None, write=ResourceScope.update)
+    svg_marker_library = SResource(read=ResourceScope.read, write=ResourceScope.update)
 
-    format = _format_attr(read=ResourceScope.read, write=ResourceScope.update)
-    sld = _sld_attr(read=ResourceScope.read, write=ResourceScope.update)
-    file_upload = _file_upload_attr(read=None, write=ResourceScope.update)
-    copy_from = _copy_from(read=None, write=ResourceScope.update)
+
+class QgisRasterStyleSerializer(Serializer, resource=QgisRasterStyle):
+    format = FormatAttr(read=ResourceScope.read, write=ResourceScope.update)
+    sld = SldAttr(read=ResourceScope.read, write=ResourceScope.update)
+    file_upload = FileUploadAttr(read=None, write=ResourceScope.update)
+    copy_from = CopyFromAttr(read=None, write=ResourceScope.update)
 
 
 _style_cache = LRUCache(maxsize=256)

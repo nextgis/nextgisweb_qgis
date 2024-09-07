@@ -125,6 +125,7 @@ def test_format(style, format_, expected, test_data, contour_layer_id, ngw_webte
         assert resp.status_code == 422
         return
 
+    assert resp.status_code // 100 == 2
     qgis_style = QgisVectorStyle.filter_by(id=resp.json["id"]).one()
     assert qgis_style.qgis_format.value == expected
 
