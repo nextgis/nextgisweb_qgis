@@ -3,19 +3,31 @@ import { makeAutoObservable, toJS } from "mobx";
 import type { GeometryType } from "@nextgisweb/feature-layer/type";
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
 import type {
+    QgisVectorStyleCreate,
+    QgisVectorStyleRead,
+    QgisVectorStyleUpdate,
+} from "@nextgisweb/qgis/type/api";
+import type {
     EditorStoreOptions as EditorStoreOptionsBase,
     EditorStore as IEditorStore,
 } from "@nextgisweb/resource/type/EditorStore";
 import type { ResourceRef } from "@nextgisweb/resource/type/api";
-import type { Style } from "@nextgisweb/sld/style-editor/type/Style";
+import type { Style } from "@nextgisweb/sld/type/api";
 
-import type { Mode, Value } from "../type";
+import type { Mode } from "../type";
 
 export interface VectorEditorStoreOptions extends EditorStoreOptionsBase {
     geometryType: GeometryType;
 }
 
-export class EditorStore implements IEditorStore<Value> {
+export class EditorStore
+    implements
+        IEditorStore<
+            QgisVectorStyleRead,
+            QgisVectorStyleCreate,
+            QgisVectorStyleCreate
+        >
+{
     readonly identity = "qgis_vector_style";
 
     mode: Mode = "file";
@@ -62,7 +74,7 @@ export class EditorStore implements IEditorStore<Value> {
         this.copy_from = val;
     };
 
-    load(value: Value) {
+    load(value: QgisVectorStyleRead) {
         if (value.sld) {
             this.sld = value.sld;
             this.mode = "sld";
@@ -75,8 +87,8 @@ export class EditorStore implements IEditorStore<Value> {
         }
     }
 
-    dump() {
-        const result: Value = {};
+    dump(): QgisVectorStyleUpdate | QgisVectorStyleCreate {
+        const result: QgisVectorStyleUpdate = {};
         if (this.mode === "file") {
             if (this.source) {
                 result.file_upload = this.source;

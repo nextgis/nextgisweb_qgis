@@ -2,13 +2,18 @@ import { makeAutoObservable, toJS } from "mobx";
 
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
 import type {
+    QgisRasterStyleCreate,
+    QgisRasterStyleRead,
+    QgisRasterStyleUpdate,
+} from "@nextgisweb/qgis/type/api";
+import type {
     EditorStoreOptions as EditorStoreOptionsBase,
     EditorStore as IEditorStore,
 } from "@nextgisweb/resource/type/EditorStore";
 import type { ResourceRef } from "@nextgisweb/resource/type/api";
-import type { Style } from "@nextgisweb/sld/style-editor/type/Style";
+import type { Style } from "@nextgisweb/sld/type/api";
 
-import type { Mode, Value } from "../type";
+import type { Mode } from "../type";
 
 type Dtype = "Int16" | "Int32" | "UInt16" | "UInt32" | "Byte";
 export interface RasterEditorStoreOptions
@@ -18,7 +23,14 @@ export interface RasterEditorStoreOptions
     band_count: number;
 }
 
-export class EditorStore implements IEditorStore<Value> {
+export class EditorStore
+    implements
+        IEditorStore<
+            QgisRasterStyleRead,
+            QgisRasterStyleCreate,
+            QgisRasterStyleUpdate
+        >
+{
     readonly identity = "qgis_raster_style";
 
     mode: Mode = "file";
@@ -67,17 +79,17 @@ export class EditorStore implements IEditorStore<Value> {
         this.copy_from = val;
     };
 
-    load(value: Value) {
+    load(value: QgisRasterStyleRead) {
         if (value.sld) {
-            this.sld = value.sld;
+            this.sld = value.sld ?? null;
             this.mode = "sld";
         } else if (value.format === "default") {
             this.mode = "default";
         }
     }
 
-    dump() {
-        const result: Value = {};
+    dump(): QgisRasterStyleCreate | QgisRasterStyleUpdate {
+        const result: QgisRasterStyleUpdate = {};
         if (this.mode === "file") {
             if (this.source) {
                 result.file_upload = this.source;

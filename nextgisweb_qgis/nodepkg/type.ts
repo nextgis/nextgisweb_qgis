@@ -1,6 +1,6 @@
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader";
 import type { ResourceRef } from "@nextgisweb/resource/type/api";
-import type { Style } from "@nextgisweb/sld/style-editor/type/Style";
+import type { Style } from "@nextgisweb/sld/type/api";
 
 export type Value = {
     file_upload?: FileMeta;
