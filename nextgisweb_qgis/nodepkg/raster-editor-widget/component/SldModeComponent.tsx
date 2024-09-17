@@ -5,6 +5,7 @@ import type { EditorWidgetProps } from "@nextgisweb/resource/type";
 import { RasterStyleEditor } from "@nextgisweb/sld/style-editor/RasterStyleEditor";
 import type { Symbolizer } from "@nextgisweb/sld/style-editor/type/Style";
 
+import { RasterSymbolizer } from "@nextgisweb/sld/type/api";
 import type { EditorStore } from "../EditorStore";
 
 export const SldModeComponent = observer(
@@ -19,16 +20,14 @@ export const SldModeComponent = observer(
             [store]
         );
 
-        if (symbolizer_?.type === "raster") {
             return (
                 <RasterStyleEditor
-                    initSymbolizer={symbolizer_}
+                    initSymbolizer={symbolizer_ as RasterSymbolizer}
                     onChange={onChange}
                     resourceId={store.parent_id}
                 />
             );
-        }
-        return null;
+
     }
 );
 
