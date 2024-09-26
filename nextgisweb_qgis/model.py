@@ -187,6 +187,7 @@ def update_not_modified(
         elif resource.qgis_format != format:
             return False
         else:
+            assert resource.qgis_fileobj, f"Missing qgis_fileobj, {resource.qgis_format=}"
             hash_existing = file_md5_hexdigest(resource.qgis_fileobj.filename())
         update = hash_existing == hash_expected
 
