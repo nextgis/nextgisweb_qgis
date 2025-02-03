@@ -640,7 +640,7 @@ def read_style(qgis_style):
         if qgis_style.qgis_format == QgisStyleFormat.SLD:
             uuid = UUID(int=qgis_style.qgis_sld_id, version=4).hex
         else:
-            uuid = qgis_style.qgis_fileobj.uuid
+            uuid = UUID(int=2**127 + qgis_style.qgis_fileobj_id, version=4).hex
 
         if isinstance(qgis_style, QgisVectorStyle):
             sml = qgis_style.svg_marker_library
