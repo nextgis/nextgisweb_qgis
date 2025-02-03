@@ -1,7 +1,11 @@
+import transaction
+
 from nextgisweb.env import Component
 from nextgisweb.lib.config import Option, OptionAnnotations
 
 import qgis_headless
+
+from .model import QgisRasterStyle, QgisVectorStyle
 
 
 class QgisComponent(Component):
@@ -39,6 +43,12 @@ class QgisComponent(Component):
             if "svg_path" in self.options:
                 qgis_headless.set_svg_paths(self.options["svg_path"])
             self._qgis_initialized = True
+
+    def maintenance(self):
+        with transaction.manager:
+            for cls in (QgisRasterStyle, QgisVectorStyle):
+                for resource in cls.filter_by(qgis_scale_range_cache=None):
+                    resource._update_scale_range_cache()
 
     # fmt: off
     option_annotations = OptionAnnotations((
