@@ -39,3 +39,18 @@ def test_update_not_modified(point_layer_id, test_data, ngw_txn):
 
     qvs.resmeta[:] = []
     assert not update_not_modified(qvs, qml1, "qgis.test")
+
+
+def test_scale_range(point_layer_id, test_data, ngw_txn):
+    vl = VectorLayer.filter_by(id=point_layer_id).one()
+    qvs = QgisVectorStyle(parent=vl).from_file(test_data / "scale/100_10.qml").persist()
+
+    assert qvs.qgis_scale_range_cache is None
+
+    ngw_txn.commit()
+
+    qvs = QgisVectorStyle.filter_by(id=qvs.id).one()
+    sr_cache = qvs.qgis_scale_range_cache
+    assert sr_cache is not None
+    assert sr_cache.min_scale_denom == 100000
+    assert sr_cache.max_scale_denom == 10000
