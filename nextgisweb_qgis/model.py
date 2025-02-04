@@ -116,7 +116,7 @@ def _render_bounds(extent, size, padding):
     return extended, render_size, target_box
 
 
-class ScaleRangeCache(Struct):
+class ScaleRangeCache(Struct, array_like=True):
     min_scale_denom: Union[float, None]
     max_scale_denom: Union[float, None]
 
@@ -160,7 +160,7 @@ class QgisStyleMixin:
     def _update_scale_range_cache(self):
         env.qgis.qgis_init()
         sr = read_style(self).scale_range()
-        self.qgis_scale_range_cache = ScaleRangeCache(min_scale_denom=sr[0], max_scale_denom=sr[1])
+        self.qgis_scale_range_cache = ScaleRangeCache(*sr)
 
     def scale_range(self):
         if self.qgis_scale_range_cache is None:
