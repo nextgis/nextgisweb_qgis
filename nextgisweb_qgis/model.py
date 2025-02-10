@@ -531,7 +531,7 @@ class RenderRequest:
             _reraise_qgis_exception(exc, OperationalError)
 
 
-class FormatAttr(SAttribute, apitype=True):
+class FormatAttr(SAttribute):
     def get(self, srlzr: Serializer) -> QgisStyleFormat:
         return srlzr.obj.qgis_format
 
@@ -548,7 +548,7 @@ class FormatAttr(SAttribute, apitype=True):
         srlzr.obj.qgis_format = value
 
 
-class SldAttr(SAttribute, apitype=True):
+class SldAttr(SAttribute):
     def get(self, srlzr: Serializer) -> Union[SLDStyle, UnsetType]:
         if srlzr.obj.qgis_format == QgisStyleFormat.SLD:
             return srlzr.obj.qgis_sld.value
@@ -565,7 +565,7 @@ class SldAttr(SAttribute, apitype=True):
         srlzr.obj.qgis_fileobj = None
 
 
-class FileUploadAttr(SAttribute, apitype=True):
+class FileUploadAttr(SAttribute):
     def get(self, srlzr: Serializer) -> UnsetType:
         return UNSET
 
@@ -603,7 +603,7 @@ class FileUploadAttr(SAttribute, apitype=True):
         srlzr.obj.qgis_sld = None
 
 
-class CopyFromAttr(SAttribute, apitype=True):
+class CopyFromAttr(SAttribute):
     def get(self, srlzr: Serializer) -> UnsetType:
         return UNSET
 
