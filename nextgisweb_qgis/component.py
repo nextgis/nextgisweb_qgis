@@ -2,8 +2,9 @@ import transaction
 
 from nextgisweb.env import Component
 from nextgisweb.lib.config import Option, OptionAnnotations
+from nextgisweb.lib.logging import logger
 
-import qgis_headless
+import qgis_headless as qh
 
 from .model import QgisRasterStyle, QgisVectorStyle
 
@@ -25,7 +26,7 @@ class QgisComponent(Component):
         view.setup_pyramid(self, config)
 
     def sys_info(self):
-        return (("QGIS", qgis_headless.get_qgis_version()),)
+        return (("QGIS", qh.get_qgis_version()),)
 
     def qgis_init(self):
         if not self._qgis_initialized:
@@ -36,19 +37,22 @@ class QgisComponent(Component):
                 logging_level = "INFO" if self.env.core.debug else "CRITICAL"
             else:
                 logging_level = logging_level.upper()
-            qgis_headless.set_logging_level(getattr(qgis_headless.LogLevel, logging_level))
+            qh.set_logging_level(getattr(qh.LogLevel, logging_level))
 
-            qgis_headless.init([])
+            qh.init([])
 
             if "svg_path" in self.options:
-                qgis_headless.set_svg_paths(self.options["svg_path"])
+                qh.set_svg_paths(self.options["svg_path"])
             self._qgis_initialized = True
 
     def maintenance(self):
         with transaction.manager:
             for cls in (QgisRasterStyle, QgisVectorStyle):
                 for resource in cls.filter_by(qgis_scale_range_cache=None):
-                    resource._update_scale_range_cache()
+                    try:
+                        resource._update_scale_range_cache()
+                    except qh.StyleValidationError as e:
+                        logger.error(f"QGIS style (id={resource.id}) error: {e}")
 
     # fmt: off
     option_annotations = OptionAnnotations((
