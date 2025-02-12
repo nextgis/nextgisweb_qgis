@@ -52,7 +52,7 @@ class QgisComponent(Component):
                     try:
                         resource._update_scale_range_cache()
                     except qh.StyleValidationError as e:
-                        logger.error(f"QGIS style (id={resource.id}) error: {e}")
+                        logger.warning(f"QGIS style (id={resource.id}) error: {e}")
 
     # fmt: off
     option_annotations = OptionAnnotations((
