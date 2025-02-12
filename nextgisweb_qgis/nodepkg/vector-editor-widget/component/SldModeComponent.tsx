@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useCallback, useMemo } from "react";
 
-import type { GeometryType } from "@nextgisweb/feature-layer/type";
+import type { FeaureLayerGeometryType } from "@nextgisweb/feature-layer/type/api";
 import type { EditorWidgetProps } from "@nextgisweb/resource/type";
 import { StyleEditor } from "@nextgisweb/sld/style-editor";
 import { SymbolizerCard } from "@nextgisweb/sld/style-editor/component/SymbolizerCard";
@@ -12,20 +12,21 @@ import type {
 
 import type { EditorStore } from "../EditorStore";
 
-const GeometryToStyleTypeMap: Record<GeometryType, SymbolizerType> = {
-    "POINT": "point",
-    "LINESTRING": "line",
-    "POLYGON": "polygon",
-    "MULTIPOINT": "point",
-    "MULTILINESTRING": "line",
-    "MULTIPOLYGON": "polygon",
-    "POINTZ": "point",
-    "LINESTRINGZ": "line",
-    "POLYGONZ": "polygon",
-    "MULTIPOINTZ": "point",
-    "MULTILINESTRINGZ": "line",
-    "MULTIPOLYGONZ": "polygon",
-};
+const GeometryToStyleTypeMap: Record<FeaureLayerGeometryType, SymbolizerType> =
+    {
+        "POINT": "point",
+        "LINESTRING": "line",
+        "POLYGON": "polygon",
+        "MULTIPOINT": "point",
+        "MULTILINESTRING": "line",
+        "MULTIPOLYGON": "polygon",
+        "POINTZ": "point",
+        "LINESTRINGZ": "line",
+        "POLYGONZ": "polygon",
+        "MULTIPOINTZ": "point",
+        "MULTILINESTRINGZ": "line",
+        "MULTIPOLYGONZ": "polygon",
+    };
 
 export const SldModeComponent = observer(
     ({ store }: EditorWidgetProps<EditorStore>) => {
@@ -57,3 +58,5 @@ export const SldModeComponent = observer(
         );
     }
 );
+
+SldModeComponent.displayName = "SldModeComponent";

@@ -1,6 +1,6 @@
 import { makeAutoObservable, toJS } from "mobx";
 
-import type { GeometryType } from "@nextgisweb/feature-layer/type";
+import type { FeaureLayerGeometryType } from "@nextgisweb/feature-layer/type/api";
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
 import type {
     QgisVectorStyleCreate,
@@ -17,7 +17,7 @@ import type { Style } from "@nextgisweb/sld/type/api";
 import type { Mode } from "../type";
 
 export interface VectorEditorStoreOptions extends EditorStoreOptionsBase {
-    geometryType: GeometryType;
+    geometryType: FeaureLayerGeometryType;
 }
 
 export class EditorStore
@@ -36,7 +36,7 @@ export class EditorStore
     uploading = false;
     sld: Style | null = null;
     copy_from?: ResourceRef = undefined;
-    geometryType: GeometryType;
+    geometryType: FeaureLayerGeometryType;
 
     constructor({ geometryType }: VectorEditorStoreOptions) {
         makeAutoObservable<EditorStore>(this, {
