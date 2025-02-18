@@ -1,6 +1,18 @@
 Changes
 =======
 
+3.4.0
+-----
+
+- Pre-calculated and cached style scale ranges for faster webmap opening.
+
+
+3.3.0
+-----
+
+- General fixes and compatibility updates.
+
+
 3.2.0
 -----
 
