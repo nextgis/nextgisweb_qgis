@@ -15,13 +15,11 @@
 <div id="DefaultStyleWidget"></div>
 
 <script type="text/javascript">
-    require([
-        "@nextgisweb/qgis/default-style-widget",
-        "@nextgisweb/gui/react-app",
-    ], function ({ default: comp}, { default: reactApp }) {
-        reactApp(
-            comp, {payload: ${json_js(payload)}},
-            document.getElementById('DefaultStyleWidget')
+    ngwEntry("@nextgisweb/gui/react-boot").then(({ default: reactBoot}) => {
+        reactBoot(
+            "@nextgisweb/qgis/default-style-widget",
+            {payload: ${json_js(payload)}},
+            "DefaultStyleWidget"
         );
     });
 </script>

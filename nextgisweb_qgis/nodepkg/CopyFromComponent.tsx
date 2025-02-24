@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 
 import { gettext } from "@nextgisweb/pyramid/i18n";
-import { ResourceSelect } from "@nextgisweb/resource/component/";
+import { ResourceSelect } from "@nextgisweb/resource/component";
 import type { ResourceSelectProps } from "@nextgisweb/resource/component/resource-select/type";
 import type { ResourceRef } from "@nextgisweb/resource/type/api";
 
