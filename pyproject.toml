@@ -1,17 +1,18 @@
 [tool.black]
 line-length = 99
-force-exclude = "qgis_headless"
 
 [tool.ruff]
 line-length = 99
-select = ["E", "F", "W", "I"]
-ignore = ["E501"]
 exclude = ["./docker.py", "./qgis_headless"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501", "E731"]
+
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 extra-standard-library = ["packaging", "pkg_resources", "setuptools"]
 section-order = [
     "future",
@@ -20,9 +21,9 @@ section-order = [
     "nextgisweb-env-lib",
     "nextgisweb-comp",
     "first-party",
-    "local-folder"
+    "local-folder",
 ]
 
-[tool.ruff.isort.sections]
+[tool.ruff.lint.isort.sections]
 "nextgisweb-env-lib" = ["nextgisweb.env", "nextgisweb.lib"]
 "nextgisweb-comp" = ["nextgisweb"]
