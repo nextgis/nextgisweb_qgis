@@ -1,6 +1,7 @@
 from nextgisweb.env import gettext
 from nextgisweb.lib import dynmenu as dm
 
+from nextgisweb.jsrealm import jsentry
 from nextgisweb.resource import Resource, Widget
 from nextgisweb.resource.view import resource_sections
 
@@ -10,7 +11,7 @@ from .model import QgisRasterStyle, QgisVectorStyle
 class VectorStyleWidget(Widget):
     resource = QgisVectorStyle
     operation = ("create", "update")
-    amdmod = "@nextgisweb/qgis/vector-editor-widget"
+    amdmod = jsentry("@nextgisweb/qgis/vector-editor-widget")
 
     def config(self):
         result = super().config()
@@ -21,7 +22,7 @@ class VectorStyleWidget(Widget):
 class RasterStyleWidget(Widget):
     resource = QgisRasterStyle
     operation = ("create", "update")
-    amdmod = "@nextgisweb/qgis/raster-editor-widget"
+    amdmod = jsentry("@nextgisweb/qgis/raster-editor-widget")
 
     def config(self):
         result = super().config()
@@ -30,6 +31,9 @@ class RasterStyleWidget(Widget):
         result["band_count"] = parent.band_count
         result["parent_id"] = parent.id
         return result
+
+
+DEFAULT_STYLE_WIDGET_JSENTRY = jsentry("@nextgisweb/qgis/default-style-widget")
 
 
 def setup_pyramid(comp, config):

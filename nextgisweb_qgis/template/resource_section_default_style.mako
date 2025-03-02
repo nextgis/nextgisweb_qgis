@@ -1,6 +1,7 @@
 <%!
     from nextgisweb.resource import Resource
     from nextgisweb_qgis import QgisRasterStyle, QgisVectorStyle
+    from nextgisweb_qgis.view import DEFAULT_STYLE_WIDGET_JSENTRY
 %>
 
 <%page args="section, cls" />
@@ -17,7 +18,7 @@
 <script type="text/javascript">
     ngwEntry("@nextgisweb/gui/react-boot").then(({ default: reactBoot}) => {
         reactBoot(
-            "@nextgisweb/qgis/default-style-widget",
+            ${json_js(DEFAULT_STYLE_WIDGET_JSENTRY)},
             {payload: ${json_js(payload)}},
             "DefaultStyleWidget"
         );
