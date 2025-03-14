@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useMemo } from "react";
 
 import type { FeaureLayerGeometryType } from "@nextgisweb/feature-layer/type/api";
-import type { EditorWidgetProps } from "@nextgisweb/resource/type";
+import type { EditorWidget } from "@nextgisweb/resource/type";
 import { StyleEditor } from "@nextgisweb/sld/style-editor";
 import { SymbolizerCard } from "@nextgisweb/sld/style-editor/component/SymbolizerCard";
 import type {
@@ -28,8 +28,8 @@ const GeometryToStyleTypeMap: Record<FeaureLayerGeometryType, SymbolizerType> =
         "MULTIPOLYGONZ": "polygon",
     };
 
-export const SldModeComponent = observer(
-    ({ store }: EditorWidgetProps<EditorStore>) => {
+export const SldModeComponent: EditorWidget<EditorStore> = observer(
+    ({ store }) => {
         const { sld } = store;
 
         const symbolizer = useMemo(() => sld?.rules[0]?.symbolizers[0], [sld]);

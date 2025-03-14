@@ -10,7 +10,7 @@ import type {
 import type {
     EditorStoreOptions as EditorStoreOptionsBase,
     EditorStore as IEditorStore,
-} from "@nextgisweb/resource/type/EditorStore";
+} from "@nextgisweb/resource/type";
 import type { ResourceRef } from "@nextgisweb/resource/type/api";
 import type { Style } from "@nextgisweb/sld/type/api";
 
