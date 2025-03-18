@@ -1,4 +1,4 @@
-import { makeAutoObservable, toJS } from "mobx";
+import { action, computed, observable, toJS } from "mobx";
 
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
 import type {
@@ -33,52 +33,53 @@ export class EditorStore
 {
     readonly identity = "qgis_raster_style";
 
-    mode: Mode = "file";
-    source?: FileMeta = undefined;
-    uploading = false;
-    sld: Style | null = null;
-    copy_from?: ResourceRef = undefined;
+    @observable.ref accessor mode: Mode = "file";
+    @observable.ref accessor source: FileMeta | undefined = undefined;
+    @observable.ref accessor uploading = false;
+    @observable.ref accessor sld: Style | null = null;
+    @observable.ref accessor copy_from: ResourceRef | undefined = undefined;
 
-    parent_id: number;
-    band_count: number;
-    dtype: Dtype;
+    readonly parent_id: number;
+    readonly band_count: number;
+    readonly dtype: Dtype;
 
     constructor({ parent_id, band_count, dtype }: RasterEditorStoreOptions) {
-        makeAutoObservable(this, {
-            identity: false,
-            dtype: false,
-            parent_id: false,
-            band_count: false,
-        });
         this.parent_id = parent_id;
         this.band_count = band_count;
         this.dtype = dtype;
     }
 
+    @computed
     get isValid() {
         return !this.uploading;
     }
 
+    @action
     setMode = (val: Mode) => {
         this.mode = val;
     };
 
+    @action
     setSource = (val?: FileMeta) => {
         this.source = val;
     };
 
+    @action
     setUploading = (val: boolean) => {
         this.uploading = val;
     };
 
+    @action
     setSld = (val: Style | null) => {
         this.sld = val;
     };
 
+    @action
     setCopyFrom = (val: ResourceRef) => {
         this.copy_from = val;
     };
 
+    @action
     load(value: QgisRasterStyleRead) {
         if (value.sld) {
             this.sld = value.sld ?? null;
