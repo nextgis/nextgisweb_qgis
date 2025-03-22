@@ -2,7 +2,6 @@ import { Balancer } from "react-wrap-balancer";
 
 import { Button, Card } from "@nextgisweb/gui/antd";
 import { errorModal } from "@nextgisweb/gui/error";
-import type { ApiError } from "@nextgisweb/gui/error/type";
 import { route, routeURL } from "@nextgisweb/pyramid/api";
 import { gettext } from "@nextgisweb/pyramid/i18n";
 import type { CompositeCreate } from "@nextgisweb/resource/type/api";
@@ -20,8 +19,8 @@ export function DefaultStyleWidget({ payload }: { payload: CompositeCreate }) {
                 json: payload,
             });
             window.open(routeURL("resource.show", { id }), "_self");
-        } catch (error) {
-            errorModal(error as ApiError);
+        } catch (err) {
+            errorModal(err);
             return;
         }
     };
