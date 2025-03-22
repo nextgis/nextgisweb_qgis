@@ -29,7 +29,7 @@ export const FileModeComponent: EditorWidget<EditorStore> = observer(
                 />
                 <label>{msgSvgMarkerLibrary}</label>
                 <ResourceSelect
-                    value={store.svgMarkerLibrary}
+                    value={store.svgMarkerLibrary ?? undefined}
                     onChange={(value) => {
                         if (Array.isArray(value)) throw "unreachable";
                         store.setSvgMarkerLibrary(value);
