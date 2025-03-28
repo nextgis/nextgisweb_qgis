@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite";
 
 import { FileUploader } from "@nextgisweb/file-upload/file-uploader";
+import { assert } from "@nextgisweb/jsrealm/error";
 import { gettext } from "@nextgisweb/pyramid/i18n";
 import { ResourceSelect } from "@nextgisweb/resource/component/resource-select";
 import type { EditorWidget } from "@nextgisweb/resource/type";
@@ -18,7 +19,7 @@ export const FileModeComponent: EditorWidget<EditorStore> = observer(
                 <FileUploader
                     accept=".qml,.sld"
                     onChange={(value) => {
-                        if (Array.isArray(value)) throw "unreachable";
+                        assert(!Array.isArray(value));
                         store.setSource(value);
                     }}
                     onUploading={(value) => {
@@ -31,7 +32,7 @@ export const FileModeComponent: EditorWidget<EditorStore> = observer(
                 <ResourceSelect
                     value={store.svgMarkerLibrary ?? undefined}
                     onChange={(value) => {
-                        if (Array.isArray(value)) throw "unreachable";
+                        assert(!Array.isArray(value));
                         store.setSvgMarkerLibrary(value);
                     }}
                     pickerOptions={{
