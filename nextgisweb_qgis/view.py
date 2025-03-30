@@ -1,4 +1,4 @@
-from nextgisweb.env import gettext
+from nextgisweb.env import env, gettext
 from nextgisweb.lib import dynmenu as dm
 
 from nextgisweb.jsrealm import jsentry
@@ -33,7 +33,26 @@ class RasterStyleWidget(Widget):
         return result
 
 
-DEFAULT_STYLE_WIDGET_JSENTRY = jsentry("@nextgisweb/qgis/default-style-widget")
+@resource_sections("@nextgisweb/qgis/resource-section/default-style")
+def resource_section_default_style(obj, *, request, **kwargs):
+    if not env.qgis.options["default_style"] or len(obj.children) != 0:
+        return
+
+    for cls in (QgisVectorStyle, QgisRasterStyle):
+        if not cls.check_parent(obj):
+            continue
+
+        child = cls(parent=obj, owner_user=request.user)
+        display_name = child.suggest_display_name(request.localizer.translate)
+        return dict(
+            payload=dict(
+                resource=dict(
+                    cls=cls.identity,
+                    parent=dict(id=obj.id),
+                    display_name=display_name,
+                )
+            )
+        )
 
 
 def setup_pyramid(comp, config):
@@ -48,10 +67,3 @@ def setup_pyramid(comp, config):
                 )
 
     Resource.__dynmenu__.add(LayerMenuExt())
-
-    @resource_sections(priority=40)
-    def resource_section_default_style(obj):
-        if comp.options["default_style"] and len(obj.children) == 0:
-            for cls in (QgisVectorStyle, QgisRasterStyle):
-                if cls.check_parent(obj):
-                    return dict(cls=cls.identity)
