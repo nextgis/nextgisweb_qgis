@@ -33,7 +33,7 @@ class RasterStyleWidget(Widget):
         return result
 
 
-@resource_sections("@nextgisweb/qgis/resource-section/default-style")
+@resource_sections("@nextgisweb/qgis/resource-section/default-style", order=-50)
 def resource_section_default_style(obj, *, request, **kwargs):
     if not env.qgis.options["default_style"] or len(obj.children) != 0:
         return
