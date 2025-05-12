@@ -13,7 +13,7 @@ import type { CompositeCreate } from "@nextgisweb/resource/type/api";
 // prettier-ignore
 const [msgButton, msgText] = [
     gettext("Create default QGIS style"),
-    gettext("Layer created. You need a style to add it to a web map. Use the button bellow to create a default QGIS style or create a style resource using sidebar."),
+    gettext("Layer created. A style is required to add the layer to a web map. You can generate a default QGIS style resource using the button."),
 ]
 
 interface QgisResourceSectionDefaultStyleProps extends ResourceSectionProps {
