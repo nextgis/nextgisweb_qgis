@@ -33,9 +33,11 @@ class RasterStyleWidget(Widget):
         return result
 
 
-@resource_sections("@nextgisweb/qgis/resource-section/default-style", order=-50)
+@resource_sections("@nextgisweb/qgis/resource-section/default-style", order=-60)
 def resource_section_default_style(obj, *, request, **kwargs):
-    if not env.qgis.options["default_style"] or len(obj.children) != 0:
+    if not env.qgis.options["default_style"] or any(
+        child.cls.endswith("_style") for child in obj.children
+    ):
         return
 
     for cls in (QgisVectorStyle, QgisRasterStyle):
@@ -44,6 +46,8 @@ def resource_section_default_style(obj, *, request, **kwargs):
 
         child = cls(parent=obj, owner_user=request.user)
         display_name = child.suggest_display_name(request.localizer.translate)
+        obj.children.remove(child)
+
         return dict(
             payload=dict(
                 resource=dict(
