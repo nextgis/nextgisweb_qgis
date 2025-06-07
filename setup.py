@@ -5,7 +5,7 @@ with io.open("VERSION", "r") as fd:
     VERSION = fd.read().rstrip()
 
 requires = [
-    "nextgisweb>=5.1.0.dev11",
+    "nextgisweb>=5.1.0.dev14",
     "qgis_headless",
 ]
 
