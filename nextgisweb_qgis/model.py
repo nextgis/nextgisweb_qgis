@@ -94,6 +94,8 @@ _FILE_FORMAT_2_HEADLESS = {
 }
 _HEADLESS_2_FILE_FORMAT = {v: k for k, v in _FILE_FORMAT_2_HEADLESS.items()}
 
+RENDER_PADDING = 64
+
 
 def _render_bounds(extent, size, padding):
     res_x = (extent[2] - extent[0]) / size[0]
@@ -370,14 +372,14 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     def render_request(self, srs, cond=None):
         return RenderRequest(self, srs, cond)
 
-    def _render_image(self, srs, extent, size, *, symbols=None, padding=0):
-        extended, render_size, target_box = _render_bounds(extent, size, padding)
-
+    def _render_image(self, srs, extent, size, *, symbols=None):
         env.qgis.qgis_init()
 
         style = read_style(self)
         if not check_scale_range(style, extent, size, dpi=96):
             return None
+
+        extended, render_size, target_box = _render_bounds(extent, size, RENDER_PADDING)
 
         feature_query = self.parent.feature_query()
         feature_query.srs(srs)
@@ -433,8 +435,11 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
         render_params = dict()
         if symbols is not None:
             render_params["symbols"] = ((idx, symbols),)
-        res = mreq.render_image(extent, size, **render_params)
-        return qgis_image_to_pil(res)
+        res = mreq.render_image(extended, render_size, **render_params)
+        im = qgis_image_to_pil(res)
+        im = im.crop(target_box)
+        assert im.size == size
+        return im
 
     def render_legend(self):
         env.qgis.qgis_init()
@@ -525,13 +530,7 @@ class RenderRequest:
 
     def render_tile(self, tile, size):
         extent = self.srs.tile_extent(tile)
-        params = dict(self.params)
-        if isinstance(self.style, QgisVectorStyle):
-            params["padding"] = size / 2
-        try:
-            return self.style._render_image(self.srs, extent, (size, size), **params)
-        except Exception as exc:
-            _reraise_qgis_exception(exc, OperationalError)
+        return self.render_extent(extent, (size, size))
 
 
 class FormatAttr(SAttribute):

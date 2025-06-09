@@ -1,0 +1,14 @@
+{
+	"type": "FeatureCollection",
+	"name": "center-west",
+	"features": [
+		{
+			"type": "Feature",
+			"properties": { },
+			"geometry": {
+				"type": "Point",
+				"coordinates": [ -40, 0 ]
+			}
+		}
+	]
+}
