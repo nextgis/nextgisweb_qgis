@@ -5,6 +5,7 @@ Changes
 -----
 
 - Fix issues with @map_scale variable and area calculations.
+- Handle rendering artifacts at tile boundaries.
 
 
 3.4.0

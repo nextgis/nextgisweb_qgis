@@ -370,14 +370,17 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     def render_request(self, srs, cond=None):
         return RenderRequest(self, srs, cond)
 
-    def _render_image(self, srs, extent, size, *, symbols=None, padding=0):
-        extended, render_size, target_box = _render_bounds(extent, size, padding)
-
+    def _render_image(self, srs, extent, size, *, symbols=None, padding=None):
         env.qgis.qgis_init()
 
         style = read_style(self)
         if not check_scale_range(style, extent, size, dpi=96):
             return None
+
+        if padding is not None:
+            extended, render_size, target_box = _render_bounds(extent, size, padding)
+        else:
+            extended, render_size = extent, size
 
         feature_query = self.parent.feature_query()
         feature_query.srs(srs)
@@ -433,8 +436,14 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
         render_params = dict()
         if symbols is not None:
             render_params["symbols"] = ((idx, symbols),)
-        res = mreq.render_image(extent, size, **render_params)
-        return qgis_image_to_pil(res)
+        res = mreq.render_image(extended, render_size, **render_params)
+        im = qgis_image_to_pil(res)
+
+        if padding is not None:
+            im = im.crop(target_box)
+            assert im.size == tuple(size)
+
+        return im
 
     def render_legend(self):
         env.qgis.qgis_init()
@@ -527,7 +536,7 @@ class RenderRequest:
         extent = self.srs.tile_extent(tile)
         params = dict(self.params)
         if isinstance(self.style, QgisVectorStyle):
-            params["padding"] = size / 2
+            params["padding"] = 64
         try:
             return self.style._render_image(self.srs, extent, (size, size), **params)
         except Exception as exc:
