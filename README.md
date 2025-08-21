@@ -10,8 +10,7 @@ $ git clone --recurse-submodules git@github.com:nextgis/nextgisweb_qgis.git
 ```
 
 Then install `qgis_headless` which is included as git submodule and requires
-QGIS 3.22+ and some additional libraries (see qgis_headeless/README.md for
-details).
+QGIS and some additional libraries (see qgis_headeless/README.md for details).
 
 ```bash
 $ cd nextgisweb_qgis
