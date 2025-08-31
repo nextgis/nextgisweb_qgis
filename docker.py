@@ -35,7 +35,7 @@ def on_package_files(event):
 @AppImage.on_virtualenv.handler
 def on_virtualenv(event):
     event.before_install(
-        "$NGWROOT/env/bin/pip install --no-cache-dir package/nextgisweb_qgis/qgis_headless"
+        f"{event.path}/bin/pip install --no-cache-dir package/nextgisweb_qgis/qgis_headless"
     )
 
 
