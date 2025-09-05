@@ -1,7 +1,3 @@
-[tool.black]
-line-length = 99
-extend-exclude = "(/qgis_headless/)"
-
 [tool.ruff]
 line-length = 99
 exclude = ["./docker.py", "./qgis_headless"]
