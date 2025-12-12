@@ -1,6 +1,7 @@
-from ngwdocker import PackageBase
 from ngwdocker.base import AppImage
 from ngwdocker.util import git_ls_files
+
+from ngwdocker import PackageBase
 
 
 class Package(PackageBase):
@@ -12,8 +13,11 @@ def on_apt(event):
     if event.image.package.apt_repository.get("nextgis_rm"):
         event.package("libngqgis-dev", "ngqgis-providers-common")
     else:
-        event.add_repository("deb https://qgis.org/ubuntu-ltr $(lsb_release -sc) main")
-        event.add_key("https://download.qgis.org/downloads/qgis-2022.gpg.key")
+        event.add_repository(
+            "deb https://qgis.org/ubuntu-ltr $(lsb_release -sc) main",
+            key="https://download.qgis.org/downloads/qgis-archive-keyring.gpg",
+        )
+
         # Package qgis-providers-common is required to get standard icons working.
         # TODO: Don't install package with its dependecies, just download it and
         # extract files to /usr/share/qgis/svg
@@ -42,4 +46,6 @@ def on_virtualenv(event):
 @AppImage.on_config.handler
 def on_config(event):
     event.image.config_set("qgis", "svg_path", "/usr/share/qgis/svg")
-    event.image.config_set("qgis", "test.qgis_headless_path", "/opt/ngw/package/nextgisweb_qgis")
+    event.image.config_set(
+        "qgis", "test.qgis_headless_path", "/opt/ngw/package/nextgisweb_qgis"
+    )
