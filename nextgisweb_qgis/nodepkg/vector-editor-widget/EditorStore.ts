@@ -1,7 +1,7 @@
 import { isEqual } from "lodash-es";
 import { action, computed, observable } from "mobx";
 
-import type { FeaureLayerGeometryType } from "@nextgisweb/feature-layer/type/api";
+import type { FeatureLayerGeometryType } from "@nextgisweb/feature-layer/type/api";
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
 import type {
     QgisVectorStyleCreate,
@@ -18,7 +18,7 @@ import type { Style } from "@nextgisweb/sld/type/api";
 export type Mode = "file" | "sld" | "copy" | "default";
 
 export interface VectorEditorStoreOptions extends EditorStoreOptions {
-    geometryType: FeaureLayerGeometryType;
+    geometryType: FeatureLayerGeometryType;
 }
 
 export class EditorStore
@@ -30,7 +30,7 @@ export class EditorStore
         >
 {
     readonly identity = "qgis_vector_style";
-    readonly geometryType: FeaureLayerGeometryType;
+    readonly geometryType: FeatureLayerGeometryType;
 
     @observable.ref accessor mode: Mode = "file";
     @observable.ref accessor source: FileMeta | null = null;

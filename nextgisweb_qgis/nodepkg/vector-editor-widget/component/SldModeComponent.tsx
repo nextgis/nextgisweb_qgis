@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useCallback, useMemo } from "react";
 
-import type { FeaureLayerGeometryType } from "@nextgisweb/feature-layer/type/api";
+import type { FeatureLayerGeometryType } from "@nextgisweb/feature-layer/type/api";
 import type { EditorWidget } from "@nextgisweb/resource/type";
 import { StyleEditor } from "@nextgisweb/sld/style-editor";
 import { SymbolizerCard } from "@nextgisweb/sld/style-editor/component/SymbolizerCard";
@@ -12,7 +12,7 @@ import type {
 
 import type { EditorStore } from "../EditorStore";
 
-const GeometryToStyleTypeMap: Record<FeaureLayerGeometryType, SymbolizerType> =
+const GeometryToStyleTypeMap: Record<FeatureLayerGeometryType, SymbolizerType> =
     {
         "POINT": "point",
         "LINESTRING": "line",
