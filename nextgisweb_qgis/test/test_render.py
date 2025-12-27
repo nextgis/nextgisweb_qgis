@@ -1,10 +1,9 @@
 from pathlib import Path
 
 import pytest
+from qgis_headless.util import image_stat
 
 from nextgisweb.vector_layer import VectorLayer
-
-from qgis_headless.util import image_stat
 
 from ..model import QgisVectorStyle
 

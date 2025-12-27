@@ -10,6 +10,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from cachetools import LRUCache
 from msgspec import UNSET, Struct, UnsetType
+from qgis_headless.util import to_pil as qgis_image_to_pil
 from shapely.geometry import box
 from sqlalchemy.orm import declared_attr
 from zope.interface import implementer
@@ -57,7 +58,6 @@ from qgis_headless import (
     StyleTypeMismatch,
     StyleValidationError,
 )
-from qgis_headless.util import to_pil as qgis_image_to_pil
 
 from .util import MD5_NULL_HEXDIGEST, file_md5_hexdigest, rand_color, sld_to_qml_raster
 
