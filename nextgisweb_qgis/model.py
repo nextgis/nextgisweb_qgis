@@ -3,6 +3,7 @@ from enum import Enum
 from io import BytesIO
 from os.path import normpath
 from os.path import sep as path_sep
+from textwrap import dedent
 from typing import Union
 from uuid import UUID
 
@@ -15,7 +16,7 @@ from shapely.geometry import box
 from sqlalchemy.orm import declared_attr
 from zope.interface import implementer
 
-from nextgisweb.env import Base, env, gettext
+from nextgisweb.env import env, gettext
 from nextgisweb.lib import saext
 from nextgisweb.lib.geometry import Geometry
 from nextgisweb.lib.saext import Msgspec
@@ -148,6 +149,19 @@ class QgisStyleMixin:
     def qgis_scale_range_cache(cls):
         return sa.Column(Msgspec(ScaleRangeCache), nullable=True)
 
+    @classmethod
+    def _qgis_format_check(cls):
+        sql = """
+            CASE qgis_format
+                WHEN 'default' THEN qgis_sld_id IS NULL AND qgis_fileobj_id IS NULL
+                WHEN 'sld' THEN qgis_sld_id IS NOT NULL AND qgis_fileobj_id IS NULL
+                WHEN 'sld_file' THEN qgis_fileobj_id IS NOT NULL AND qgis_sld_id IS NULL
+                WHEN 'qml_file' THEN qgis_fileobj_id IS NOT NULL AND qgis_sld_id IS NULL
+                ELSE false
+            END
+        """
+        return sa.CheckConstraint(dedent(sql).strip(), name="qgis_format_check")
+
     @property
     def srs(self):
         return self.parent.srs
@@ -167,21 +181,6 @@ class QgisStyleMixin:
             self._update_scale_range_cache()
         c = self.qgis_scale_range_cache
         return (c.min_scale_denom, c.max_scale_denom)
-
-    __table_args__ = (
-        sa.CheckConstraint(
-            """
-            CASE qgis_format
-                WHEN 'default' THEN qgis_sld_id IS NULL AND qgis_fileobj_id IS NULL
-                WHEN 'sld' THEN qgis_sld_id IS NOT NULL AND qgis_fileobj_id IS NULL
-                WHEN 'sld_file' THEN qgis_fileobj_id IS NOT NULL AND qgis_sld_id IS NULL
-                WHEN 'qml_file' THEN qgis_fileobj_id IS NOT NULL AND qgis_sld_id IS NULL
-                ELSE false
-            END
-        """,
-            name="qgis_format_check",
-        ),
-    )
 
 
 def update_not_modified(
@@ -240,10 +239,12 @@ def update_not_modified(
 
 
 @implementer(IRenderableStyle, ILegendSymbols, IRenderableScaleRange)
-class QgisRasterStyle(Base, QgisStyleMixin, Resource):
+class QgisRasterStyle(Resource, QgisStyleMixin):
     identity = "qgis_raster_style"
     cls_display_name = gettext("QGIS raster style")
     cls_order = 60
+
+    __table_args__ = (QgisStyleMixin._qgis_format_check(),)
 
     __scope__ = DataScope
 
@@ -341,7 +342,7 @@ def path_resolver_factory(svg_marker_library):
 
 
 @implementer(IRenderableStyle, ILegendableStyle, ILegendSymbols, IRenderableScaleRange)
-class QgisVectorStyle(Base, QgisStyleMixin, Resource):
+class QgisVectorStyle(Resource, QgisStyleMixin):
     identity = "qgis_vector_style"
     cls_display_name = gettext("QGIS vector style")
     cls_order = 60
@@ -349,6 +350,8 @@ class QgisVectorStyle(Base, QgisStyleMixin, Resource):
     __scope__ = DataScope
 
     svg_marker_library_id = sa.Column(sa.ForeignKey(SVGMarkerLibrary.id), nullable=True)
+
+    __table_args__ = (QgisStyleMixin._qgis_format_check(),)
 
     svg_marker_library = orm.relationship(
         SVGMarkerLibrary,
