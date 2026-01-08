@@ -3,13 +3,12 @@ from pathlib import Path
 import pytest
 import transaction
 
-from nextgisweb.env import DBSession
-
+from nextgisweb.raster_layer import RasterLayer
 from nextgisweb.vector_layer import VectorLayer
 
 import nextgisweb_qgis
 
-pytestmark = pytest.mark.usefixtures("ngw_resource_defaults", "ngw_auth_administrator")
+pytestmark = pytest.mark.usefixtures("ngw_resource_defaults")
 
 
 @pytest.fixture(scope="module")
@@ -29,8 +28,6 @@ def point_layer_id(test_data):
     with transaction.manager:
         source = test_data / "zero/data.geojson"
         res = VectorLayer().persist().from_ogr(source)
-        DBSession.flush()
-
     yield res.id
 
 
@@ -39,8 +36,6 @@ def polygon_layer_id(test_data):
     with transaction.manager:
         source = test_data / "landuse/landuse.geojson"
         res = VectorLayer().persist().from_ogr(source)
-        DBSession.flush()
-
     yield res.id
 
 
@@ -49,6 +44,12 @@ def contour_layer_id(test_data):
     with transaction.manager:
         source = test_data / "contour/data.geojson"
         res = VectorLayer().persist().from_ogr(source)
-        DBSession.flush()
-
     yield res.id
+
+
+@pytest.fixture(scope="module")
+def raster_layer_id(test_data):
+    with transaction.manager:
+        layer = RasterLayer().persist()
+        layer.load_file(str(test_data / "raster/rounds.tif"))
+    yield layer.id

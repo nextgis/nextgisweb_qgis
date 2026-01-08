@@ -1,9 +1,6 @@
-from secrets import token_hex
-
 import pytest
-import transaction
 
-from nextgisweb.raster_layer import RasterLayer
+from nextgisweb.resource.test import ResourceAPI
 from nextgisweb.spatial_ref_sys import SRS
 
 from ..model import QgisRasterStyle, QgisStyleFormat, QgisVectorStyle
@@ -20,19 +17,19 @@ pytestmark = pytest.mark.usefixtures("ngw_resource_defaults", "ngw_auth_administ
         pytest.param("landuse/landuse.qml", 201, id="valid-style"),
     ),
 )
-def test_qgis_vector_style(test_data, style, status, polygon_layer_id, ngw_webtest_app):
-    style_data = (test_data / style).read_bytes()
-    resp = ngw_webtest_app.put("/api/component/file_upload/", style_data)
+def test_qgis_vector_style(test_data, style, status, polygon_layer_id, ngw_file_upload):
+    rapi = ResourceAPI()
 
-    body = dict(
-        resource=dict(
-            cls="qgis_vector_style",
-            parent=dict(id=polygon_layer_id),
-            display_name=token_hex(8),
-        ),
-        qgis_vector_style=dict(file_upload=resp.json),
+    style_fu = ngw_file_upload(test_data / style)
+
+    resp = rapi.create_request(
+        "qgis_vector_style",
+        {
+            "resource": {"parent": {"id": polygon_layer_id}},
+            "qgis_vector_style": {"file_upload": style_fu},
+        },
+        status=status,
     )
-    resp = ngw_webtest_app.post_json("/api/resource/", body, status=status)
 
     if status != 201:
         return
@@ -43,15 +40,6 @@ def test_qgis_vector_style(test_data, style, status, polygon_layer_id, ngw_webte
     req.render_tile((0, 0, 0), 256)
 
 
-@pytest.fixture(scope="module")
-def raster_layer_id(test_data, ngw_env):
-    with transaction.manager:
-        layer = RasterLayer().persist()
-        layer.load_file(str(test_data / "raster/rounds.tif"))
-
-    yield layer.id
-
-
 @pytest.mark.parametrize(
     "style, status",
     (
@@ -60,19 +48,19 @@ def raster_layer_id(test_data, ngw_env):
         pytest.param("raster/rounds.qml", 201, id="valid-style"),
     ),
 )
-def test_qgis_raster_style(test_data, style, status, raster_layer_id, ngw_webtest_app):
-    style_data = (test_data / style).read_bytes()
-    resp = ngw_webtest_app.put("/api/component/file_upload/", style_data)
+def test_qgis_raster_style(test_data, style, status, raster_layer_id, ngw_file_upload):
+    rapi = ResourceAPI()
 
-    body = dict(
-        resource=dict(
-            cls="qgis_raster_style",
-            parent=dict(id=raster_layer_id),
-            display_name=token_hex(8),
-        ),
-        qgis_raster_style=dict(file_upload=resp.json),
+    style_fu = ngw_file_upload(test_data / style)
+
+    resp = rapi.create_request(
+        "qgis_raster_style",
+        {
+            "resource": {"parent": {"id": raster_layer_id}},
+            "qgis_raster_style": {"file_upload": style_fu},
+        },
+        status=status,
     )
-    resp = ngw_webtest_app.post_json("/api/resource/", body, status=status)
 
     if status != 201:
         return
@@ -103,24 +91,20 @@ def test_qgis_raster_style(test_data, style, status, raster_layer_id, ngw_webtes
         (None, "sld_file", None),
     ),
 )
-def test_format(style, format_, expected, test_data, contour_layer_id, ngw_webtest_app):
-    body = dict(
-        resource=dict(
-            cls="qgis_vector_style",
-            parent=dict(id=contour_layer_id),
-            display_name=token_hex(8),
-        ),
-    )
+def test_format(style, format_, expected, test_data, contour_layer_id, ngw_file_upload):
+    rapi = ResourceAPI()
+
+    body = {"resource": {"parent": {"id": contour_layer_id}}}
     if format_ is not None or style is not None:
-        body["qgis_vector_style"] = dict()
+        body["qgis_vector_style"] = {}
         if format_ is not None:
             body["qgis_vector_style"]["format"] = format_
         if style is not None:
-            style_data = (test_data / style).read_bytes()
-            resp = ngw_webtest_app.put("/api/component/file_upload/", style_data)
-            body["qgis_vector_style"]["file_upload"] = resp.json
+            style_fu = ngw_file_upload(test_data / style)
+            body["qgis_vector_style"]["file_upload"] = style_fu
 
-    resp = ngw_webtest_app.post_json("/api/resource/", body, status="*")
+    resp = rapi.create_request("qgis_vector_style", body, status="*")
+
     if expected is None:
         assert resp.status_code == 422
         return
@@ -130,31 +114,30 @@ def test_format(style, format_, expected, test_data, contour_layer_id, ngw_webte
     assert qgis_style.qgis_format.value == expected
 
 
-def test_sld_vector(point_layer_id, ngw_webtest_app):
-    symbolizer = dict(
-        type="point",
-        graphic=dict(
-            opacity=0.75,
-            mark=dict(
-                well_known_name="square",
-                fill=dict(opacity=0.25, color="#00FF00"),
-                stroke=dict(opacity=0.75, color="#FF0000", width=2),
-            ),
-            size=16,
-        ),
-    )
-    sld = dict(rules=[dict(symbolizers=[symbolizer])])
+def test_sld_vector(point_layer_id):
+    rapi = ResourceAPI()
 
-    resp = ngw_webtest_app.post_json(
-        "/api/resource/",
-        dict(
-            resource=dict(
-                cls="qgis_vector_style",
-                parent=dict(id=point_layer_id),
-                display_name=token_hex(8),
-            ),
-            qgis_vector_style=dict(format=QgisStyleFormat.SLD.value, sld=sld),
-        ),
+    symbolizer = {
+        "type": "point",
+        "graphic": {
+            "opacity": 0.75,
+            "mark": {
+                "well_known_name": "square",
+                "fill": {"opacity": 0.25, "color": "#00FF00"},
+                "stroke": {"opacity": 0.75, "color": "#FF0000", "width": 2},
+            },
+            "size": 16,
+        },
+    }
+
+    sld = {"rules": [{"symbolizers": [symbolizer]}]}
+
+    resp = rapi.create_request(
+        "qgis_vector_style",
+        {
+            "resource": {"parent": {"id": point_layer_id}},
+            "qgis_vector_style": {"format": QgisStyleFormat.SLD.value, "sld": sld},
+        },
         status=201,
     )
 
@@ -167,27 +150,26 @@ def test_sld_vector(point_layer_id, ngw_webtest_app):
     assert pixel == (0, 255, 0, 63)
 
 
-def test_sld_raster(raster_layer_id, ngw_webtest_app):
-    symbolizer = dict(
-        type="raster",
-        opacity=0.5,
-        channels=dict(
-            red=dict(source_channel=1),
-            green=dict(source_channel=2),
-        ),
-    )
-    sld = dict(rules=[dict(symbolizers=[symbolizer])])
+def test_sld_raster(raster_layer_id):
+    rapi = ResourceAPI()
 
-    resp = ngw_webtest_app.post_json(
-        "/api/resource/",
-        dict(
-            resource=dict(
-                cls="qgis_raster_style",
-                parent=dict(id=raster_layer_id),
-                display_name=token_hex(8),
-            ),
-            qgis_raster_style=dict(format=QgisStyleFormat.SLD.value, sld=sld),
-        ),
+    symbolizer = {
+        "type": "raster",
+        "opacity": 0.5,
+        "channels": {
+            "red": {"source_channel": 1},
+            "green": {"source_channel": 2},
+        },
+    }
+
+    sld = {"rules": [{"symbolizers": [symbolizer]}]}
+
+    resp = rapi.create_request(
+        "qgis_raster_style",
+        {
+            "resource": {"parent": {"id": raster_layer_id}},
+            "qgis_raster_style": {"format": QgisStyleFormat.SLD.value, "sld": sld},
+        },
         status=201,
     )
 

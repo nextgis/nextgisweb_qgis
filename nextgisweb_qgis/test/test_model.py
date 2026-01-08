@@ -4,7 +4,7 @@ from nextgisweb.vector_layer import VectorLayer
 
 from ..model import QgisStyleFormat, QgisVectorStyle, update_not_modified
 
-pytestmark = pytest.mark.usefixtures("ngw_resource_defaults", "ngw_auth_administrator")
+pytestmark = pytest.mark.usefixtures("ngw_resource_defaults")
 
 
 def test_update_not_modified(point_layer_id, test_data, ngw_txn):
