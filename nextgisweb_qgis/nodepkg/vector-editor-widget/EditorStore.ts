@@ -21,14 +21,11 @@ export interface VectorEditorStoreOptions extends EditorStoreOptions {
     geometryType: FeatureLayerGeometryType;
 }
 
-export class EditorStore
-    implements
-        IEditorStore<
-            QgisVectorStyleRead,
-            QgisVectorStyleCreate,
-            QgisVectorStyleCreate
-        >
-{
+export class EditorStore implements IEditorStore<
+    QgisVectorStyleRead,
+    QgisVectorStyleCreate,
+    QgisVectorStyleCreate
+> {
     readonly identity = "qgis_vector_style";
     readonly geometryType: FeatureLayerGeometryType;
 

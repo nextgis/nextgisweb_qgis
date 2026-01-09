@@ -24,14 +24,11 @@ export interface RasterEditorStoreOptions extends EditorStoreOptions {
     band_count: number;
 }
 
-export class EditorStore
-    implements
-        IEditorStore<
-            QgisRasterStyleRead,
-            QgisRasterStyleCreate,
-            QgisRasterStyleUpdate
-        >
-{
+export class EditorStore implements IEditorStore<
+    QgisRasterStyleRead,
+    QgisRasterStyleCreate,
+    QgisRasterStyleUpdate
+> {
     readonly identity = "qgis_raster_style";
 
     @observable.ref accessor mode: Mode = "file";
