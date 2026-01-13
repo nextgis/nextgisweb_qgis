@@ -1,0 +1,32 @@
+{
+	"type": "FeatureCollection",
+	"name": "two-points",
+	"features": [
+		{
+			"type": "Feature",
+			"properties": {
+				"color": "#FF0000"
+			},
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					-40,
+					0
+				]
+			}
+		},
+		{
+			"type": "Feature",
+			"properties": {
+				"color": "#00FF00"
+			},
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					40,
+					0
+				]
+			}
+		}
+	]
+}

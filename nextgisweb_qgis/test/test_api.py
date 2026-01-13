@@ -1,7 +1,15 @@
-import pytest
+import json
+from io import BytesIO
 
+import pytest
+import transaction
+from PIL import Image
+from qgis_headless.util import image_stat
+
+from nextgisweb.pyramid.test import WebTestApp
 from nextgisweb.resource.test import ResourceAPI
 from nextgisweb.spatial_ref_sys import SRS
+from nextgisweb.vector_layer.model import VectorLayer
 
 from ..model import QgisRasterStyle, QgisStyleFormat, QgisVectorStyle
 
@@ -187,3 +195,43 @@ def test_sld_raster(raster_layer_id):
 
         pixel = img.getpixel((128, 128))
         assert pixel[: len(color)] == color
+
+
+@pytest.fixture(scope="module")
+def two_point_style_id(two_point_layer_id, ngw_data_path):
+    with transaction.manager:
+        layer = VectorLayer.filter_by(id=two_point_layer_id).one()
+        style = QgisVectorStyle(parent=layer).from_file(ngw_data_path / "two-points.qml").persist()
+    yield style.id
+
+
+@pytest.mark.parametrize(
+    "feature_filter, color_max",
+    (
+        pytest.param(None, (255, 255, 0, 255), id="both"),
+        pytest.param(["all", ["==", ["get", "color"], "#FF0000"]], (255, 0, 0, 255), id="red"),
+        pytest.param(["all", ["==", ["get", "color"], "#00FF00"]], (0, 255, 0, 255), id="green"),
+        pytest.param(["all", ["==", ["get", "color"], "no-match"]], (0, 0, 0, 0), id="empty"),
+    ),
+)
+def test_feature_filter(
+    feature_filter, color_max, two_point_style_id, ngw_webtest_app: WebTestApp
+):
+    query = dict(
+        resource=two_point_style_id,
+        extent="-20037508,-20037508,20037508,20037508",
+        size="256,256",
+        nd=200,
+    )
+    if feature_filter is not None:
+        query[f"filter[{two_point_style_id}]"] = json.dumps(feature_filter)
+
+    resp = ngw_webtest_app.get("/api/component/render/image", query=query, status=200)
+    im = Image.open(BytesIO(resp.body))
+    stat = image_stat(im)
+
+    r, g, b, a = color_max
+    assert stat.red.max == r
+    assert stat.green.max == g
+    assert stat.blue.max == b
+    assert stat.alpha.max == a
