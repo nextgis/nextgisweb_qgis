@@ -22,7 +22,7 @@ from nextgisweb.lib.geometry import Geometry
 from nextgisweb.lib.saext import Msgspec
 
 from nextgisweb.core.exception import InsufficientPermissions, OperationalError, ValidationError
-from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE, IFeatureLayer
+from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE, IFeatureLayer, IFilterableFeatureLayer
 from nextgisweb.file_storage import FileObj
 from nextgisweb.file_upload import FileUploadRef
 from nextgisweb.render import (
@@ -373,7 +373,7 @@ class QgisVectorStyle(Resource, QgisStyleMixin):
     def render_request(self, srs, cond=None):
         return RenderRequest(self, srs, cond)
 
-    def _render_image(self, srs, extent, size, *, symbols=None, padding=None):
+    def _render_image(self, srs, extent, size, *, symbols=None, feature_filter=None, padding=None):
         env.qgis.qgis_init()
 
         style = read_style(self)
@@ -385,7 +385,11 @@ class QgisVectorStyle(Resource, QgisStyleMixin):
         else:
             extended, render_size = extent, size
 
-        feature_query = self.parent.feature_query()
+        feature_layer = self.parent
+        feature_query = feature_layer.feature_query()
+        if feature_filter is not None and IFilterableFeatureLayer.providedBy(feature_layer):
+            filter_program = feature_layer.filter_parser.parse(feature_filter)
+            feature_query.set_filter_program(filter_program)
         feature_query.srs(srs)
 
         bbox = Geometry.from_shape(box(*extended), srid=srs.id)
@@ -526,8 +530,11 @@ class RenderRequest:
         self.srs = srs
         self.params = dict()
         if isinstance(style, QgisVectorStyle):
-            if cond is not None and "symbols" in cond:
-                self.params["symbols"] = tuple(cond["symbols"])
+            if cond is not None:
+                if "symbols" in cond:
+                    self.params["symbols"] = tuple(cond["symbols"])
+                if "filter" in cond:
+                    self.params["feature_filter"] = cond["filter"]
 
     def render_extent(self, extent, size):
         try:

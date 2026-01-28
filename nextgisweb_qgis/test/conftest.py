@@ -53,3 +53,11 @@ def raster_layer_id(test_data):
         layer = RasterLayer().persist()
         layer.load_file(str(test_data / "raster/rounds.tif"))
     yield layer.id
+
+
+@pytest.fixture(scope="module")
+def two_point_layer_id(ngw_data_path):
+    with transaction.manager:
+        source = ngw_data_path / "two-points.geojson"
+        res = VectorLayer().persist().from_ogr(source)
+    yield res.id
