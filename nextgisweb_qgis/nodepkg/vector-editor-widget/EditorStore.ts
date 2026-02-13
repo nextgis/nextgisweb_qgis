@@ -8,6 +8,7 @@ import type {
     QgisVectorStyleRead,
     QgisVectorStyleUpdate,
 } from "@nextgisweb/qgis/type/api";
+import type { CompositeStore } from "@nextgisweb/resource/composite";
 import type {
     EditorStoreOptions,
     EditorStore as IEditorStore,
@@ -28,6 +29,7 @@ export class EditorStore implements IEditorStore<
 > {
     readonly identity = "qgis_vector_style";
     readonly geometryType: FeatureLayerGeometryType;
+    readonly composite?: CompositeStore;
 
     @observable.ref accessor mode: Mode = "file";
     @observable.ref accessor source: FileMeta | null = null;
@@ -38,7 +40,8 @@ export class EditorStore implements IEditorStore<
     @observable.ref accessor dirty = false;
     @observable.ref accessor uploading = false;
 
-    constructor({ geometryType }: VectorEditorStoreOptions) {
+    constructor({ geometryType, composite }: VectorEditorStoreOptions) {
+        this.composite = composite;
         this.geometryType = geometryType;
     }
 
