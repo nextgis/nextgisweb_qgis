@@ -1,3 +1,4 @@
+import re
 from ngwdocker.base import AppImage
 from ngwdocker.util import git_ls_files
 
@@ -10,8 +11,17 @@ class Package(PackageBase):
 
 @AppImage.on_apt.handler
 def on_apt(event):
+    this_package = event.image.context.packages.get("nextgisweb_qgis")
+    qgis_version = this_package.settings.get("qgis_version")
+
+    def _with_qgis_version(pkg):
+        return f'"{pkg}={qgis_version}"' if qgis_version else pkg
+
     if event.image.package.apt_repository.get("nextgis_rm"):
-        event.package("libngqgis-dev", "ngqgis-providers-common")
+        event.package(
+            _with_qgis_version("libngqgis-dev"),
+            _with_qgis_version("ngqgis-providers-common"),
+        )
     else:
         event.add_repository(
             "deb https://qgis.org/ubuntu-ltr $(lsb_release -sc) main",
@@ -21,7 +31,10 @@ def on_apt(event):
         # Package qgis-providers-common is required to get standard icons working.
         # TODO: Don't install package with its dependecies, just download it and
         # extract files to /usr/share/qgis/svg
-        event.package("libqgis-dev", "qgis-providers-common")
+        event.package(
+            _with_qgis_version("libqgis-dev"),
+            _with_qgis_version("qgis-providers-common"),
+        )
 
     event.package(
         "build-essential",
