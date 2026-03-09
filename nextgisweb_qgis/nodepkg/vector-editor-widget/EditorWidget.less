@@ -1,26 +1,26 @@
 .ngw-qgis-vector-editor-widget {
-    padding: 1em;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 1em;
+  padding: 1em;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1em;
 
-    & > label {
-        align-self: flex-start;
-        line-height: 32px;
+  & > label {
+    align-self: flex-start;
+    line-height: 32px;
 
-        &::after {
-            content: ":";
-        }
+    &::after {
+      content: ":";
     }
+  }
 
-    & > .mode,
-    & > span {
-        grid-column: 1 / span 2;
-    }
+  & > .mode,
+  & > span {
+    grid-column: 1 / span 2;
+  }
 
-    & > .ngw-sld-style-editor {
-        .ant-form-item {
-            margin-bottom: 12px;
-        }
+  & > .ngw-sld-style-editor {
+    .ant-form-item {
+      margin-bottom: 12px;
     }
+  }
 }

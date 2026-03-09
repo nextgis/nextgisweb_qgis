@@ -5,8 +5,8 @@ import { route, routeURL } from "@nextgisweb/pyramid/api";
 import { gettext } from "@nextgisweb/pyramid/i18n";
 import { ResourceSectionButton } from "@nextgisweb/resource/resource-section";
 import type {
-    ResourceSection,
-    ResourceSectionProps,
+  ResourceSection,
+  ResourceSectionProps,
 } from "@nextgisweb/resource/resource-section";
 import type { CompositeCreate } from "@nextgisweb/resource/type/api";
 
@@ -17,36 +17,32 @@ const [msgButton, msgText] = [
 ]
 
 interface QgisResourceSectionDefaultStyleProps extends ResourceSectionProps {
-    payload: CompositeCreate;
+  payload: CompositeCreate;
 }
 
 export const QgisResourceSectionDefaultStyle: ResourceSection<
-    QgisResourceSectionDefaultStyleProps
+  QgisResourceSectionDefaultStyleProps
 > = ({ payload }) => {
-    const create = useMemo(
-        () => async () => {
-            try {
-                const { id } = await route("resource.collection").post({
-                    json: payload,
-                });
-                window.open(routeURL("resource.show", { id }), "_self");
-            } catch (err) {
-                errorModal(err);
-                return;
-            }
-        },
-        [payload]
-    );
+  const create = useMemo(
+    () => async () => {
+      try {
+        const { id } = await route("resource.collection").post({
+          json: payload,
+        });
+        window.open(routeURL("resource.show", { id }), "_self");
+      } catch (err) {
+        errorModal(err);
+        return;
+      }
+    },
+    [payload]
+  );
 
-    return (
-        <ResourceSectionButton
-            type="primary"
-            label={msgButton}
-            onClick={create}
-        >
-            {msgText}
-        </ResourceSectionButton>
-    );
+  return (
+    <ResourceSectionButton type="primary" label={msgButton} onClick={create}>
+      {msgText}
+    </ResourceSectionButton>
+  );
 };
 
 QgisResourceSectionDefaultStyle.displayName = "QgisResourceSectionDefaultStyle";

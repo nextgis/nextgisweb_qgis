@@ -8,28 +8,28 @@ import type { ResourceRef } from "@nextgisweb/resource/type/api";
 const msgLabel = gettext("Source");
 
 export const CopyFromComponent = observer(
-    ({
-        store,
-        cls,
-        pickerOptions,
-        ...rest
-    }: {
-        store: { setCopyFrom: (value: ResourceRef) => void };
-        cls: "qgis_vector_style" | "qgis_raster_style";
-    } & ResourceSelectProps<number>) => {
-        return (
-            <>
-                <label>{msgLabel}</label>
-                <ResourceSelect
-                    onChange={(value) => {
-                        store.setCopyFrom({ id: value } as ResourceRef);
-                    }}
-                    pickerOptions={{ requireClass: cls, ...pickerOptions }}
-                    {...rest}
-                />
-            </>
-        );
-    }
+  ({
+    store,
+    cls,
+    pickerOptions,
+    ...rest
+  }: {
+    store: { setCopyFrom: (value: ResourceRef) => void };
+    cls: "qgis_vector_style" | "qgis_raster_style";
+  } & ResourceSelectProps<number>) => {
+    return (
+      <>
+        <label>{msgLabel}</label>
+        <ResourceSelect
+          onChange={(value) => {
+            store.setCopyFrom({ id: value } as ResourceRef);
+          }}
+          pickerOptions={{ requireClass: cls, ...pickerOptions }}
+          {...rest}
+        />
+      </>
+    );
+  }
 );
 
 CopyFromComponent.displayName = "CopyFromComponent";
