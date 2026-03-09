@@ -61,12 +61,4 @@ def resource_section_default_style(obj, *, request, **kwargs):
 
 
 def setup_pyramid(comp, config):
-    @Resource.__dynmenu__.add
-    def _resource_dynmenu(args):
-        if isinstance(args.obj, (QgisVectorStyle, QgisRasterStyle)):
-            yield dm.Label("qgis_style", gettext("QGIS style"))
-            yield dm.Link(
-                "qgis_style/qml",
-                label=gettext("QML file"),
-                url=lambda args: args.request.route_url("qgis.style_qml", id=args.obj.id),
-            )
+    pass
