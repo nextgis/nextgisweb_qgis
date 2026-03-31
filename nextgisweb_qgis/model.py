@@ -256,12 +256,17 @@ class QgisRasterStyle(Resource, QgisStyleMixin):
         return RenderRequest(self, srs)
 
     def _qgis_layer(self):
-        # We need raster pyramids so use working directory filename instead of
-        # original filename.
-        gdal_path = env.raster_layer.workdir_path(
-            self.parent.fileobj,
-            self.parent.fileobj_pam,
-        )
+        parent = self.parent
+        if parent.storage is not None:
+            parent.storage.configure_gdal()
+            gdal_path = parent.storage.vsi_path(parent.storage_filename)
+        else:
+            # We need raster pyramids so use working directory filename instead of
+            # original filename.
+            gdal_path = env.raster_layer.workdir_path(
+                parent.fileobj,
+                parent.fileobj_pam,
+            )
         return Layer.from_gdal(str(gdal_path))
 
     def _render_image(self, srs, extent, size):
