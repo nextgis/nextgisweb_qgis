@@ -1,8 +1,7 @@
-from nextgisweb.env import DBSession, env, gettext
-from nextgisweb.lib import dynmenu as dm
+from nextgisweb.env import DBSession, env
 
 from nextgisweb.jsrealm import jsentry
-from nextgisweb.resource import Resource, Widget
+from nextgisweb.resource import Widget
 from nextgisweb.resource.view import resource_sections
 
 from .model import QgisRasterStyle, QgisVectorStyle
