@@ -60,7 +60,13 @@ from qgis_headless import (
     StyleValidationError,
 )
 
-from .util import MD5_NULL_HEXDIGEST, file_md5_hexdigest, rand_color, sld_to_qml_raster
+from .util import (
+    MD5_NULL_HEXDIGEST,
+    file_md5_hexdigest,
+    rand_color,
+    sld_fix_vector,
+    sld_to_qml_raster,
+)
 
 _GEOM_TYPE_TO_QGIS = {
     GEOM_TYPE.POINT: Layer.GT_POINT,
@@ -672,67 +678,71 @@ class QgisRasterStyleSerializer(Serializer, resource=QgisRasterStyle):
 _style_cache = LRUCache(maxsize=256)
 
 
-def read_style(qgis_style):
+def _cache_key(qgis_style):
     if qgis_style.qgis_format == QgisStyleFormat.DEFAULT:
-        key = qgis_style.id
+        return qgis_style.id
 
+    if qgis_style.qgis_format == QgisStyleFormat.SLD:
+        uuid = UUID(int=qgis_style.qgis_sld_id, version=4).hex
     else:
-        if qgis_style.qgis_format == QgisStyleFormat.SLD:
-            uuid = UUID(int=qgis_style.qgis_sld_id, version=4).hex
+        uuid = UUID(int=2**127 + qgis_style.qgis_fileobj_id, version=4).hex
+
+    if isinstance(qgis_style, QgisRasterStyle):
+        return uuid
+
+    sml = qgis_style.svg_marker_library
+    return (uuid, None if sml is None else sml.tstamp, qgis_style.parent.geometry_type)
+
+
+def _read_style(qgis_style):
+    is_vector = isinstance(qgis_style, QgisVectorStyle)
+
+    params = dict()
+    params["layer_type"] = LT_VECTOR if is_vector else LT_RASTER
+    if is_vector:
+        params["layer_geometry_type"] = _GEOM_TYPE_TO_QGIS[qgis_style.parent.geometry_type]
+
+    # Default
+    if qgis_style.qgis_format == QgisStyleFormat.DEFAULT:
+        if is_vector:
+            if params["layer_geometry_type"] in (
+                Layer.GT_POLYGON,
+                Layer.GT_POLYGONZ,
+                Layer.GT_MULTIPOLYGON,
+                Layer.GT_MULTIPOLYGONZ,
+            ):
+                opacity = 63
+            else:
+                opacity = 255
+            params["color"] = rand_color(qgis_style.id) + (opacity,)
+        return Style.from_defaults(**params)
+
+    if is_vector:
+        params["svg_resolver"] = path_resolver_factory(qgis_style.svg_marker_library)
+
+    # User-defined SLD
+    if qgis_style.qgis_format == QgisStyleFormat.SLD:
+        sld_xml = qgis_style.qgis_sld.to_xml()
+        if isinstance(qgis_style, QgisRasterStyle):
+            # We have to convert to QML until QGIS supports raster SLD import
+            xml = sld_to_qml_raster(sld_xml)
+            params["format"] = StyleFormat.QML
         else:
-            uuid = UUID(int=2**127 + qgis_style.qgis_fileobj_id, version=4).hex
+            xml = sld_fix_vector(sld_xml)
+            params["format"] = StyleFormat.SLD
+        return Style.from_string(xml, **params)
 
-        if isinstance(qgis_style, QgisVectorStyle):
-            sml = qgis_style.svg_marker_library
-            geometry_type = qgis_style.parent.geometry_type
-        else:
-            sml = geometry_type = None
+    # QML or SLD file
+    params["format"] = _FILE_FORMAT_2_HEADLESS[qgis_style.qgis_format]
+    # NOTE: Some file objects can have component != 'qgis'
+    filename = env.file_storage.filename(qgis_style.qgis_fileobj)
+    return Style.from_file(filename, **params)
 
-        key = (uuid, None if sml is None else sml.tstamp, geometry_type)
 
+def read_style(qgis_style):
+    key = _cache_key(qgis_style)
     if (style := _style_cache.get(key)) is None:
-        params = dict()
-
-        if qgis_style.qgis_format == QgisStyleFormat.DEFAULT:
-            if isinstance(qgis_style, QgisVectorStyle):
-                params["layer_type"] = LT_VECTOR
-                params["layer_geometry_type"] = _GEOM_TYPE_TO_QGIS[qgis_style.parent.geometry_type]
-                if params["layer_geometry_type"] in (
-                    Layer.GT_POLYGON,
-                    Layer.GT_POLYGONZ,
-                    Layer.GT_MULTIPOLYGON,
-                    Layer.GT_MULTIPOLYGONZ,
-                ):
-                    opacity = 63
-                else:
-                    opacity = 255
-                params["color"] = rand_color(qgis_style.id) + (opacity,)
-            else:
-                params["layer_type"] = LT_RASTER
-            style = Style.from_defaults(**params)
-
-        else:
-            if geometry_type is not None:
-                params["layer_geometry_type"] = _GEOM_TYPE_TO_QGIS[geometry_type]
-                params["svg_resolver"] = path_resolver_factory(sml)
-
-            if qgis_style.qgis_format == QgisStyleFormat.SLD:
-                xml = qgis_style.qgis_sld.to_xml()
-                if isinstance(qgis_style, QgisRasterStyle):
-                    # We have to convert to QML until QGIS supports raster SLD import
-                    xml = sld_to_qml_raster(xml)
-                    params["format"] = StyleFormat.QML
-                else:
-                    params["format"] = StyleFormat.SLD
-                style = Style.from_string(xml, **params)
-            else:
-                params["format"] = _FILE_FORMAT_2_HEADLESS[qgis_style.qgis_format]
-                # NOTE: Some file objects can have component != 'qgis'
-                filename = env.file_storage.filename(qgis_style.qgis_fileobj)
-                style = Style.from_file(filename, **params)
-
-        _style_cache[key] = style
-
+        style = _style_cache[key] = _read_style(qgis_style)
     return style
 
 
