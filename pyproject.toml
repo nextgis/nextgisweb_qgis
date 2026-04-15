@@ -1,6 +1,6 @@
 [tool.ruff]
 line-length = 99
-exclude = ["./docker.py", "./qgis_headless"]
+exclude = ["./qgis_headless"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

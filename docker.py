@@ -1,8 +1,8 @@
-import re
-from ngwdocker.base import AppImage
-from ngwdocker.util import git_ls_files
+# // crater >= 2.3.0.dev0
 
 from ngwdocker import PackageBase
+from ngwdocker.base import AppImage
+from ngwdocker.util import git_ls_files
 
 
 class Package(PackageBase):
@@ -59,6 +59,5 @@ def on_virtualenv(event):
 @AppImage.on_config.handler
 def on_config(event):
     event.image.config_set("qgis", "svg_path", "/usr/share/qgis/svg")
-    event.image.config_set(
-        "qgis", "test.qgis_headless_path", "/opt/ngw/package/nextgisweb_qgis"
-    )
+    qgis_headless_path = "${CRATER_ROOT}/package/nextgisweb_qgis"
+    event.image.config_set("qgis", "test.qgis_headless_path", qgis_headless_path)
