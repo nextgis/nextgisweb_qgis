@@ -7,6 +7,11 @@ import type {
   QgisVectorStyleRead,
   QgisVectorStyleUpdate,
 } from "@nextgisweb/qgis/type/api";
+import { normalizePostprocessPresets } from "@nextgisweb/render/postprocess-section";
+import type {
+  SelectedPostprocessPresetKey,
+  SharedPostprocessPresetDefinition,
+} from "@nextgisweb/render/postprocess-section";
 import type { CompositeStore } from "@nextgisweb/resource/composite";
 import type { EditorStore as IEditorStore } from "@nextgisweb/resource/type";
 
@@ -30,8 +35,12 @@ export class EditorStore implements IEditorStore<
   readonly identity: EffectsStoreOptions["identity"];
 
   @observable.ref accessor postprocess: PostprocessValue | null = null;
+  @observable.ref
+  accessor postprocessPresets: SharedPostprocessPresetDefinition[] = [];
+  @observable.ref accessor selectedPresetKey: SelectedPostprocessPresetKey =
+    null;
 
-  #loaded: PostprocessValue | null = null;
+  loadedPostprocess: PostprocessValue | null = null;
 
   constructor({ composite, identity }: EffectsStoreOptions) {
     this.composite = composite;
@@ -40,9 +49,14 @@ export class EditorStore implements IEditorStore<
 
   @action
   load(value: ReadValue) {
+    const readValue = value as ReadValue & { postprocess_presets?: unknown };
     const normalized = normalizePostprocess(value.postprocess);
     this.postprocess = normalized;
-    this.#loaded = normalized;
+    this.loadedPostprocess = normalized;
+    this.selectedPresetKey = null;
+    this.postprocessPresets = normalizePostprocessPresets(
+      readValue.postprocess_presets
+    );
   }
 
   dump(): UpdateValue | undefined {
@@ -55,7 +69,7 @@ export class EditorStore implements IEditorStore<
 
   @computed
   get dirty() {
-    return !isEqual(this.postprocess, this.#loaded);
+    return !isEqual(this.postprocess, this.loadedPostprocess);
   }
 
   @computed
@@ -70,6 +84,20 @@ export class EditorStore implements IEditorStore<
   ) {
     const current: Partial<PostprocessValue> = this.postprocess ?? {};
     if (current[key] === value) return;
-    this.postprocess = normalizePostprocess({ ...current, [key]: value });
+    this.postprocess = normalizePostprocess({
+      ...current,
+      [key]: value,
+    });
+    this.selectedPresetKey = null;
+  }
+
+  @action.bound
+  replacePostprocess(value: PostprocessValue | null) {
+    this.postprocess = value;
+  }
+
+  @action.bound
+  setSelectedPresetKey(value: SelectedPostprocessPresetKey) {
+    this.selectedPresetKey = value;
   }
 }

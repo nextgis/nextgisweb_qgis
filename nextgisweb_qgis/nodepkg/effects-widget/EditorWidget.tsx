@@ -7,8 +7,9 @@ import type { EffectsPreviewMode } from "@nextgisweb/render/effects-preview/Effe
 import { PostprocessSection } from "@nextgisweb/render/postprocess-section/PostprocessSection";
 import type { EditorWidget as IEditorWidget } from "@nextgisweb/resource/type";
 
-import type { EditorStore } from "./EditorStore";
 import { serializePostprocess } from "../postprocess";
+
+import type { EditorStore } from "./EditorStore";
 
 import "./EditorWidget.less";
 
@@ -19,8 +20,14 @@ export const EditorWidget: IEditorWidget<EditorStore> = observer(
     return (
       <div className="ngw-qgis-effects-widget">
         <PostprocessSection
+          presets={store.postprocessPresets}
+          selectedPresetKey={store.selectedPresetKey}
           value={store.postprocess}
           onChange={(key, value) => store.setPostprocess(key, value)}
+          onChangeValue={(value) => store.replacePostprocess(value)}
+          onChangeSelectedPresetKey={(value) =>
+            store.setSelectedPresetKey(value)
+          }
         />
         <EffectsPreview
           resourceId={store.composite.resourceId}

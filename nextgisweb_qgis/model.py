@@ -34,9 +34,9 @@ from nextgisweb.render import (
     ITileRenderRequest,
     LegendSymbol,
     PostprocessAttr,
+    PostprocessPresetsAttr,
     RenderPostprocess,
     apply_postprocess,
-    merge_postprocess,
 )
 from nextgisweb.resmeta import ResourceMetadataItem
 from nextgisweb.resource import (
@@ -290,7 +290,9 @@ class QgisRasterStyle(Resource, QgisStyleMixin):
         if not check_scale_range(style, extent, size, dpi=96):
             return None
 
-        if postprocess:
+        effective_postprocess = postprocess if postprocess is not None else self.postprocess
+
+        if effective_postprocess:
             padding = 64 if padding is None else max(padding, 64)
 
         if padding is not None:
@@ -310,7 +312,7 @@ class QgisRasterStyle(Resource, QgisStyleMixin):
 
         img = apply_postprocess(
             img,
-            merge_postprocess(self.postprocess, postprocess),
+            effective_postprocess,
             extent=tuple(extended),
         )
 
@@ -430,7 +432,9 @@ class QgisVectorStyle(Resource, QgisStyleMixin):
         if not check_scale_range(style, extent, size, dpi=96):
             return None
 
-        if postprocess:
+        effective_postprocess = postprocess if postprocess is not None else self.postprocess
+
+        if effective_postprocess:
             padding = 64 if padding is None else max(padding, 64)
 
         if padding is not None:
@@ -501,7 +505,7 @@ class QgisVectorStyle(Resource, QgisStyleMixin):
 
         im = apply_postprocess(
             im,
-            merge_postprocess(self.postprocess, postprocess),
+            effective_postprocess,
             extent=tuple(extended),
         )
 
@@ -700,10 +704,12 @@ class CopyFromAttr(SAttribute):
             "qgis_fileobj",
             "qgis_sld",
             "svg_marker_library",
-            "postprocess",
         ):
             if hasattr(style, attr):
                 setattr(srlzr.obj, attr, getattr(style, attr))
+
+        if hasattr(style, "postprocess"):
+            srlzr.obj.postprocess = style.postprocess
 
         if (fobj := srlzr.obj.qgis_fileobj) is not None:
             env.qgis.qgis_init()
@@ -722,6 +728,7 @@ class QgisVectorStyleSerializer(Serializer, resource=QgisVectorStyle):
     file_upload = FileUploadAttr(read=None, write=ResourceScope.update)
     copy_from = CopyFromAttr(read=None, write=ResourceScope.update)
     postprocess = PostprocessAttr(read=ResourceScope.read, write=ResourceScope.update)
+    postprocess_presets = PostprocessPresetsAttr(read=ResourceScope.read, write=None)
     svg_marker_library = SResource(read=ResourceScope.read, write=ResourceScope.update)
 
 
@@ -731,6 +738,7 @@ class QgisRasterStyleSerializer(Serializer, resource=QgisRasterStyle):
     file_upload = FileUploadAttr(read=None, write=ResourceScope.update)
     copy_from = CopyFromAttr(read=None, write=ResourceScope.update)
     postprocess = PostprocessAttr(read=ResourceScope.read, write=ResourceScope.update)
+    postprocess_presets = PostprocessPresetsAttr(read=ResourceScope.read, write=None)
 
 
 _style_cache = LRUCache(maxsize=256)
