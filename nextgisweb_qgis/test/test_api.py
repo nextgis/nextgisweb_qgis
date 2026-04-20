@@ -7,6 +7,7 @@ from PIL import Image
 from qgis_headless.util import image_stat
 
 from nextgisweb.pyramid.test import WebTestApp
+from nextgisweb.render import RenderPostprocess
 from nextgisweb.resource.test import ResourceAPI
 from nextgisweb.spatial_ref_sys import SRS
 from nextgisweb.vector_layer.model import VectorLayer
@@ -195,6 +196,119 @@ def test_sld_raster(raster_layer_id):
 
         pixel = img.getpixel((128, 128))
         assert pixel[: len(color)] == color
+
+
+def test_qgis_raster_style_render_request_postprocess(test_data, raster_layer_id, ngw_file_upload):
+    rapi = ResourceAPI()
+
+    style_fu = ngw_file_upload(test_data / "raster/rounds.qml")
+    resp = rapi.create_request(
+        "qgis_raster_style",
+        {
+            "resource": {"parent": {"id": raster_layer_id}},
+            "qgis_raster_style": {"file_upload": style_fu},
+        },
+        status=201,
+    )
+
+    res = QgisRasterStyle.filter_by(id=resp.json["id"]).one()
+    srs = SRS.filter_by(id=3857).one()
+    postprocess = RenderPostprocess(contrast=1.1)
+
+    req = res.render_request(srs, cond={"postprocess": postprocess})
+
+    assert req.params["postprocess"] == postprocess
+
+
+def test_qgis_raster_render_tile_applies_postprocess_on_padded_extent(
+    test_data,
+    raster_layer_id,
+    ngw_file_upload,
+    monkeypatch,
+):
+    rapi = ResourceAPI()
+
+    style_fu = ngw_file_upload(test_data / "raster/rounds.qml")
+    resp = rapi.create_request(
+        "qgis_raster_style",
+        {
+            "resource": {"parent": {"id": raster_layer_id}},
+            "qgis_raster_style": {"file_upload": style_fu},
+        },
+        status=201,
+    )
+
+    res = QgisRasterStyle.filter_by(id=resp.json["id"]).one()
+    srs = SRS.filter_by(id=3857).one()
+    tile = (0, 0, 0)
+    captured = {}
+
+    def fake_apply_postprocess(img, postprocess, *, extent):
+        captured["size"] = img.size
+        captured["extent"] = extent
+        captured["postprocess"] = postprocess
+        return img
+
+    monkeypatch.setattr("nextgisweb_qgis.model.apply_postprocess", fake_apply_postprocess)
+
+    req = res.render_request(srs, cond={"postprocess": RenderPostprocess(contrast=1.1)})
+    img = req.render_tile(tile, 256)
+
+    tile_extent = srs.tile_extent(tile)
+
+    assert img is not None
+    assert img.size == (256, 256)
+    assert captured["size"] == (384, 384)
+    assert captured["extent"] == pytest.approx(
+        (
+            tile_extent[0] - (tile_extent[2] - tile_extent[0]) / 4,
+            tile_extent[1] - (tile_extent[3] - tile_extent[1]) / 4,
+            tile_extent[2] + (tile_extent[2] - tile_extent[0]) / 4,
+            tile_extent[3] + (tile_extent[3] - tile_extent[1]) / 4,
+        )
+    )
+    assert captured["postprocess"].contrast == 1.1
+
+
+def test_qgis_raster_render_extent_applies_postprocess_on_padded_extent(
+    test_data,
+    raster_layer_id,
+    ngw_file_upload,
+    monkeypatch,
+):
+    rapi = ResourceAPI()
+
+    style_fu = ngw_file_upload(test_data / "raster/rounds.qml")
+    resp = rapi.create_request(
+        "qgis_raster_style",
+        {
+            "resource": {"parent": {"id": raster_layer_id}},
+            "qgis_raster_style": {"file_upload": style_fu},
+        },
+        status=201,
+    )
+
+    res = QgisRasterStyle.filter_by(id=resp.json["id"]).one()
+    srs = SRS.filter_by(id=3857).one()
+    extent = (0.0, 0.0, 256.0, 256.0)
+    captured = {}
+
+    def fake_apply_postprocess(img, postprocess, *, extent):
+        captured["size"] = img.size
+        captured["extent"] = extent
+        captured["postprocess"] = postprocess
+        return img
+
+    monkeypatch.setattr("nextgisweb_qgis.model.apply_postprocess", fake_apply_postprocess)
+
+    req = res.render_request(srs, cond={"postprocess": RenderPostprocess(contrast=1.1)})
+    img = req.render_extent(extent, (256, 256))
+
+    assert img is not None
+    assert img.size == (256, 256)
+    assert captured["size"] == (384, 384)
+    assert captured["extent"] == pytest.approx((-64.0, -64.0, 320.0, 320.0))
+    assert captured["postprocess"].contrast == 1.1
 
 
 @pytest.fixture(scope="module")

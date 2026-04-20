@@ -33,6 +33,10 @@ from nextgisweb.render import (
     IRenderableStyle,
     ITileRenderRequest,
     LegendSymbol,
+    PostprocessAttr,
+    RenderPostprocess,
+    apply_postprocess,
+    merge_postprocess,
 )
 from nextgisweb.resmeta import ResourceMetadataItem
 from nextgisweb.resource import (
@@ -155,6 +159,10 @@ class QgisStyleMixin:
     def qgis_scale_range_cache(cls):
         return sa.Column(Msgspec(ScaleRangeCache), nullable=True)
 
+    @declared_attr
+    def postprocess(cls):
+        return sa.Column(Msgspec(RenderPostprocess), nullable=True)
+
     @classmethod
     def _qgis_format_check(cls):
         sql = """
@@ -259,7 +267,7 @@ class QgisRasterStyle(Resource, QgisStyleMixin):
         return parent.cls == "raster_layer"
 
     def render_request(self, srs, cond=None):
-        return RenderRequest(self, srs)
+        return RenderRequest(self, srs, cond)
 
     def _qgis_layer(self):
         parent = self.parent
@@ -275,12 +283,20 @@ class QgisRasterStyle(Resource, QgisStyleMixin):
             )
         return Layer.from_gdal(str(gdal_path))
 
-    def _render_image(self, srs, extent, size):
+    def _render_image(self, srs, extent, size, *, padding: int | None = None, postprocess=None):
         env.qgis.qgis_init()
 
         style = read_style(self)
         if not check_scale_range(style, extent, size, dpi=96):
             return None
+
+        if postprocess:
+            padding = 64 if padding is None else max(padding, 64)
+
+        if padding is not None:
+            extended, render_size, target_box = _render_bounds(extent, size, padding)
+        else:
+            extended, render_size = extent, size
 
         mreq = MapRequest()
         mreq.set_dpi(96)
@@ -289,8 +305,21 @@ class QgisRasterStyle(Resource, QgisStyleMixin):
         layer = self._qgis_layer()
         mreq.add_layer(layer, style)
 
-        res = mreq.render_image(extent, size)
+        res = mreq.render_image(extended, render_size)
         img = qgis_image_to_pil(res)
+
+        img = apply_postprocess(
+            img,
+            merge_postprocess(self.postprocess, postprocess),
+            extent=tuple(extended),
+        )
+
+        if img is None:
+            return None
+
+        if padding is not None:
+            img = img.crop(target_box)
+            assert img.size == tuple(size)
 
         return img
 
@@ -384,12 +413,25 @@ class QgisVectorStyle(Resource, QgisStyleMixin):
     def render_request(self, srs, cond=None):
         return RenderRequest(self, srs, cond)
 
-    def _render_image(self, srs, extent, size, *, symbols=None, feature_filter=None, padding=None):
+    def _render_image(
+        self,
+        srs,
+        extent,
+        size,
+        *,
+        symbols=None,
+        feature_filter=None,
+        padding: int | None = None,
+        postprocess=None,
+    ):
         env.qgis.qgis_init()
 
         style = read_style(self)
         if not check_scale_range(style, extent, size, dpi=96):
             return None
+
+        if postprocess:
+            padding = 64 if padding is None else max(padding, 64)
 
         if padding is not None:
             extended, render_size, target_box = _render_bounds(extent, size, padding)
@@ -456,6 +498,12 @@ class QgisVectorStyle(Resource, QgisStyleMixin):
             render_params["symbols"] = ((idx, symbols),)
         res = mreq.render_image(extended, render_size, **render_params)
         im = qgis_image_to_pil(res)
+
+        im = apply_postprocess(
+            im,
+            merge_postprocess(self.postprocess, postprocess),
+            extent=tuple(extended),
+        )
 
         if padding is not None:
             im = im.crop(target_box)
@@ -540,6 +588,8 @@ class RenderRequest:
         self.style = style
         self.srs = srs
         self.params = dict()
+        if cond is not None and "postprocess" in cond:
+            self.params["postprocess"] = cond["postprocess"]
         if isinstance(style, QgisVectorStyle):
             if cond is not None:
                 if "symbols" in cond:
@@ -556,7 +606,7 @@ class RenderRequest:
     def render_tile(self, tile, size):
         extent = self.srs.tile_extent(tile)
         params = dict(self.params)
-        if isinstance(self.style, QgisVectorStyle):
+        if isinstance(self.style, (QgisVectorStyle, QgisRasterStyle)):
             params["padding"] = 64
         try:
             return self.style._render_image(self.srs, extent, (size, size), **params)
@@ -645,7 +695,13 @@ class CopyFromAttr(SAttribute):
         if not style.has_permission(ResourceScope.read, srlzr.user):
             raise InsufficientPermissions()  # TODO: Add more details
 
-        for attr in ("qgis_format", "qgis_fileobj", "qgis_sld", "svg_marker_library"):
+        for attr in (
+            "qgis_format",
+            "qgis_fileobj",
+            "qgis_sld",
+            "svg_marker_library",
+            "postprocess",
+        ):
             if hasattr(style, attr):
                 setattr(srlzr.obj, attr, getattr(style, attr))
 
@@ -665,6 +721,7 @@ class QgisVectorStyleSerializer(Serializer, resource=QgisVectorStyle):
     sld = SldAttr(read=ResourceScope.read, write=ResourceScope.update)
     file_upload = FileUploadAttr(read=None, write=ResourceScope.update)
     copy_from = CopyFromAttr(read=None, write=ResourceScope.update)
+    postprocess = PostprocessAttr(read=ResourceScope.read, write=ResourceScope.update)
     svg_marker_library = SResource(read=ResourceScope.read, write=ResourceScope.update)
 
 
@@ -673,6 +730,7 @@ class QgisRasterStyleSerializer(Serializer, resource=QgisRasterStyle):
     sld = SldAttr(read=ResourceScope.read, write=ResourceScope.update)
     file_upload = FileUploadAttr(read=None, write=ResourceScope.update)
     copy_from = CopyFromAttr(read=None, write=ResourceScope.update)
+    postprocess = PostprocessAttr(read=ResourceScope.read, write=ResourceScope.update)
 
 
 _style_cache = LRUCache(maxsize=256)
@@ -752,7 +810,13 @@ def _update_scale_range_cache_event(mapper, connection, qgis_style):
         history = getattr(attrs_state, attr).load_history()
         if history.has_changes():
             qgis_style._update_scale_range_cache()
-            return
+            break
+
+    if (
+        getattr(attrs_state, "postprocess").load_history().has_changes()
+        and qgis_style.tile_cache is not None
+    ):
+        qgis_style.tile_cache.clear()
 
 
 for cls in (QgisRasterStyle, QgisVectorStyle):

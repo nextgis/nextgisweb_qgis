@@ -18,6 +18,17 @@ class VectorStyleWidget(Widget):
         return result
 
 
+class VectorEffectsWidget(Widget):
+    resource = QgisVectorStyle
+    operation = ("create", "update")
+    amdmod = jsentry("@nextgisweb/qgis/effects-widget")
+
+    def config(self):
+        result = super().config()
+        result["identity"] = QgisVectorStyle.identity
+        return result
+
+
 class RasterStyleWidget(Widget):
     resource = QgisRasterStyle
     operation = ("create", "update")
@@ -29,6 +40,17 @@ class RasterStyleWidget(Widget):
         result["dtype"] = parent.dtype
         result["band_count"] = parent.band_count
         result["parent_id"] = parent.id
+        return result
+
+
+class RasterEffectsWidget(Widget):
+    resource = QgisRasterStyle
+    operation = ("create", "update")
+    amdmod = jsentry("@nextgisweb/qgis/effects-widget")
+
+    def config(self):
+        result = super().config()
+        result["identity"] = QgisRasterStyle.identity
         return result
 
 

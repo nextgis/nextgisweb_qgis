@@ -14,6 +14,9 @@ import type {
 import type { ResourceRef } from "@nextgisweb/resource/type/api";
 import type { Style } from "@nextgisweb/sld/type/api";
 
+import { normalizePostprocess, serializePostprocess } from "../postprocess";
+import type { PostprocessValue } from "../postprocess";
+
 export type Mode = "file" | "sld" | "copy" | "default";
 
 type Dtype = "Int16" | "Int32" | "UInt16" | "UInt32" | "Byte";
@@ -35,6 +38,7 @@ export class EditorStore implements IEditorStore<
   @observable.ref accessor source: FileMeta | null = null;
   @observable.ref accessor sld: Style | null = null;
   @observable.ref accessor copyFrom: ResourceRef | null = null;
+  @observable.ref accessor postprocess: PostprocessValue | null = null;
 
   @observable.ref accessor dirty = false;
   @observable.ref accessor uploading = false;
@@ -57,6 +61,10 @@ export class EditorStore implements IEditorStore<
     } else if (value.format === "default") {
       this.mode = "default";
     }
+
+    this.postprocess = normalizePostprocess(value.postprocess);
+
+    this.dirty = false;
   }
 
   dump() {
@@ -77,6 +85,9 @@ export class EditorStore implements IEditorStore<
     } else if (this.mode === "copy") {
       result.copy_from = this.copyFrom ?? undefined;
     }
+
+    result.postprocess = serializePostprocess(this.postprocess);
+
     return result;
   }
 
@@ -109,6 +120,17 @@ export class EditorStore implements IEditorStore<
   @action.bound
   setCopyFrom(value: this["copyFrom"]) {
     this.copyFrom = value;
+    this.dirty = true;
+  }
+
+  @action.bound
+  setPostprocess<K extends keyof PostprocessValue>(
+    key: K,
+    value: PostprocessValue[K]
+  ) {
+    const current: Partial<PostprocessValue> = this.postprocess ?? {};
+    if (current[key] === value) return;
+    this.postprocess = normalizePostprocess({ ...current, [key]: value });
     this.dirty = true;
   }
 
