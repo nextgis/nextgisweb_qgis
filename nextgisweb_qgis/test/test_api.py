@@ -220,6 +220,56 @@ def test_qgis_raster_style_render_request_postprocess(test_data, raster_layer_id
     assert req.params["postprocess"] == postprocess
 
 
+def test_qgis_vector_style_postprocess_can_be_cleared(
+    test_data, polygon_layer_id, ngw_file_upload
+):
+    rapi = ResourceAPI()
+
+    style_fu = ngw_file_upload(test_data / "landuse/landuse.qml")
+    resp = rapi.create_request(
+        "qgis_vector_style",
+        {
+            "resource": {"parent": {"id": polygon_layer_id}},
+            "qgis_vector_style": {"file_upload": style_fu},
+        },
+        status=201,
+    )
+
+    style_id = resp.json["id"]
+
+    rapi.update(style_id, {"qgis_vector_style": {"postprocess": {"contrast": 1.1}}})
+    assert rapi.read(style_id)["qgis_vector_style"]["postprocess"]["contrast"] == 1.1
+
+    rapi.update(style_id, {"qgis_vector_style": {"postprocess": None}})
+
+    assert rapi.read(style_id)["qgis_vector_style"]["postprocess"] is None
+    assert QgisVectorStyle.filter_by(id=style_id).one().postprocess is None
+
+
+def test_qgis_raster_style_postprocess_can_be_cleared(test_data, raster_layer_id, ngw_file_upload):
+    rapi = ResourceAPI()
+
+    style_fu = ngw_file_upload(test_data / "raster/rounds.qml")
+    resp = rapi.create_request(
+        "qgis_raster_style",
+        {
+            "resource": {"parent": {"id": raster_layer_id}},
+            "qgis_raster_style": {"file_upload": style_fu},
+        },
+        status=201,
+    )
+
+    style_id = resp.json["id"]
+
+    rapi.update(style_id, {"qgis_raster_style": {"postprocess": {"contrast": 1.1}}})
+    assert rapi.read(style_id)["qgis_raster_style"]["postprocess"]["contrast"] == 1.1
+
+    rapi.update(style_id, {"qgis_raster_style": {"postprocess": None}})
+
+    assert rapi.read(style_id)["qgis_raster_style"]["postprocess"] is None
+    assert QgisRasterStyle.filter_by(id=style_id).one().postprocess is None
+
+
 def test_qgis_raster_render_tile_applies_postprocess_on_padded_extent(
     test_data,
     raster_layer_id,

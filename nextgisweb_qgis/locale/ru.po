@@ -1,4 +1,4 @@
-#: api.py:38
+#: api.py:39
 msgid ""
 "The original QML was requested but the style has '{}' format. Use other "
 "values of the 'original' parameter."
@@ -6,33 +6,37 @@ msgstr ""
 "Запрошен орингинальный QML, но этот стиль имеет формат '{}'. Используйте "
 "другие значения параметра 'original'."
 
-#: model.py:245
+#: model.py:258
 msgid "QGIS raster style"
 msgstr "Растровый стиль QGIS"
 
-#: model.py:297
+#: model.py:343
 msgid "Band {}"
 msgstr "Канал {}"
 
-#: model.py:343
+#: model.py:389
 msgid "QGIS vector style"
 msgstr "Векторный стиль QGIS"
 
-#: model.py:543 model.py:560 model.py:595
+#: model.py:630 model.py:647 model.py:682
 msgid "Style format mismatch."
 msgstr "Несоответствие формата стиля."
 
-#: model.py:593 model.py:758
+#: model.py:680 model.py:867
 msgid "Style file is not valid."
 msgstr "Некорректный стиль."
 
-#: model.py:756
+#: model.py:865
 msgid "Layer type mismatch."
 msgstr "Несоответствие типу слоя."
 
 #: nodepkg/CopyFromComponent.tsx:8
 msgid "Source"
 msgstr "Источник"
+
+#: nodepkg/effects-widget/EditorWidget.tsx:67
+msgid "Effects"
+msgstr "Эффекты"
 
 #: nodepkg/raster-editor-widget/EditorWidget.tsx:26
 #: nodepkg/vector-editor-widget/EditorWidget.tsx:26
@@ -55,19 +59,23 @@ msgid "Copy from resource"
 msgstr "Скопировать из ресурса"
 
 #: nodepkg/raster-editor-widget/EditorWidget.tsx:68
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:68 view.py:62
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:63
 msgid "QGIS style"
 msgstr "Стиль QGIS"
 
 #: nodepkg/raster-editor-widget/component/FileModeComponent.tsx:10
-#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:11
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:14
 msgid "Select a style"
 msgstr "Выберите стиль"
 
 #: nodepkg/raster-editor-widget/component/FileModeComponent.tsx:11
-#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:12
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:15
 msgid "QML or SLD formats are supported."
 msgstr "Поддерживаются форматы QML и SLD."
+
+#: nodepkg/resource-action-plugin.tsx:11
+msgid "QML file"
+msgstr "Файл QML"
 
 #: nodepkg/resource-section/default-style/QgisResourceSectionDefaultStyle.tsx:15
 msgid "Create default QGIS style"
@@ -81,10 +89,6 @@ msgstr ""
 "Слой создан. Для добавления слоя на веб-карту требуется стиль. Вы можете "
 "сгенерировать стиль QGIS по умолчанию с помощью этой кнопки."
 
-#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:13
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:16
 msgid "SVG marker library"
 msgstr "Библиотека маркеров SVG"
-
-#: view.py:65
-msgid "QML file"
-msgstr "Файл QML"
