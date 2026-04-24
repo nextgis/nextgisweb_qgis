@@ -805,4 +805,5 @@ _FIELD_TYPE_TO_QGIS = {
     FIELD_TYPE.DATE: (Layer.FT_DATE, _convert_date),
     FIELD_TYPE.TIME: (Layer.FT_TIME, _convert_time),
     FIELD_TYPE.DATETIME: (Layer.FT_DATETIME, _convert_datetime),
+    FIELD_TYPE.BOOLEAN: (Layer.FT_BOOLEAN, _convert_none),
 }
