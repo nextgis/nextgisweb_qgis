@@ -130,7 +130,6 @@ def test_sld_text_offset(ngw_env, anchor):
             size=5, mark=sldm.Mark(fill=sldm.Fill(color="#00FF00"))
         )  # opacity=0)))
     )
-
     sld = sldm.SLD(
         value=sldm.Style(
             rules=[
@@ -172,3 +171,49 @@ def test_sld_text_offset(ngw_env, anchor):
         img2 = img.crop((0 + dx, 0 + dy, 128 + dx, 128 + dy))
         img2.save(f"/opt/ngw/work/out-{anchor}-{i}.png")
     # stat = image_stat(img)
+
+
+def test_sld_text_halo(ngw_env):
+    ngw_env.qgis.qgis_init()
+
+    text_symbolizer = sldm.TextSymbolizer(
+        field="label",
+        fill=sldm.Fill(color="#FF0000"),
+        font_size=12,
+        halo=sldm.Halo(radius=3, fill=sldm.Fill(color="#00FF00")),
+    )
+    geom_symbolizer = sldm.PointSymbolizer(
+        graphic=sldm.Graphic(mark=sldm.Mark(fill=sldm.Fill(opacity=0)))
+    )
+    sld = sldm.SLD(
+        value=sldm.Style(
+            rules=[
+                sldm.Rule(symbolizers=[geom_symbolizer]),
+                sldm.Rule(symbolizers=[text_symbolizer]),
+            ]
+        )
+    )
+
+    res = QgisVectorStyle(
+        parent=VectorLayer(geometry_type="POINT"),
+        qgis_format=QgisStyleFormat.SLD,
+        qgis_sld=sld,
+    )
+
+    style = _read_style(res)
+
+    crs = CRS.from_epsg(4326)
+
+    feature = (1, Geometry.from_wkt("POINT (0 0)").wkb, ("LABEL",))
+    layer = Layer.from_data(
+        Layer.GT_POINT,
+        crs,
+        (("label", Layer.FT_STRING),),
+        (feature,),
+    )
+
+    img = render_vector(layer, style, (-180, -90, 180, 90), crs=crs)
+    stat = image_stat(img)
+
+    assert stat.red.max == 255, "Label missing"
+    assert stat.green.max == 255, "Halo missing"
