@@ -25,6 +25,7 @@ def on_apt(event):
     else:
         event.add_repository(
             "deb https://qgis.org/ubuntu-ltr $(lsb_release -sc) main",
+            # Alternative URL: https://qgis.org/downloads/qgis-archive-keyring.gpg
             key="https://download.qgis.org/downloads/qgis-archive-keyring.gpg",
         )
 
