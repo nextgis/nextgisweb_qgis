@@ -2,6 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { FeatureLayerGeometryType } from "@nextgisweb/feature-layer/type/api";
+import type { SpatialGeometryType } from "@nextgisweb/feature-layer/util/geometry-types";
 import type { OptionType } from "@nextgisweb/gui/antd";
 import { useResourceAttr } from "@nextgisweb/resource/hook/useResourceAttr";
 import type { EditorWidget } from "@nextgisweb/resource/type";
@@ -13,21 +14,27 @@ import type {
 
 import type { EditorStore } from "../EditorStore";
 
-const GeometryToStyleTypeMap: Record<FeatureLayerGeometryType, SymbolizerType> =
-  {
-    "POINT": "point",
-    "LINESTRING": "line",
-    "POLYGON": "polygon",
-    "MULTIPOINT": "point",
-    "MULTILINESTRING": "line",
-    "MULTIPOLYGON": "polygon",
-    "POINTZ": "point",
-    "LINESTRINGZ": "line",
-    "POLYGONZ": "polygon",
-    "MULTIPOINTZ": "point",
-    "MULTILINESTRINGZ": "line",
-    "MULTIPOLYGONZ": "polygon",
-  };
+const GeometryToStyleTypeMap: Record<SpatialGeometryType, SymbolizerType> = {
+  "POINT": "point",
+  "LINESTRING": "line",
+  "POLYGON": "polygon",
+  "MULTIPOINT": "point",
+  "MULTILINESTRING": "line",
+  "MULTIPOLYGON": "polygon",
+  "POINTZ": "point",
+  "LINESTRINGZ": "line",
+  "POLYGONZ": "polygon",
+  "MULTIPOINTZ": "point",
+  "MULTILINESTRINGZ": "line",
+  "MULTIPOLYGONZ": "polygon",
+};
+
+function getStyleGeometry(type: FeatureLayerGeometryType) {
+  if (type === "NONE") {
+    throw new Error("Geometry type NONE is not supported");
+  }
+  return GeometryToStyleTypeMap[type];
+}
 
 export const SldModeComponent: EditorWidget<EditorStore> = observer(
   ({ store }) => {
@@ -80,7 +87,7 @@ export const SldModeComponent: EditorWidget<EditorStore> = observer(
     );
 
     const initType: SymbolizerType = store.geometryType
-      ? GeometryToStyleTypeMap[store.geometryType]
+      ? getStyleGeometry(store.geometryType)
       : "point";
 
     return (
