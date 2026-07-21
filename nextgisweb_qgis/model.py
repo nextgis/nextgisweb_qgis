@@ -19,6 +19,7 @@ from zope.interface import implementer
 from nextgisweb.env import env, gettext
 from nextgisweb.lib import saext
 from nextgisweb.lib.geometry import Geometry
+from nextgisweb.lib.json import dumps as json_dumps
 from nextgisweb.lib.saext import Msgspec
 
 from nextgisweb.core.exception import InsufficientPermissions, OperationalError, ValidationError
@@ -773,6 +774,11 @@ def _convert_none(v):
     return v
 
 
+def _convert_json(v):
+    if v is not None:
+        return json_dumps(v)
+
+
 def _convert_date(v):
     if v is not None:
         return v.timetuple()[0:3]
@@ -806,4 +812,5 @@ _FIELD_TYPE_TO_QGIS = {
     FIELD_TYPE.TIME: (Layer.FT_TIME, _convert_time),
     FIELD_TYPE.DATETIME: (Layer.FT_DATETIME, _convert_datetime),
     FIELD_TYPE.BOOLEAN: (Layer.FT_BOOLEAN, _convert_none),
+    FIELD_TYPE.JSON: (Layer.FT_JSON, _convert_json),
 }
