@@ -1,5 +1,28 @@
 .ngw-qgis-raster-editor-widget {
   padding: 1em;
   display: grid;
+  grid-template-columns: auto 1fr;
   gap: 1em;
+
+  & > label {
+    align-self: flex-start;
+    line-height: 32px;
+  }
+
+  & > .mode,
+  & > .ant-divider,
+  & > .ngw-file-upload-file-uploader,
+  & > .ngw-qgis-raster-editor-widget-sld {
+    grid-column: 1 / span 2;
+  }
+
+  & > .ant-divider {
+    margin: 0.5em 0;
+  }
+
+  & > .ngw-qgis-raster-editor-widget-sld {
+    .ant-form-item {
+      margin-bottom: 12px;
+    }
+  }
 }

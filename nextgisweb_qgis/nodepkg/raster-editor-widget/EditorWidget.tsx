@@ -1,7 +1,8 @@
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 
-import { Select } from "@nextgisweb/gui/antd";
+import { Divider } from "@nextgisweb/gui/antd";
+import { ModeSelector } from "@nextgisweb/gui/component/ModeSelector";
 import { gettext } from "@nextgisweb/pyramid/i18n";
 import type { EditorWidget as IEditorWidget } from "@nextgisweb/resource/type";
 
@@ -13,49 +14,48 @@ import { SldModeComponent } from "./component/SldModeComponent";
 
 import "./EditorWidget.less";
 
-type SelectProps = Parameters<typeof Select>[0];
-type Option = NonNullable<SelectProps["options"]>[0] & {
-  value: Mode;
-};
+const modeOpts = [
+  { value: "file" as const, label: gettext("Style from file") },
+  { value: "sld" as const, label: gettext("User-defined style") },
+  { value: "default" as const, label: gettext("Default style") },
+  { value: "copy" as const, label: gettext("Copy from resource") },
+];
 
 export const EditorWidget: IEditorWidget<EditorStore> = observer(
   ({ store }) => {
     const { mode } = store;
-    const modeOpts = useMemo(() => {
-      const result: Option[] = [
-        { value: "file", label: gettext("Style from file") },
-        { value: "sld", label: gettext("User-defined style") },
-        { value: "default", label: gettext("Default style") },
-        { value: "copy", label: gettext("Copy from resource") },
-      ];
-      return result;
-    }, []);
 
     const modeComponent = useMemo(() => {
       switch (mode) {
         case "file":
           return <FileModeComponent store={store} />;
         case "sld":
-          return <SldModeComponent store={store} />;
+          return (
+            <>
+              <Divider />
+              <SldModeComponent store={store} />
+            </>
+          );
         case "copy":
           return (
-            <CopyFromComponent
-              store={store}
-              cls="qgis_raster_style"
-              pickerOptions={{ initParentId: store.parent_id }}
-            />
+            <>
+              <Divider />
+              <CopyFromComponent
+                store={store}
+                cls="qgis_raster_style"
+                pickerOptions={{ initParentId: store.parent_id }}
+              />
+            </>
           );
-        default:
-          <>Default</>;
       }
     }, [store, mode]);
 
     return (
       <div className="ngw-qgis-raster-editor-widget">
-        <Select
+        <ModeSelector<Mode>
           className="mode"
-          options={modeOpts}
           value={store.mode}
+          options={modeOpts}
           onChange={store.setMode}
         />
         {modeComponent}
