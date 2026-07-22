@@ -5,6 +5,7 @@ from random import Random
 from lxml import etree
 from lxml.builder import ElementMaker
 
+from nextgisweb.core.exception import ValidationError
 from nextgisweb.sld import NSMAP as nsmap_sld
 
 MD5_NULL_HEXDIGEST = "d41d8cd98f00b204e9800998ecf8427e"
@@ -86,6 +87,91 @@ def sld_fix_vector(xml):
         xml = etree.tostring(_sld, encoding="unicode")
 
     return xml
+
+
+def fix_layer_geometry_type(qml_str, geometry_type):
+    """Post-process QML to ensure correct layerGeometryType.
+
+    Removes all existing layerGeometryType elements and inserts the correct
+    one based on the layer's actual geometry type. This mirrors how QGIS
+    Desktop handles missing layerGeometryType, but QGIS Headless requires it
+    to be explicit.
+    """
+    if geometry_type is None:
+        return qml_str
+
+    root = etree.fromstring(qml_str.encode("utf-8"))
+
+    for el in root.findall("layerGeometryType"):
+        el.getparent().remove(el)
+
+    geom_el = etree.SubElement(root, "layerGeometryType")
+    geom_el.text = str(geometry_type)
+
+    return etree.tostring(root, encoding="unicode", xml_declaration=False)
+
+
+def fix_labeling_enabled(qml_str):
+    """Post-process QML to keep labelsEnabled consistent with <labeling>.
+
+    QGIS Desktop only renders labels when the root element's labelsEnabled
+    attribute is "1", independently of the <labeling> element itself. LLMs
+    reliably forget to set it, so it's enforced here instead of relying on
+    the prompt.
+    """
+    root = etree.fromstring(qml_str.encode("utf-8"))
+    root.attrib["labelsEnabled"] = "1" if root.find("labeling") is not None else "0"
+    return etree.tostring(root, encoding="unicode", xml_declaration=False)
+
+
+def add_qml_metadata(qml_str, layer_id, prompt):
+    """Add layer reference and user prompt to QML metadata for debugging."""
+    root = etree.fromstring(qml_str.encode("utf-8"))
+
+    metadata = etree.SubElement(root, "metadata")
+    layer_el = etree.SubElement(metadata, "layer_id")
+    layer_el.text = str(layer_id)
+    prompt_el = etree.SubElement(metadata, "user_prompt")
+    prompt_el.text = prompt
+
+    return etree.tostring(root, encoding="unicode", xml_declaration=False)
+
+
+def validate_qml_structure(qml_str):
+    """Validate that QML contains at least one renderer-v2 or labeling tag."""
+    root = etree.fromstring(qml_str.encode("utf-8"))
+    if root.find("renderer-v2") is None and root.find("labeling") is None:
+        raise ValidationError(
+            message="Generated QML is invalid: missing renderer-v2 and labeling tags."
+        )
+
+
+# QML integer geometry type (see _QML_GEOM_TYPE in api.py) -> name / expected <symbol type="...">
+QML_GEOM_TYPE_NAME = {0: "point", 1: "line", 2: "polygon"}
+QML_GEOM_TYPE_SYMBOL_TYPE = {0: "marker", 1: "line", 2: "fill"}
+
+
+def validate_symbol_geometry_type(qml_str, geometry_type):
+    """Validate that every top-level symbol matches the layer's geometry type.
+
+    The LLM is told the layer's geometry type, but sometimes ignores it and
+    generates a symbol for the wrong geometry (e.g. a line symbol for a
+    polygon layer). Such styles don't fail to parse, they just don't render
+    the way the user asked, so this is checked explicitly instead of trusting
+    the prompt.
+    """
+    expected = QML_GEOM_TYPE_SYMBOL_TYPE.get(geometry_type)
+    if expected is None:
+        return
+
+    root = etree.fromstring(qml_str.encode("utf-8"))
+    for symbol in root.findall("renderer-v2/symbols/symbol"):
+        actual = symbol.get("type")
+        if actual != expected:
+            raise ValidationError(
+                message="Generated QML is invalid: layer geometry requires a "
+                "'{}' symbol, but generated a '{}' symbol.".format(expected, actual)
+            )
 
 
 def file_md5_hexdigest(file):
