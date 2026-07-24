@@ -1,6 +1,6 @@
 from enum import Enum
 
-from msgspec import Struct
+from msgspec import UNSET, Struct
 from pyramid.response import FileResponse, Response
 
 from nextgisweb.env import gettext
@@ -9,8 +9,8 @@ from nextgisweb.lib.json import loads as json_loads
 from nextgisweb.core.exception import ValidationError
 from nextgisweb.feature_layer import IAggregatableFeatureQuery, IFeatureLayer
 from nextgisweb.feature_layer.aggregation import MinMaxSpec, UniqueValuesSpec
+from nextgisweb.file_upload.api import FileUploadObject
 from nextgisweb.file_upload.model import FileUpload
-from nextgisweb.pyramid import JSONType
 from nextgisweb.resource import DataScope, ResourceFactory, ResourceScope, resource_factory
 
 import qgis_headless as qh
@@ -184,7 +184,11 @@ def _get_field_samples(resource, limit=20):
     return "\n".join(lines) if lines else ""
 
 
-def style_generate(resource, request, *, body: StyleGenerateBody) -> JSONType:
+class StyleGenerateResponse(Struct, kw_only=True):
+    file_upload: FileUploadObject
+
+
+def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenerateResponse:
     """Generate QML style from natural language prompt using LLM"""
     request.resource_permission(DataScope.read)
 
@@ -236,13 +240,20 @@ def style_generate(resource, request, *, body: StyleGenerateBody) -> JSONType:
     fupload = FileUpload(
         size=len(qml_bytes),
         name="style.qml",
-        mime_type="application/x-qgis-style",
+        mime_type="application/x-qgis-layer-settings",
     )
     with fupload.data_path.open("wb") as fd:
         fd.write(qml_bytes)
     fupload.write_meta()
 
-    return {"file_upload": {"id": fupload.id}}
+    return StyleGenerateResponse(
+        file_upload=FileUploadObject(
+            id=fupload.id,
+            size=fupload.size,
+            name=fupload.name or UNSET,
+            mime_type=fupload.mime_type or UNSET,
+        )
+    )
 
 
 def setup_pyramid(comp, config):
