@@ -2,7 +2,9 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 
 import { FileUploader } from "@nextgisweb/file-upload/file-uploader";
+import { Button } from "@nextgisweb/gui/antd";
 import { assert } from "@nextgisweb/jsrealm/error";
+import llmSettings from "@nextgisweb/llm-core/client-settings";
 import { useRoute } from "@nextgisweb/pyramid/hook";
 import { gettext } from "@nextgisweb/pyramid/i18n";
 import { resourceAttrItems } from "@nextgisweb/resource/api/resource-attr";
@@ -11,25 +13,31 @@ import type { EditorWidget } from "@nextgisweb/resource/type";
 
 import type { EditorStore } from "../EditorStore";
 
+import { GenerateWithAiModal } from "./GenerateWithAiModal";
+
 const msgUploadText = gettext("Select a style");
 const msgHelpText = gettext("QML or SLD formats are supported.");
 const msgSvgMarkerLibrary = gettext("SVG marker library");
+const msgGenerateWithAi = gettext("Generate with AI");
 
 export const FileModeComponent: EditorWidget<EditorStore> = observer(
   ({ store }) => {
     const [parentGroup, setParentGroup] = useState<number | undefined>(
       undefined
     );
-    const resourceGroupId = store.composite?.parent;
+    const resourceId = store.composite?.parent;
+
+    const [aiModalOpen, setAiModalOpen] = useState(false);
+    const [aiPrompt, setAiPrompt] = useState("");
 
     const { route } = useRoute("resource.attr");
 
     useEffect(() => {
-      if (resourceGroupId !== undefined && resourceGroupId !== null) {
+      if (resourceId !== undefined && resourceId !== null) {
         const loadAttrItem = async () => {
           const attrItems = await resourceAttrItems({
             route,
-            resources: [resourceGroupId],
+            resources: [resourceId],
             attributes: [["resource.parent"]],
           });
           const parent = attrItems[0].get("resource.parent");
@@ -39,22 +47,43 @@ export const FileModeComponent: EditorWidget<EditorStore> = observer(
         };
         loadAttrItem();
       }
-    }, [resourceGroupId, route]);
+    }, [resourceId, route]);
 
     return (
       <>
-        <FileUploader
-          accept=".qml,.sld"
-          onChange={(value) => {
-            assert(!Array.isArray(value));
-            store.setSource(value);
-          }}
-          onUploading={(value) => {
-            store.setUploading(value);
-          }}
-          uploadText={msgUploadText}
-          helpText={msgHelpText}
-        />
+        <div className="file-uploader-wrap">
+          <FileUploader
+            accept=".qml,.sld"
+            fileMeta={store.source ?? undefined}
+            onChange={(value) => {
+              assert(!Array.isArray(value));
+              store.setSource(value);
+            }}
+            onUploading={(value) => {
+              store.setUploading(value);
+            }}
+            uploadText={msgUploadText}
+            helpText={msgHelpText}
+          />
+          {llmSettings.available && resourceId !== null && (
+            <Button
+              className="generate-with-ai-button"
+              onClick={() => setAiModalOpen(true)}
+            >
+              {msgGenerateWithAi}
+            </Button>
+          )}
+        </div>
+        {resourceId && (
+          <GenerateWithAiModal
+            store={store}
+            resourceId={resourceId}
+            open={aiModalOpen}
+            prompt={aiPrompt}
+            onPromptChange={setAiPrompt}
+            onClose={() => setAiModalOpen(false)}
+          />
+        )}
         <label>{msgSvgMarkerLibrary}</label>
         <ResourceSelect
           value={store.svgMarkerLibrary ?? undefined}

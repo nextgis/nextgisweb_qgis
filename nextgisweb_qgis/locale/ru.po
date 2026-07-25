@@ -1,4 +1,4 @@
-#: api.py:38
+#: api.py:80
 msgid ""
 "The original QML was requested but the style has '{}' format. Use other "
 "values of the 'original' parameter."
@@ -6,27 +6,27 @@ msgstr ""
 "Запрошен орингинальный QML, но этот стиль имеет формат '{}'. Используйте "
 "другие значения параметра 'original'."
 
-#: model.py:245
+#: model.py:251
 msgid "QGIS raster style"
 msgstr "Растровый стиль QGIS"
 
-#: model.py:297
+#: model.py:313
 msgid "Band {}"
 msgstr "Канал {}"
 
-#: model.py:343
+#: model.py:359
 msgid "QGIS vector style"
 msgstr "Векторный стиль QGIS"
 
-#: model.py:543 model.py:560 model.py:595
+#: model.py:576 model.py:593 model.py:628
 msgid "Style format mismatch."
 msgstr "Несоответствие формата стиля."
 
-#: model.py:593 model.py:758
+#: model.py:626 model.py:802
 msgid "Style file is not valid."
 msgstr "Некорректный стиль."
 
-#: model.py:756
+#: model.py:800
 msgid "Layer type mismatch."
 msgstr "Несоответствие типу слоя."
 
@@ -34,40 +34,44 @@ msgstr "Несоответствие типу слоя."
 msgid "Source"
 msgstr "Источник"
 
-#: nodepkg/raster-editor-widget/EditorWidget.tsx:26
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:26
+#: nodepkg/raster-editor-widget/EditorWidget.tsx:18
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:18
 msgid "Style from file"
 msgstr "Стиль из файла"
 
-#: nodepkg/raster-editor-widget/EditorWidget.tsx:27
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:27
+#: nodepkg/raster-editor-widget/EditorWidget.tsx:19
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:19
 msgid "User-defined style"
 msgstr "Пользовательский стиль"
 
-#: nodepkg/raster-editor-widget/EditorWidget.tsx:28
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:28
+#: nodepkg/raster-editor-widget/EditorWidget.tsx:20
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:20
 msgid "Default style"
 msgstr "Стиль по умолчанию"
 
-#: nodepkg/raster-editor-widget/EditorWidget.tsx:29
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:29
+#: nodepkg/raster-editor-widget/EditorWidget.tsx:21
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:21
 msgid "Copy from resource"
 msgstr "Скопировать из ресурса"
 
 #: nodepkg/raster-editor-widget/EditorWidget.tsx:68
-#: nodepkg/vector-editor-widget/EditorWidget.tsx:68 view.py:62
+#: nodepkg/vector-editor-widget/EditorWidget.tsx:64
 msgid "QGIS style"
 msgstr "Стиль QGIS"
 
 #: nodepkg/raster-editor-widget/component/FileModeComponent.tsx:10
-#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:11
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:18
 msgid "Select a style"
 msgstr "Выберите стиль"
 
 #: nodepkg/raster-editor-widget/component/FileModeComponent.tsx:11
-#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:12
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:19
 msgid "QML or SLD formats are supported."
 msgstr "Поддерживаются форматы QML и SLD."
+
+#: nodepkg/resource-action-plugin.tsx:11
+msgid "QML file"
+msgstr "Файл QML"
 
 #: nodepkg/resource-section/default-style/QgisResourceSectionDefaultStyle.tsx:15
 msgid "Create default QGIS style"
@@ -81,10 +85,23 @@ msgstr ""
 "Слой создан. Для добавления слоя на веб-карту требуется стиль. Вы можете "
 "сгенерировать стиль QGIS по умолчанию с помощью этой кнопки."
 
-#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:13
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:20
 msgid "SVG marker library"
 msgstr "Библиотека маркеров SVG"
 
-#: view.py:65
-msgid "QML file"
-msgstr "Файл QML"
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:21
+#: nodepkg/vector-editor-widget/component/GenerateWithAiModal.tsx:14
+msgid "Generate with AI"
+msgstr "Сгенерировать с AI"
+
+#: nodepkg/vector-editor-widget/component/GenerateWithAiModal.tsx:15
+msgid "Describe the style in plain language..."
+msgstr "Опишите стиль простыми словами..."
+
+#: nodepkg/vector-editor-widget/component/GenerateWithAiModal.tsx:16
+msgid "Generate"
+msgstr "Сгенерировать"
+
+#: nodepkg/vector-editor-widget/component/GenerateWithAiModal.tsx:17
+msgid "Cancel"
+msgstr "Отмена"

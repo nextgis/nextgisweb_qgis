@@ -11,12 +11,23 @@
 
   & > .mode,
   & > .ant-divider,
-  & > .ngw-file-upload-file-uploader {
+  & > .file-uploader-wrap {
     grid-column: 1 / span 2;
   }
 
   & > .ant-divider {
     margin: 0.5em 0;
+  }
+
+  & > .file-uploader-wrap {
+    position: relative;
+
+    & > .generate-with-ai-button {
+      position: absolute;
+      top: 1em;
+      right: 1em;
+      z-index: 1;
+    }
   }
 
   & > .ngw-sld-style-editor {
