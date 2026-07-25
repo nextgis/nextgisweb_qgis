@@ -16,7 +16,7 @@ import type {
 import type { ResourceRef } from "@nextgisweb/resource/type/api";
 import type { Style } from "@nextgisweb/sld/type/api";
 
-export type Mode = "file" | "sld" | "copy" | "default" | "ai";
+export type Mode = "file" | "sld" | "copy" | "default";
 
 export interface VectorEditorStoreOptions extends EditorStoreOptions {
   geometryType: FeatureLayerGeometryType;
@@ -36,7 +36,6 @@ export class EditorStore implements IEditorStore<
   @observable.ref accessor sld: Style | null = null;
   @observable.ref accessor svgMarkerLibrary: number | null = null;
   @observable.ref accessor copyFrom: ResourceRef | null = null;
-  @observable.ref accessor aiSource: FileMeta | null = null;
 
   @observable.ref accessor dirty = false;
   @observable.ref accessor uploading = false;
@@ -84,10 +83,6 @@ export class EditorStore implements IEditorStore<
       result.format = "default";
     } else if (this.mode === "copy") {
       result.copy_from = this.copyFrom ?? undefined;
-    } else if (this.mode === "ai") {
-      if (this.aiSource) {
-        result.file_upload = this.aiSource;
-      }
     }
     return result;
   }
@@ -128,12 +123,6 @@ export class EditorStore implements IEditorStore<
   @action.bound
   setCopyFrom(value: this["copyFrom"]) {
     this.copyFrom = value;
-    this.dirty = true;
-  }
-
-  @action.bound
-  setAiSource(value: this["aiSource"]) {
-    this.aiSource = value;
     this.dirty = true;
   }
 
