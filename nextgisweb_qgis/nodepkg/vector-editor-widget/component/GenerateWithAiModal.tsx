@@ -1,8 +1,9 @@
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 
 import { Button, Input, Modal, Space, Spin } from "@nextgisweb/gui/antd";
 import { errorModal } from "@nextgisweb/gui/error";
+import { useUnsavedChanges } from "@nextgisweb/gui/hook";
 import { route } from "@nextgisweb/pyramid/api";
 import { gettext } from "@nextgisweb/pyramid/i18n";
 
@@ -14,9 +15,6 @@ const msgTitle = gettext("Generate with AI");
 const msgPromptPlaceholder = gettext("Describe the style in plain language...");
 const msgGenerate = gettext("Generate");
 const msgCancel = gettext("Cancel");
-const msgGenerating = gettext(
-  "Please wait, the request is being processed by AI"
-);
 
 interface GenerateWithAiModalProps {
   store: EditorStore;
@@ -38,14 +36,7 @@ export const GenerateWithAiModal = observer(
   }: GenerateWithAiModalProps) => {
     const { uploading: generating } = store;
 
-    useEffect(() => {
-      if (!generating) return;
-      const handler = (e: BeforeUnloadEvent) => {
-        e.preventDefault();
-      };
-      window.addEventListener("beforeunload", handler);
-      return () => window.removeEventListener("beforeunload", handler);
-    }, [generating]);
+    useUnsavedChanges({ dirty: generating });
 
     const handleGenerate = useCallback(async () => {
       if (!prompt.trim()) return;
@@ -80,23 +71,22 @@ export const GenerateWithAiModal = observer(
         mask={{ closable: !generating }}
         width={640}
         footer={
-          <Space>
-            <Button onClick={onClose} disabled={generating}>
-              {msgCancel}
-            </Button>
-            <Button
-              type="primary"
-              loading={generating}
-              disabled={!prompt.trim()}
-              onClick={handleGenerate}
-            >
-              {msgGenerate}
-            </Button>
-          </Space>
+          generating ? null : (
+            <Space>
+              <Button onClick={onClose}>{msgCancel}</Button>
+              <Button
+                type="primary"
+                disabled={!prompt.trim()}
+                onClick={handleGenerate}
+              >
+                {msgGenerate}
+              </Button>
+            </Space>
+          )
         }
       >
         {generating ? (
-          <Spin size="large" description={msgGenerating}>
+          <Spin size="large">
             <div style={{ height: 80 }} />
           </Spin>
         ) : (
