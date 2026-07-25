@@ -9,7 +9,6 @@ import type { EditorWidget as IEditorWidget } from "@nextgisweb/resource/type";
 import { CopyFromComponent } from "../CopyFromComponent";
 
 import type { EditorStore, Mode } from "./EditorStore";
-import { AiModeComponent } from "./component/AiModeComponent";
 import { FileModeComponent } from "./component/FileModeComponent";
 import { SldModeComponent } from "./component/SldModeComponent";
 
@@ -18,7 +17,6 @@ import "./EditorWidget.less";
 const modeOpts = [
   { value: "file" as const, label: gettext("Style from file") },
   { value: "sld" as const, label: gettext("User-defined style") },
-  { value: "ai" as const, label: gettext("Generate with AI") },
   { value: "default" as const, label: gettext("Default style") },
   { value: "copy" as const, label: gettext("Copy from resource") },
 ];
@@ -36,13 +34,6 @@ export const EditorWidget: IEditorWidget<EditorStore> = observer(
             <>
               <Divider />
               <SldModeComponent store={store} />
-            </>
-          );
-        case "ai":
-          return (
-            <>
-              <Divider />
-              <AiModeComponent store={store} />
             </>
           );
         case "copy":

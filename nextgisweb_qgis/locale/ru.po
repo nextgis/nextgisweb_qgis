@@ -85,6 +85,27 @@ msgstr ""
 msgid "SVG marker library"
 msgstr "Библиотека маркеров SVG"
 
+#: nodepkg/vector-editor-widget/component/FileModeComponent.tsx:21
+#: nodepkg/vector-editor-widget/component/GenerateWithAiModal.tsx:13
+msgid "Generate with AI"
+msgstr "Сгенерировать с AI"
+
+#: nodepkg/vector-editor-widget/component/GenerateWithAiModal.tsx:14
+msgid "Describe the style in plain language..."
+msgstr "Опишите стиль простыми словами..."
+
+#: nodepkg/vector-editor-widget/component/GenerateWithAiModal.tsx:15
+msgid "Generate"
+msgstr "Сгенерировать"
+
+#: nodepkg/vector-editor-widget/component/GenerateWithAiModal.tsx:16
+msgid "Cancel"
+msgstr "Отмена"
+
+#: nodepkg/vector-editor-widget/component/GenerateWithAiModal.tsx:17
+msgid "Please wait, the request is being processed by AI"
+msgstr "Подождите, запрос обрабатывается AI"
+
 #: view.py:65
 msgid "QML file"
 msgstr "Файл QML"
