@@ -14,9 +14,30 @@ from nextgisweb.file_upload.model import FileUpload
 from nextgisweb.resource import DataScope, ResourceFactory, ResourceScope, resource_factory
 
 import qgis_headless as qh
-from qgis_headless import Style
+from qgis_headless import Layer, Style
 
-from .model import QgisRasterStyle, QgisStyleFormat, QgisVectorStyle, read_style
+from .model import (
+    _GEOM_TYPE_TO_QGIS,
+    QgisRasterStyle,
+    QgisStyleFormat,
+    QgisVectorStyle,
+    read_style,
+)
+
+_QML_GEOM_TYPE = {
+    Layer.GT_POINT: 0,
+    Layer.GT_LINESTRING: 1,
+    Layer.GT_POLYGON: 2,
+    Layer.GT_MULTIPOINT: 0,
+    Layer.GT_MULTILINESTRING: 1,
+    Layer.GT_MULTIPOLYGON: 2,
+    Layer.GT_POINTZ: 0,
+    Layer.GT_LINESTRINGZ: 1,
+    Layer.GT_POLYGONZ: 2,
+    Layer.GT_MULTIPOINTZ: 0,
+    Layer.GT_MULTILINESTRINGZ: 1,
+    Layer.GT_MULTIPOLYGONZ: 2,
+}
 
 
 class OriginalEnum(Enum):
@@ -54,69 +75,28 @@ def style_qml(
     return response
 
 
-_QML_SCHEMA = """
-You are an expert QGIS cartographer and QML generator.
+_QML_SYSTEM_PROMPT = """\
+You generate QGIS {version} QML styles.
 
-Generate a complete, valid QML style compatible with QGIS {version}.
+The output is loaded directly by QGIS.
 
-Layer fields:
-{fields_desc}
+Rules:
 
-General rules:
-- You MUST call the set_qml function.
-- The `qml` parameter MUST contain ONLY the XML document, beginning with `<?xml`.
-- Do not output markdown, explanations, comments, or any text outside the XML.
-- The generated QML must load successfully in QGIS {version}.
-
-Renderer selection:
-- Use a Single Symbol renderer when one symbol is sufficient.
-- Use a Categorized renderer for discrete attribute values.
-- Use a Graduated renderer for numeric ranges.
-- Use a Rule-Based renderer when styling depends on multiple rules, feature hierarchy, rendering order, or multiple attributes.
-
-QML generation:
-- Generate the SMALLEST valid QML.
-- Include ONLY XML elements required to reproduce the requested appearance.
-- Omit properties that use QGIS default values.
-- Do not duplicate default <Option> or <prop> entries.
-- Do not invent unsupported XML elements or properties.
-- Every referenced symbol must exist exactly once.
-- Keep symbol definitions compact.
-- Reuse symbols whenever practical.
-- Produce syntactically valid XML with properly closed elements.
-- No indentation.
-- No line breaks except inside XML declaration if required.
-- No extra whitespace between elements.
-
-Cartographic principles:
-- Prioritize readability.
-- Build a clear visual hierarchy.
-- Use symbol size or line width as the primary indicator of importance.
-- Use color as a secondary visual variable.
-- Minimize the number of colors.
-- Similar feature classes should share similar styling.
-- More important features should visually dominate.
-- Less important features should recede.
-- Avoid decorative styling.
-- Avoid highly saturated colors unless explicitly requested.
-- Prefer established cartographic conventions over arbitrary styling.
-
-Road styling:
-- Prefer a Rule-Based renderer.
-- Draw roads from least important to most important.
-- Use line width as the primary indicator of hierarchy.
-- Keep related road classes visually similar.
-- Major roads may use a casing.
-- Construction and proposed roads should use dashed lines.
-- Prefer a restrained palette similar to OpenStreetMap Carto rather than assigning unique colors to every road class.
-
-Quality:
-- Produce deterministic output.
-- Do not include XML comments.
-- Do not include redundant metadata.
-- Do not include unused symbols.
-- Do not include properties that do not affect rendering.
-
+- You MUST call set_qml().
+- qml MUST contain a complete QGIS QML document.
+- The document MUST be valid XML.
+- The document MUST closely match QGIS Desktop serialization.
+- Never invent XML elements or property names.
+- Choose the renderer that best matches the requested styling.
+- Use Single Symbol, Categorized, Graduated or Rule-Based as appropriate.
+- Produce output that could have been saved by QGIS Desktop.
+- Preserve QGIS XML element names, attributes, property names, and serialization conventions.
+- Output compact XML without indentation.
+- Output the entire XML document on a single line.
+- Do not insert whitespace or line breaks between XML elements.
+- Do not output XML comments.
+- Do not output any text outside the XML document.
+- The <layerGeometryType> element MUST contain an integer: 0=Point, 1=Line, 2=Polygon.
 """
 
 _QML_TOOL = {
@@ -208,9 +188,17 @@ def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenera
 
     values_desc = _get_field_samples(resource)
 
-    prompt_content = body.prompt
+    geom_type = _GEOM_TYPE_TO_QGIS[resource.geometry_type]
+    qml_geometry_type = _QML_GEOM_TYPE.get(geom_type, geom_type)
+
+    user_parts = [
+        f"QML layerGeometryType: {qml_geometry_type}",
+        "Layer fields:",
+        fields_desc,
+    ]
     if values_desc:
-        prompt_content = f"{body.prompt}\n\nSample values:\n{values_desc}"
+        user_parts.extend(["", "Sample values:", values_desc])
+    user_parts.extend(["", body.prompt])
 
     client = llm.make_client()
     response = client.chat.completions.create(
@@ -219,11 +207,11 @@ def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenera
         messages=[
             {
                 "role": "system",
-                "content": _QML_SCHEMA.format(version=qgis_version, fields_desc=fields_desc),
+                "content": _QML_SYSTEM_PROMPT.format(version=qgis_version),
             },
             {
                 "role": "user",
-                "content": prompt_content,
+                "content": "\n".join(user_parts),
             },
         ],
         tools=[_QML_TOOL],
