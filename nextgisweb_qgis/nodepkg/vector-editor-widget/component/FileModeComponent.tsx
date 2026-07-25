@@ -68,7 +68,6 @@ export const FileModeComponent: EditorWidget<EditorStore> = observer(
           {llmSettings.available && resourceId !== null && (
             <Button
               className="generate-with-ai-button"
-              size="small"
               onClick={() => setAiModalOpen(true)}
             >
               {msgGenerateWithAi}
