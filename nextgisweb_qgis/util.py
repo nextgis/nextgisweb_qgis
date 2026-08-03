@@ -55,7 +55,8 @@ def sld_fix_vector(xml):
 
     _sld = etree.fromstring(xml)
     E = ElementMaker(namespace=nsmap_sld["se"])
-    for _rule in sld_find(_sld, "./NamedLayer/UserStyle/se:FeatureTypeStyle/se:Rule"):
+    _fts = sld_find(_sld, "./NamedLayer/UserStyle/se:FeatureTypeStyle")
+    for _rule in sld_find(_fts, "./se:Rule"):
         match etree.QName(_rule).localname:
             case "PointSymbolizer":
                 _graphic = sld_find(_rule, "./se:Graphic")
@@ -65,6 +66,17 @@ def sld_fix_vector(xml):
                 if len(_graphic) == 0:
                     fixed = True
                     _graphic.append(E.Mark())
+
+            case "LineSymbolizer":
+                if (_text_symbolizer := sld_find(_fts, "./se:Rule/se:TextSymbolizer")) is not None:
+                    _label_placement = sld_find(_text_symbolizer, "./se:LabelPlacement")
+                    if _label_placement is None:
+                        _label_placement = E.LabelPlacement()
+                        _text_symbolizer.append(_label_placement)
+                    if len(_label_placement) == 0:
+                        fixed = True
+                        _label_placement.append(E.PointPlacement())
+
             case "PolygonSymbolizer":
                 if len(_rule) == 0:
                     fixed = True

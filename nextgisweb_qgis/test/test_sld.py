@@ -58,12 +58,11 @@ def test_sld_minimal_raster():
                 graphic=sldm.Graphic(mark=sldm.Mark(fill=sldm.Fill(color="#00FF00")))
             ),
         ),
-        # TODO: Fix linestring labels
-        # (
-        #     "LINESTRING",
-        #     "LINESTRING (-90 0,90 0)",
-        #     sldm.LineSymbolizer(stroke=sldm.Stroke(color="#00FF00")),
-        # ),
+        (
+            "LINESTRING",
+            "LINESTRING (-90 0,90 0)",
+            sldm.LineSymbolizer(stroke=sldm.Stroke(color="#00FF00")),
+        ),
         (
             "POLYGON",
             "POLYGON ((-90 -45,-90 45,90 45,90 -45,-90 -45))",
