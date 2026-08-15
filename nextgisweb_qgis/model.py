@@ -13,7 +13,7 @@ from cachetools import LRUCache
 from msgspec import UNSET, Struct, UnsetType
 from qgis_headless.util import to_pil as qgis_image_to_pil
 from shapely.geometry import box
-from sqlalchemy.orm import declared_attr
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 from zope.interface import implementer
 
 from nextgisweb.env import env, gettext
@@ -142,7 +142,7 @@ class QgisStyleMixin:
 
     @declared_attr
     def qgis_fileobj(cls):
-        return orm.relationship(FileObj, cascade="save-update, merge")
+        return orm.relationship(FileObj, cascade="save-update,merge")
 
     @declared_attr
     def qgis_sld_id(cls):
@@ -150,7 +150,7 @@ class QgisStyleMixin:
 
     @declared_attr
     def qgis_sld(cls):
-        return orm.relationship(SLD, cascade="save-update, merge")
+        return orm.relationship(SLD, cascade="save-update,merge")
 
     @declared_attr
     def qgis_scale_range_cache(cls):
@@ -361,17 +361,16 @@ class QgisVectorStyle(Resource, QgisStyleMixin):
 
     __scope__ = DataScope
 
-    svg_marker_library_id = sa.Column(sa.ForeignKey(SVGMarkerLibrary.id), nullable=True)
+    svg_marker_library_id: Mapped[int | None] = mapped_column(sa.ForeignKey(SVGMarkerLibrary.id))
 
     __table_args__ = (QgisStyleMixin._qgis_format_check(),)
 
-    svg_marker_library = orm.relationship(
-        SVGMarkerLibrary,
+    svg_marker_library: Mapped[SVGMarkerLibrary | None] = orm.relationship(
         foreign_keys=svg_marker_library_id,
-        cascade="save-update, merge",
+        cascade="save-update,merge",
         # Backref is just for cleaning up QgisVectorStyle -> SVGMarkerLibrary
         # reference. SQLAlchemy does this automatically.
-        backref=orm.backref("_backref_qgis_vector_style", cascade_backrefs=False),
+        backref=orm.backref("_backref_qgis_vector_style"),
     )
 
     @classmethod
