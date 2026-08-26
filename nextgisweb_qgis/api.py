@@ -23,6 +23,7 @@ from .model import (
     QgisVectorStyle,
     read_style,
 )
+from .util import add_qml_metadata, fix_layer_geometry_type, validate_qml_structure
 
 _QML_GEOM_TYPE = {
     Layer.GT_POINT: 0,
@@ -79,6 +80,8 @@ _QML_SYSTEM_PROMPT = """\
 You generate QGIS {version} QML styles.
 
 The output is loaded directly by QGIS.
+Focus ONLY on symbology (<renderer-v2>) and labels (<labeling>).\
+ Do NOT generate project structure or other QGIS settings.
 
 Rules:
 
@@ -87,8 +90,9 @@ Rules:
 - The document MUST be valid XML.
 - The document MUST closely match QGIS Desktop serialization.
 - Never invent XML elements or property names.
-- Choose the renderer that best matches the requested styling.
-- Use Single Symbol, Categorized, Graduated or Rule-Based as appropriate.
+- Choose the renderer type that best matches the requested styling.
+- Use the renderer type attribute values exactly as they appear in QGIS XML:\
+ singleSymbol, categorizedSymbol, graduatedSymbol, RuleRenderer, heatmapRenderer, 25dRenderer.
 - Produce output that could have been saved by QGIS Desktop.
 - Preserve QGIS XML element names, attributes, property names, and serialization conventions.
 - Output compact XML without indentation.
@@ -96,7 +100,6 @@ Rules:
 - Do not insert whitespace or line breaks between XML elements.
 - Do not output XML comments.
 - Do not output any text outside the XML document.
-- The <layerGeometryType> element MUST contain an integer: 0=Point, 1=Line, 2=Polygon.
 """
 
 _QML_TOOL = {
@@ -192,7 +195,8 @@ def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenera
     qml_geometry_type = _QML_GEOM_TYPE.get(geom_type, geom_type)
 
     user_parts = [
-        f"QML layerGeometryType: {qml_geometry_type}",
+        f"Layer resource ID: {resource.id}",
+        f"Layer geometry type (QML integer): {qml_geometry_type}",
         "Layer fields:",
         fields_desc,
     ]
@@ -221,6 +225,10 @@ def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenera
     tool_call = response.choices[0].message.tool_calls[0]
     args = json_loads(tool_call.function.arguments)
     qml = args["qml"]
+
+    validate_qml_structure(qml)
+    qml = fix_layer_geometry_type(qml, qml_geometry_type)
+    qml = add_qml_metadata(qml, resource.id, body.prompt)
 
     Style.from_string(qml)
 
