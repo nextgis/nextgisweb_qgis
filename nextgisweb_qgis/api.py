@@ -1,5 +1,7 @@
 from enum import Enum
+from pathlib import Path
 
+from mako.template import Template
 from msgspec import UNSET, Struct
 from pyramid.response import FileResponse, Response
 
@@ -23,7 +25,15 @@ from .model import (
     QgisVectorStyle,
     read_style,
 )
-from .util import add_qml_metadata, fix_layer_geometry_type, validate_qml_structure
+from .util import (
+    QML_GEOM_TYPE_NAME,
+    QML_GEOM_TYPE_SYMBOL_TYPE,
+    add_qml_metadata,
+    fix_labeling_enabled,
+    fix_layer_geometry_type,
+    validate_qml_structure,
+    validate_symbol_geometry_type,
+)
 
 _QML_GEOM_TYPE = {
     Layer.GT_POINT: 0,
@@ -76,31 +86,12 @@ def style_qml(
     return response
 
 
-_QML_SYSTEM_PROMPT = """\
-You generate QGIS {version} QML styles.
+_QML_PROMPT_TEMPLATE = Template(filename=str(Path(__file__).parent / "template" / "qml_generate_prompt.mako"))
 
-The output is loaded directly by QGIS.
-Focus ONLY on symbology (<renderer-v2>) and labels (<labeling>).\
- Do NOT generate project structure or other QGIS settings.
 
-Rules:
+def _qml_system_prompt(version):
+    return _QML_PROMPT_TEMPLATE.render(version=version)
 
-- You MUST call set_qml().
-- qml MUST contain a complete QGIS QML document.
-- The document MUST be valid XML.
-- The document MUST closely match QGIS Desktop serialization.
-- Never invent XML elements or property names.
-- Choose the renderer type that best matches the requested styling.
-- Use the renderer type attribute values exactly as they appear in QGIS XML:\
- singleSymbol, categorizedSymbol, graduatedSymbol, RuleRenderer, heatmapRenderer, 25dRenderer.
-- Produce output that could have been saved by QGIS Desktop.
-- Preserve QGIS XML element names, attributes, property names, and serialization conventions.
-- Output compact XML without indentation.
-- Output the entire XML document on a single line.
-- Do not insert whitespace or line breaks between XML elements.
-- Do not output XML comments.
-- Do not output any text outside the XML document.
-"""
 
 _QML_TOOL = {
     "type": "function",
@@ -192,11 +183,15 @@ def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenera
     values_desc = _get_field_samples(resource)
 
     geom_type = _GEOM_TYPE_TO_QGIS[resource.geometry_type]
-    qml_geometry_type = _QML_GEOM_TYPE.get(geom_type, geom_type)
+    qml_geometry_type = _QML_GEOM_TYPE[geom_type]
+    geom_name = QML_GEOM_TYPE_NAME[qml_geometry_type]
+    symbol_type = QML_GEOM_TYPE_SYMBOL_TYPE[qml_geometry_type]
 
     user_parts = [
         f"Layer resource ID: {resource.id}",
-        f"Layer geometry type (QML integer): {qml_geometry_type}",
+        f"Layer geometry type: {geom_name}. You MUST use a '{symbol_type}' symbol "
+        f"(symbol type=\"{symbol_type}\", layer class=\"Simple{symbol_type.capitalize()}\") "
+        "— no other symbol type is valid for this layer.",
         "Layer fields:",
         fields_desc,
     ]
@@ -211,7 +206,7 @@ def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenera
         messages=[
             {
                 "role": "system",
-                "content": _QML_SYSTEM_PROMPT.format(version=qgis_version),
+                "content": _qml_system_prompt(qgis_version),
             },
             {
                 "role": "user",
@@ -227,7 +222,9 @@ def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenera
     qml = args["qml"]
 
     validate_qml_structure(qml)
+    validate_symbol_geometry_type(qml, qml_geometry_type)
     qml = fix_layer_geometry_type(qml, qml_geometry_type)
+    qml = fix_labeling_enabled(qml)
     qml = add_qml_metadata(qml, resource.id, body.prompt)
 
     Style.from_string(qml)
