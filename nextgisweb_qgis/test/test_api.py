@@ -54,18 +54,22 @@ def test_qgis_vector_style(test_data, style, status, polygon_layer_id, ngw_file_
         pytest.param("invalid.qml", 422, id="invalid-qml"),
         pytest.param("landuse/landuse.qml", 422, id="wrong-layer-type"),
         pytest.param("raster/rounds.qml", 201, id="valid-style"),
+        pytest.param(None, 201, id="default-style"),
     ),
 )
 def test_qgis_raster_style(test_data, style, status, raster_layer_id, ngw_file_upload):
     rapi = ResourceAPI()
 
-    style_fu = ngw_file_upload(test_data / style)
+    if style is not None:
+        style_data = {"file_upload": ngw_file_upload(test_data / style)}
+    else:
+        style_data = {"format": "default"}
 
     resp = rapi.create_request(
         "qgis_raster_style",
         {
             "resource": {"parent": {"id": raster_layer_id}},
-            "qgis_raster_style": {"file_upload": style_fu},
+            "qgis_raster_style": style_data,
         },
         status=status,
     )
