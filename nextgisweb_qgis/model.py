@@ -716,7 +716,7 @@ def _read_style(qgis_style):
                 opacity = 255
             params["color"] = rand_color(qgis_style.id) + (opacity,)
         else:
-            params["random_seed"] = qgis_style.id
+            params["random_seed"] = qgis_style.id or 0
         return Style.from_defaults(**params)
 
     if is_vector:
