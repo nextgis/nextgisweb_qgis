@@ -8,11 +8,9 @@ from nextgisweb.vector_layer import VectorLayer
 
 import nextgisweb_qgis
 
-pytestmark = pytest.mark.usefixtures("ngw_resource_defaults")
-
 
 @pytest.fixture(scope="module")
-def test_data(ngw_env):
+def test_data(ngw_resource_defaults, ngw_env):
     if qgh_path := ngw_env.qgis.options["test.qgis_headless_path"]:
         base = Path(qgh_path) / "qgis_headless"
     else:
@@ -24,7 +22,7 @@ def test_data(ngw_env):
 
 
 @pytest.fixture(scope="module")
-def point_layer_id(test_data):
+def point_layer_id(test_data, ngw_resource_defaults):
     with transaction.manager:
         source = test_data / "zero/data.geojson"
         res = VectorLayer().persist().from_ogr(source)
@@ -32,7 +30,7 @@ def point_layer_id(test_data):
 
 
 @pytest.fixture(scope="module")
-def polygon_layer_id(test_data):
+def polygon_layer_id(test_data, ngw_resource_defaults):
     with transaction.manager:
         source = test_data / "landuse/landuse.geojson"
         res = VectorLayer().persist().from_ogr(source)
@@ -40,7 +38,7 @@ def polygon_layer_id(test_data):
 
 
 @pytest.fixture(scope="module")
-def contour_layer_id(test_data):
+def contour_layer_id(test_data, ngw_resource_defaults):
     with transaction.manager:
         source = test_data / "contour/data.geojson"
         res = VectorLayer().persist().from_ogr(source)
@@ -48,7 +46,7 @@ def contour_layer_id(test_data):
 
 
 @pytest.fixture(scope="module")
-def raster_layer_id(test_data):
+def raster_layer_id(test_data, ngw_resource_defaults):
     with transaction.manager:
         layer = RasterLayer().persist()
         layer.load_file(str(test_data / "raster/rounds.tif"))
@@ -56,7 +54,7 @@ def raster_layer_id(test_data):
 
 
 @pytest.fixture(scope="module")
-def two_point_layer_id(ngw_data_path):
+def two_point_layer_id(ngw_data_path, ngw_resource_defaults):
     with transaction.manager:
         source = ngw_data_path / "two-points.geojson"
         res = VectorLayer().persist().from_ogr(source)
