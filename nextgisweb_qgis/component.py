@@ -25,9 +25,6 @@ class QgisComponent(Component):
         api.setup_pyramid(self, config)
         view.setup_pyramid(self, config)
 
-    def sys_info(self):
-        return (("QGIS", qh.get_qgis_version()),)
-
     def qgis_init(self):
         if not self._qgis_initialized:
             # Set up logging level before initialization. Default is CRITICAL in
