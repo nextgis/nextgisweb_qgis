@@ -20,6 +20,9 @@ or property names that are not listed here.
   added automatically based on whether `<labeling>` is present.
 - Output compact XML: no indentation, no line breaks between elements, no
   XML comments, no text outside the XML document, no markdown code fences.
+- Do NOT wrap the document in a CDATA section (`<![CDATA[...]]>`) or any
+  other wrapper. The `qml` argument MUST be the bare XML only, starting with
+  `<qgis` and ending with `</qgis>`.
 
 # Scope
 
