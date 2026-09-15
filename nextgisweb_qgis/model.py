@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 import re
 from enum import Enum
 from io import BytesIO
 from os.path import normpath
 from os.path import sep as path_sep
 from textwrap import dedent
-from typing import Union
+from typing import TYPE_CHECKING, Union
 from uuid import UUID
 
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
+import transaction
 from cachetools import LRUCache
 from msgspec import UNSET, Struct, UnsetType
 from qgis_headless.util import to_pil as qgis_image_to_pil
@@ -20,8 +23,10 @@ from nextgisweb.env import env, gettext
 from nextgisweb.lib import saext
 from nextgisweb.lib.geometry import Geometry
 from nextgisweb.lib.json import dumps as json_dumps
+from nextgisweb.lib.logging import logger
 from nextgisweb.lib.saext import Msgspec
 
+from nextgisweb.core import maintenance_hook
 from nextgisweb.core.exception import InsufficientPermissions, OperationalError, ValidationError
 from nextgisweb.feature_layer import FIELD_TYPE, GEOM_TYPE, IFeatureLayer, IFilterableFeatureLayer
 from nextgisweb.file_storage import FileObj
@@ -49,6 +54,7 @@ from nextgisweb.sld import SLD
 from nextgisweb.sld.model import Style as SLDStyle
 from nextgisweb.svg_marker_library import SVGMarkerLibrary
 
+import qgis_headless as qh
 from qgis_headless import (
     CRS,
     LT_RASTER,
@@ -68,6 +74,10 @@ from .util import (
     sld_fix_vector,
     sld_to_qml_raster,
 )
+
+if TYPE_CHECKING:
+    from .component import QgisComponent
+
 
 _GEOM_TYPE_TO_QGIS = {
     GEOM_TYPE.POINT: Layer.GT_POINT,
@@ -769,6 +779,17 @@ def check_scale_range(style, extent, size, *, dpi):
 
     denom = (extent[2] - extent[0]) * dpi / (size[0] * 0.0254)
     return (min_denom is None or min_denom > denom) and (max_denom is None or max_denom < denom)
+
+
+@maintenance_hook()
+def maintenance(comp: QgisComponent):
+    with transaction.manager:
+        for cls in (QgisRasterStyle, QgisVectorStyle):
+            for resource in cls.filter_by(qgis_scale_range_cache=None):
+                try:
+                    resource._update_scale_range_cache()
+                except qh.StyleValidationError as e:
+                    logger.warning(f"QGIS style (id={resource.id}) error: {e}")
 
 
 def _convert_none(v):

@@ -1,17 +1,12 @@
-import transaction
-
 from nextgisweb.env import Component
 from nextgisweb.lib.config import Option, OptionAnnotations
-from nextgisweb.lib.logging import logger
 
 import qgis_headless as qh
-
-from .model import QgisRasterStyle, QgisVectorStyle
 
 
 class QgisComponent(Component):
     def initialize(self):
-        super(QgisComponent, self).initialize()
+        super().initialize()
         self._qgis_initialized = False
 
     def setup_pyramid(self, config):
@@ -36,15 +31,6 @@ class QgisComponent(Component):
             if "svg_path" in self.options:
                 qh.set_svg_paths(self.options["svg_path"])
             self._qgis_initialized = True
-
-    def maintenance(self):
-        with transaction.manager:
-            for cls in (QgisRasterStyle, QgisVectorStyle):
-                for resource in cls.filter_by(qgis_scale_range_cache=None):
-                    try:
-                        resource._update_scale_range_cache()
-                    except qh.StyleValidationError as e:
-                        logger.warning(f"QGIS style (id={resource.id}) error: {e}")
 
     # fmt: off
     option_annotations = OptionAnnotations((
