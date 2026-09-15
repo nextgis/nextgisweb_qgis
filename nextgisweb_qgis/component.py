@@ -14,12 +14,7 @@ class QgisComponent(Component):
         super(QgisComponent, self).initialize()
         self._qgis_initialized = False
 
-    def configure(self):
-        super(QgisComponent, self).configure()
-
     def setup_pyramid(self, config):
-        super(QgisComponent, self).setup_pyramid(config)
-
         from . import api, view
 
         api.setup_pyramid(self, config)
