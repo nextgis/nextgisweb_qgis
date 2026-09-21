@@ -276,7 +276,12 @@ class QgisRasterStyle(Resource, QgisStyleMixin):
         parent = self.parent
         if parent.storage is not None:
             parent.storage.configure_gdal()
-            gdal_path = parent.storage.vsi_path(parent.storage_filename)
+            # Use vrt:// to prevent a cache removal.
+            # QgsGdalProvider removes the network cache at each layer open.
+            # The removal clears the shared CURL cache with the S3 data.
+            # Keep the cache to reuse the S3 data at the next open.
+            # See https://github.com/qgis/QGIS/pull/57388
+            gdal_path = "vrt://" + parent.storage.vsi_path(parent.storage_filename)
         else:
             # We need raster pyramids so use working directory filename instead of
             # original filename.
