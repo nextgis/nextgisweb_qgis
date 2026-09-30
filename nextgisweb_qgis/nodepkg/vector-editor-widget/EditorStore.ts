@@ -1,5 +1,5 @@
 import { isEqual } from "lodash-es";
-import { action, computed, observable } from "mobx";
+import { action, actionBound, computed, observableRef } from "mobx";
 
 import type { FeatureLayerGeometryType } from "@nextgisweb/feature-layer/type/api";
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader/type";
@@ -31,14 +31,14 @@ export class EditorStore implements IEditorStore<
   readonly geometryType: FeatureLayerGeometryType;
   readonly composite?: CompositeStore;
 
-  @observable.ref accessor mode: Mode = "file";
-  @observable.ref accessor source: FileMeta | null = null;
-  @observable.ref accessor sld: Style | null = null;
-  @observable.ref accessor svgMarkerLibrary: number | null = null;
-  @observable.ref accessor copyFrom: ResourceRef | null = null;
+  @observableRef accessor mode: Mode = "file";
+  @observableRef accessor source: FileMeta | null = null;
+  @observableRef accessor sld: Style | null = null;
+  @observableRef accessor svgMarkerLibrary: number | null = null;
+  @observableRef accessor copyFrom: ResourceRef | null = null;
 
-  @observable.ref accessor dirty = false;
-  @observable.ref accessor uploading = false;
+  @observableRef accessor dirty = false;
+  @observableRef accessor uploading = false;
 
   constructor({ geometryType, composite }: VectorEditorStoreOptions) {
     this.composite = composite;
@@ -92,13 +92,13 @@ export class EditorStore implements IEditorStore<
     return !this.uploading;
   }
 
-  @action.bound
+  @actionBound
   setMode(value: this["mode"]) {
     this.mode = value;
     this.dirty = true;
   }
 
-  @action.bound
+  @actionBound
   setSource(value: this["source"] | undefined) {
     value = value ?? null;
     if (this.source === (value ?? null)) return;
@@ -106,27 +106,27 @@ export class EditorStore implements IEditorStore<
     this.dirty = true;
   }
 
-  @action.bound
+  @actionBound
   setSvgMarkerLibrary(value: this["svgMarkerLibrary"] | undefined) {
     value = value ?? null;
     this.svgMarkerLibrary = value;
     this.dirty = true;
   }
 
-  @action.bound
+  @actionBound
   setSld(value: this["sld"]) {
     if (isEqual(this.sld, value)) return;
     this.sld = value;
     this.dirty = true;
   }
 
-  @action.bound
+  @actionBound
   setCopyFrom(value: this["copyFrom"]) {
     this.copyFrom = value;
     this.dirty = true;
   }
 
-  @action.bound
+  @actionBound
   setUploading(value: this["uploading"]) {
     this.uploading = value;
   }

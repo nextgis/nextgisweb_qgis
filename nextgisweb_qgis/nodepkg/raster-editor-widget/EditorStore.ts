@@ -1,5 +1,5 @@
 import { isEqual } from "lodash-es";
-import { action, computed, observable } from "mobx";
+import { action, actionBound, computed, observableRef } from "mobx";
 
 import type { FileMeta } from "@nextgisweb/file-upload/file-uploader";
 import type {
@@ -31,13 +31,13 @@ export class EditorStore implements IEditorStore<
 > {
   readonly identity = "qgis_raster_style";
 
-  @observable.ref accessor mode: Mode = "file";
-  @observable.ref accessor source: FileMeta | null = null;
-  @observable.ref accessor sld: Style | null = null;
-  @observable.ref accessor copyFrom: ResourceRef | null = null;
+  @observableRef accessor mode: Mode = "file";
+  @observableRef accessor source: FileMeta | null = null;
+  @observableRef accessor sld: Style | null = null;
+  @observableRef accessor copyFrom: ResourceRef | null = null;
 
-  @observable.ref accessor dirty = false;
-  @observable.ref accessor uploading = false;
+  @observableRef accessor dirty = false;
+  @observableRef accessor uploading = false;
 
   readonly parent_id: number;
   readonly band_count: number;
@@ -85,13 +85,13 @@ export class EditorStore implements IEditorStore<
     return !this.uploading;
   }
 
-  @action.bound
+  @actionBound
   setMode(value: Mode) {
     this.mode = value;
     this.dirty = true;
   }
 
-  @action.bound
+  @actionBound
   setSource(value: this["source"] | undefined) {
     value = value ?? null;
     if (this.source === (value ?? null)) return;
@@ -99,20 +99,20 @@ export class EditorStore implements IEditorStore<
     this.dirty = true;
   }
 
-  @action.bound
+  @actionBound
   setSld(value: this["sld"]) {
     if (isEqual(this.sld, value)) return;
     this.sld = value;
     this.dirty = true;
   }
 
-  @action.bound
+  @actionBound
   setCopyFrom(value: this["copyFrom"]) {
     this.copyFrom = value;
     this.dirty = true;
   }
 
-  @action.bound
+  @actionBound
   setUploading(val: boolean) {
     this.uploading = val;
   }
