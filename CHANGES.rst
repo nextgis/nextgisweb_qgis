@@ -1,6 +1,13 @@
 Changes
 =======
 
+4.0.0
+-----
+
+- AI-powered generation of styles.
+- Support for rendering using JSON field values.
+
+
 3.5.0
 -----
 
