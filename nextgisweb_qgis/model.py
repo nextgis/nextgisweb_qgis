@@ -329,6 +329,7 @@ class QgisRasterStyle(QgisStyleMixin, Resource):
             result.append(
                 LegendSymbol(
                     index=s.index(),
+                    parent=s.parent(),
                     render=None,
                     display_name=dn,
                     icon=qgis_image_to_pil(s.icon()),
@@ -524,6 +525,7 @@ class QgisVectorStyle(QgisStyleMixin, Resource):
         return [
             LegendSymbol(
                 index=s.index(),
+                parent=s.parent(),
                 render=s.render(),
                 display_name=s.title(),
                 icon=qgis_image_to_pil(s.icon()),
