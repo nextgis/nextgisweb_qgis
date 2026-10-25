@@ -3,7 +3,6 @@ from pathlib import Path
 
 from mako.template import Template
 from msgspec import UNSET, Struct
-from pyramid.response import FileResponse, Response
 
 from nextgisweb.env import gettext
 from nextgisweb.lib.json import loads as json_loads
@@ -13,6 +12,7 @@ from nextgisweb.feature_layer import IAggregatableFeatureQuery, IFeatureLayer
 from nextgisweb.feature_layer.aggregation import MinMaxSpec, UniqueValuesSpec
 from nextgisweb.file_upload.api import FileUploadObject
 from nextgisweb.file_upload.model import FileUpload
+from nextgisweb.pyramid.tomb import FileResponse, HTTPNotFound, Response
 from nextgisweb.resource import DataScope, ResourceFactory, ResourceScope, resource_factory
 
 import qgis_headless as qh
@@ -170,8 +170,6 @@ def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenera
 
     llm = request.env.llm_core
     if not llm.available:
-        from pyramid.httpexceptions import HTTPNotFound
-
         raise HTTPNotFound()
 
     qgis_version = qh.get_qgis_version()
