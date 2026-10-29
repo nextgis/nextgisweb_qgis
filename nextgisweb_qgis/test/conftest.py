@@ -59,3 +59,16 @@ def two_point_layer_id(ngw_data_path, ngw_resource_defaults):
         source = ngw_data_path / "two-points.geojson"
         res = VectorLayer().persist().from_ogr(source)
     yield res.id
+
+
+@pytest.fixture(scope="module")
+def no_geom_layer_id(ngw_resource_defaults):
+    with transaction.manager:
+        res = VectorLayer(geometry_type="NONE").persist()
+        res.setup_from_fields(
+            [
+                {"keyname": "value_int", "datatype": "INTEGER"},
+                {"keyname": "value_str", "datatype": "STRING"},
+            ]
+        )
+    yield res.id

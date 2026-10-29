@@ -92,6 +92,7 @@ _GEOM_TYPE_TO_QGIS = {
     GEOM_TYPE.MULTIPOINTZ: Layer.GT_MULTIPOINTZ,
     GEOM_TYPE.MULTILINESTRINGZ: Layer.GT_MULTILINESTRINGZ,
     GEOM_TYPE.MULTIPOLYGONZ: Layer.GT_MULTIPOLYGONZ,
+    GEOM_TYPE.NONE: Layer.GT_NULL,
 }
 
 STRIP_SVG_PATH = re.compile(
@@ -109,6 +110,10 @@ class QgisStyleFormat(Enum):
 _FILE_FORMAT_2_HEADLESS = {
     QgisStyleFormat.QML_FILE: StyleFormat.QML,
     QgisStyleFormat.SLD_FILE: StyleFormat.SLD,
+}
+_FORMAT_2_HEADLESS = {
+    QgisStyleFormat.SLD: StyleFormat.SLD,
+    **_FILE_FORMAT_2_HEADLESS,
 }
 _HEADLESS_2_FILE_FORMAT = {v: k for k, v in _FILE_FORMAT_2_HEADLESS.items()}
 
@@ -339,7 +344,7 @@ class QgisRasterStyle(QgisStyleMixin, Resource):
 
     def _headless_kwargs(self):
         return dict(
-            format=_FILE_FORMAT_2_HEADLESS[self.qgis_format],
+            format=_FORMAT_2_HEADLESS[self.qgis_format],
             layer_type=LT_RASTER,
         )
 
@@ -391,7 +396,7 @@ class QgisVectorStyle(QgisStyleMixin, Resource):
 
     @classmethod
     def check_parent(cls, parent):
-        return IFeatureLayer.providedBy(parent) and parent.geometry_type != GEOM_TYPE.NONE
+        return IFeatureLayer.providedBy(parent)  # and parent.geometry_type != GEOM_TYPE.NONE
 
     @property
     def feature_layer(self):
@@ -401,6 +406,10 @@ class QgisVectorStyle(QgisStyleMixin, Resource):
         return RenderRequest(self, srs, cond)
 
     def _render_image(self, srs, extent, size, *, symbols=None, feature_filter=None, padding=None):
+        geometry_type = self.parent.geometry_type
+        if geometry_type == GEOM_TYPE.NONE:
+            return
+
         env.qgis.qgis_init()
 
         style = read_style(self)
@@ -462,7 +471,7 @@ class QgisVectorStyle(QgisStyleMixin, Resource):
             return None
 
         layer = Layer.from_data(
-            _GEOM_TYPE_TO_QGIS[self.parent.geometry_type], crs, tuple(qhl_fields), tuple(features)
+            _GEOM_TYPE_TO_QGIS[geometry_type], crs, tuple(qhl_fields), tuple(features)
         )
 
         idx = mreq.add_layer(layer, style)
@@ -535,7 +544,7 @@ class QgisVectorStyle(QgisStyleMixin, Resource):
 
     def _headless_kwargs(self):
         return dict(
-            format=_FILE_FORMAT_2_HEADLESS[self.qgis_format],
+            format=_FORMAT_2_HEADLESS[self.qgis_format],
             layer_type=LT_VECTOR,
             layer_geometry_type=_GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
         )
@@ -611,6 +620,24 @@ class SldAttr(SAttribute):
 
         sld = SLD()
         sld.deserialize(value)
+
+        sld_xml = sld.to_xml()
+
+        params = srlzr.obj._headless_kwargs()
+        if isinstance(srlzr.obj, QgisRasterStyle):
+            xml = sld_to_qml_raster(sld_xml)
+            params["format"] = StyleFormat.QML
+        else:
+            xml = sld_fix_vector(sld_xml)
+            params["format"] = StyleFormat.SLD
+
+        env.qgis.qgis_init()
+
+        try:
+            Style.from_string(xml, **params)
+        except Exception as exc:
+            _reraise_qgis_exception(exc, ValidationError)
+
         srlzr.obj.qgis_sld = sld
         srlzr.obj.qgis_fileobj = None
 

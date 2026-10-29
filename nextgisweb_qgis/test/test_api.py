@@ -16,6 +16,24 @@ from ..model import QgisRasterStyle, QgisStyleFormat, QgisVectorStyle
 pytestmark = pytest.mark.usefixtures("ngw_resource_defaults", "ngw_auth_administrator")
 
 
+def sld_body():
+    symbolizer = {
+        "type": "point",
+        "graphic": {
+            "opacity": 0.75,
+            "mark": {
+                "well_known_name": "square",
+                "fill": {"opacity": 0.25, "color": "#00FF00"},
+                "stroke": {"opacity": 0.75, "color": "#FF0000", "width": 2},
+            },
+            "size": 16,
+        },
+    }
+
+    sld = {"rules": [{"symbolizers": [symbolizer]}]}
+    return {"format": QgisStyleFormat.SLD.value, "sld": sld}
+
+
 @pytest.mark.parametrize(
     "style, status",
     (
@@ -45,7 +63,48 @@ def test_qgis_vector_style(test_data, style, status, polygon_layer_id, ngw_file_
     res = QgisVectorStyle.filter_by(id=resp.json["id"]).one()
     srs = SRS.filter_by(id=3857).one()
     req = res.render_request(srs)
-    req.render_tile((0, 0, 0), 256)
+    img = req.render_tile((0, 0, 0), 256)
+    assert img is not None
+
+
+@pytest.mark.parametrize(
+    "style, status",
+    (
+        pytest.param(None, 201, id="default"),
+        pytest.param("no-geom/no-geom.qml", 201, id="no-geom-style"),
+        pytest.param("raster/rounds.qml", 422, id="wrong-layer-type"),
+        pytest.param("point-style.qml", 422, id="wrong-geometry-type"),
+        pytest.param("sld/point.sld", 422, id="sld-file"),
+        pytest.param(sld_body, 422, id="sld-user-defined"),
+    ),
+)
+def test_vector_no_geom(style, status, no_geom_layer_id, ngw_file_upload, test_data):
+    rapi = ResourceAPI()
+
+    if style is None:
+        style_data = {"format": "default"}
+    elif isinstance(style, str):
+        style_data = {"file_upload": ngw_file_upload(test_data / style)}
+    else:
+        style_data = style()
+
+    resp = rapi.create_request(
+        "qgis_vector_style",
+        {
+            "resource": {"parent": {"id": no_geom_layer_id}},
+            "qgis_vector_style": style_data,
+        },
+        status=status,
+    )
+
+    if status != 201:
+        return
+
+    res = QgisVectorStyle.filter_by(id=resp.json["id"]).one()
+    srs = SRS.filter_by(id=3857).one()
+    req = res.render_request(srs)
+    img = req.render_tile((0, 0, 0), 256)
+    assert img is None
 
 
 @pytest.mark.parametrize(
@@ -129,26 +188,11 @@ def test_format(style, format_, expected, test_data, contour_layer_id, ngw_file_
 def test_sld_vector(point_layer_id):
     rapi = ResourceAPI()
 
-    symbolizer = {
-        "type": "point",
-        "graphic": {
-            "opacity": 0.75,
-            "mark": {
-                "well_known_name": "square",
-                "fill": {"opacity": 0.25, "color": "#00FF00"},
-                "stroke": {"opacity": 0.75, "color": "#FF0000", "width": 2},
-            },
-            "size": 16,
-        },
-    }
-
-    sld = {"rules": [{"symbolizers": [symbolizer]}]}
-
     resp = rapi.create_request(
         "qgis_vector_style",
         {
             "resource": {"parent": {"id": point_layer_id}},
-            "qgis_vector_style": {"format": QgisStyleFormat.SLD.value, "sld": sld},
+            "qgis_vector_style": sld_body(),
         },
         status=201,
     )

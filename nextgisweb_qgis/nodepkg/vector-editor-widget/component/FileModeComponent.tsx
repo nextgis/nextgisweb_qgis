@@ -74,7 +74,7 @@ export const FileModeComponent: EditorWidget<EditorStore> = observer(
             </Button>
           )}
         </div>
-        {resourceId && (
+        {resourceId && store.geometryType !== "NONE" && (
           <GenerateWithAiModal
             store={store}
             resourceId={resourceId}
