@@ -65,16 +65,18 @@ export const FileModeComponent: EditorWidget<EditorStore> = observer(
             uploadText={msgUploadText}
             helpText={msgHelpText}
           />
-          {llmSettings.available && resourceId !== null && (
-            <Button
-              className="generate-with-ai-button"
-              onClick={() => setAiModalOpen(true)}
-            >
-              {msgGenerateWithAi}
-            </Button>
-          )}
+          {llmSettings.available &&
+            resourceId !== null &&
+            store.geometryType !== "NONE" && (
+              <Button
+                className="generate-with-ai-button"
+                onClick={() => setAiModalOpen(true)}
+              >
+                {msgGenerateWithAi}
+              </Button>
+            )}
         </div>
-        {resourceId && (
+        {resourceId && store.geometryType !== "NONE" && (
           <GenerateWithAiModal
             store={store}
             resourceId={resourceId}

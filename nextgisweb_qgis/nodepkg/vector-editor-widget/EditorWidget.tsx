@@ -14,15 +14,24 @@ import { SldModeComponent } from "./component/SldModeComponent";
 
 import "./EditorWidget.less";
 
-const modeOpts = [
-  { value: "file" as const, label: gettext("Style from file") },
-  { value: "sld" as const, label: gettext("User-defined style") },
-  { value: "default" as const, label: gettext("Default style") },
-  { value: "copy" as const, label: gettext("Copy from resource") },
-];
-
 export const EditorWidget: IEditorWidget<EditorStore> = observer(
   ({ store }) => {
+    const modeOpts = [
+      { value: "file" as Mode, label: gettext("Style from file") },
+    ];
+    if (store.geometryType !== "NONE") {
+      modeOpts.push({
+        value: "sld" as Mode,
+        label: gettext("User-defined style"),
+      });
+    }
+    modeOpts.push(
+      ...[
+        { value: "default" as Mode, label: gettext("Default style") },
+        { value: "copy" as Mode, label: gettext("Copy from resource") },
+      ]
+    );
+
     const { mode } = store;
 
     const modeComponent = useMemo(() => {
