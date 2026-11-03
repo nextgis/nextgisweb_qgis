@@ -1,5 +1,6 @@
 [tool.ruff]
 line-length = 99
+target-version = "py314"
 exclude = ["./qgis_headless"]
 
 [tool.ruff.lint]
