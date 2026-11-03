@@ -16,6 +16,15 @@ from ..model import QgisRasterStyle, QgisStyleFormat, QgisVectorStyle
 pytestmark = pytest.mark.usefixtures("ngw_resource_defaults", "ngw_auth_administrator")
 
 
+def _assert_color(img: Image.Image, color: tuple[int, int, int, int]):
+    stat = image_stat(img)
+    r, g, b, a = color
+    assert stat.red.max == r
+    assert stat.green.max == g
+    assert stat.blue.max == b
+    assert stat.alpha.max == a
+
+
 def sld_body():
     symbolizer = {
         "type": "point",
@@ -275,11 +284,29 @@ def test_feature_filter(
         query[f"filter[{two_point_style_id}]"] = json.dumps(feature_filter)
 
     resp = ngw_webtest_app.get("/api/component/render/image", query=query, status=200)
-    im = Image.open(BytesIO(resp.body))
-    stat = image_stat(im)
+    img = Image.open(BytesIO(resp.body))
+    _assert_color(img, color_max)
 
-    r, g, b, a = color_max
-    assert stat.red.max == r
-    assert stat.green.max == g
-    assert stat.blue.max == b
-    assert stat.alpha.max == a
+
+def test_no_geom(ngw_webtest_app: WebTestApp):
+    with transaction.manager:
+        layer = VectorLayer(geometry_type="NONE").persist()
+        style = QgisVectorStyle(parent=layer).persist()
+
+    ngw_webtest_app.get(
+        "/api/component/render/tile",
+        query={"resource": style.id, "z": 0, "x": 0, "y": 0, "nd": 204},
+        status=204,
+    )
+
+    resp = ngw_webtest_app.get(f"/api/resource/{style.id}/legend", status=200)
+    img = Image.open(BytesIO(resp.body))
+    _assert_color(img, (0, 0, 0, 0))
+
+    resp = ngw_webtest_app.get(
+        "/api/component/render/legend_symbols", query={"resources": style.id}, status=200
+    )
+    items = resp.json["items"]
+    assert len(items) == 1
+    assert items[0]["resource"]["id"] == style.id
+    assert len(items[0]["legend_symbols"]) == 0

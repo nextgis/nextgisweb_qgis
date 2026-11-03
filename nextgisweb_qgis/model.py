@@ -14,6 +14,7 @@ import sqlalchemy.orm as orm
 import transaction
 from cachetools import LRUCache
 from msgspec import UNSET, Struct, UnsetType
+from PIL import Image as PILImage
 from qgis_headless.util import to_pil as qgis_image_to_pil
 from shapely.geometry import box
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column
@@ -489,23 +490,20 @@ class QgisVectorStyle(QgisStyleMixin, Resource):
         return im
 
     def render_legend(self):
-        env.qgis.qgis_init()
+        if self.feature_layer.geometry_type == GEOM_TYPE.NONE:
+            img = PILImage.new("RGBA", (24, 24), (0, 0, 0, 0))
+        else:
+            env.qgis.qgis_init()
 
-        mreq = MapRequest()
-        mreq.set_dpi(96)
+            mreq = MapRequest()
+            mreq.set_dpi(96)
 
-        style = read_style(self)
+            style = read_style(self)
+            layer = self._dummy_layer()
 
-        layer = Layer.from_data(
-            _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
-            CRS.from_epsg(self.parent.srs.id),
-            (),
-            (),
-        )
-
-        mreq.add_layer(layer, style)
-        res = mreq.render_legend()
-        img = qgis_image_to_pil(res)
+            mreq.add_layer(layer, style)
+            res = mreq.render_legend()
+            img = qgis_image_to_pil(res)
 
         # PNG-compressed buffer is required for render_legend()
         # TODO: Switch to PIL Image in future!
@@ -515,20 +513,16 @@ class QgisVectorStyle(QgisStyleMixin, Resource):
         return buf
 
     def legend_symbols(self, icon_size):
+        if self.feature_layer.geometry_type == GEOM_TYPE.NONE:
+            return []
+
         env.qgis.qgis_init()
 
         mreq = MapRequest()
         mreq.set_dpi(96)
 
         style = read_style(self)
-
-        layer = Layer.from_data(
-            _GEOM_TYPE_TO_QGIS[self.parent.geometry_type],
-            CRS.from_epsg(self.parent.srs.id),
-            (),
-            (),
-        )
-
+        layer = self._dummy_layer()
         mreq.add_layer(layer, style)
 
         return [
@@ -541,6 +535,15 @@ class QgisVectorStyle(QgisStyleMixin, Resource):
             )
             for s in mreq.legend_symbols(0, (icon_size, icon_size))
         ]
+
+    def _dummy_layer(self) -> Layer:
+        feature_layer = self.feature_layer
+        return Layer.from_data(
+            _GEOM_TYPE_TO_QGIS[feature_layer.geometry_type],
+            CRS.from_epsg(feature_layer.srs.id),
+            (),
+            (),
+        )
 
     def _headless_kwargs(self):
         return dict(
