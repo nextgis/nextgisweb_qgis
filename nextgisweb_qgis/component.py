@@ -1,27 +1,28 @@
 from nextgisweb.env import Component
 from nextgisweb.lib.config import Option, OptionAnnotations
 
+from nextgisweb.core.component import CoreComponent
+
 import qgis_headless as qh
 
 
 class QgisComponent(Component):
-    def initialize(self):
+    def initialize(self) -> None:
         super().initialize()
         self._qgis_initialized = False
 
-    def setup_pyramid(self, config):
-        from . import api, view
+    def setup_pyramid(self, config) -> None:  # noqa: ANN001
+        from . import api, view  # noqa: F401
 
         api.setup_pyramid(self, config)
-        view.setup_pyramid(self, config)
 
-    def qgis_init(self):
+    def qgis_init(self) -> None:
         if not self._qgis_initialized:
             # Set up logging level before initialization. Default is CRITICAL in
             # production mode and INFO in development mode.
             logging_level = self.options["logging_level"]
             if logging_level is None:
-                logging_level = "INFO" if self.env.core.debug else "CRITICAL"
+                logging_level = "INFO" if self.env.component(CoreComponent).debug else "CRITICAL"
             else:
                 logging_level = logging_level.upper()
             qh.set_logging_level(getattr(qh.LogLevel, logging_level))

@@ -4,11 +4,12 @@ target-version = "py314"
 exclude = ["./qgis_headless"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
-ignore = ["E501", "E731"]
+select = ["E", "F", "W", "I", "ANN", "C4", "RUF022"]
+ignore = ["ANN401"]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
+"**/test/**.py" = ["ANN"]
+"./docker.py" = ["ANN"]
 
 [tool.ruff.lint.isort]
 extra-standard-library = ["packaging", "pkg_resources", "setuptools"]

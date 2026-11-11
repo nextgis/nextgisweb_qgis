@@ -1,9 +1,12 @@
 import re
 from hashlib import md5
+from pathlib import Path
 from random import Random
+from typing import Literal, overload
 
 from lxml import etree
 from lxml.builder import ElementMaker
+from lxml.etree import Element
 
 from nextgisweb.core.exception import ValidationError
 from nextgisweb.sld import NSMAP as nsmap_sld
@@ -11,19 +14,30 @@ from nextgisweb.sld import NSMAP as nsmap_sld
 MD5_NULL_HEXDIGEST = "d41d8cd98f00b204e9800998ecf8427e"
 
 
-def rand_color(seed=None):
+def rand_color(seed: int | None = None) -> tuple[int, int, int]:
     r = Random(seed)
     return (r.randrange(0, 256, 1), r.randrange(0, 256, 1), r.randrange(0, 256, 1))
 
 
-def sld_find(el, path):
-    return el.find(path, namespaces=nsmap_sld)
+@overload
+def sld_find(el: Element, path: str, *, must: Literal[True]) -> Element: ...
 
 
-def sld_to_qml_raster(xml):
+@overload
+def sld_find(el: Element, path: str, *, must: Literal[False] = False) -> Element | None: ...
+
+
+def sld_find(el: Element, path: str, *, must: bool = False) -> Element | None:
+    result = el.find(path, namespaces=nsmap_sld)
+    if must:
+        assert result is not None
+    return result
+
+
+def sld_to_qml_raster(xml: str) -> str:
     _sld = etree.fromstring(xml)
     _raster_symbolizer = sld_find(
-        _sld, "./NamedLayer/UserStyle/se:FeatureTypeStyle/se:Rule/se:RasterSymbolizer"
+        _sld, "./NamedLayer/UserStyle/se:FeatureTypeStyle/se:Rule/se:RasterSymbolizer", must=True
     )
 
     E = ElementMaker()
@@ -33,17 +47,21 @@ def sld_to_qml_raster(xml):
 
     rasterrenderer.attrib["type"] = "multibandcolor"
     if (_opacity := sld_find(_raster_symbolizer, "./se:Opacity")) is not None:
+        assert _opacity.text is not None
         rasterrenderer.attrib["opacity"] = _opacity.text
-    for _channel in sld_find(_raster_symbolizer, "./se:ChannelSelection"):
+    for _channel in sld_find(_raster_symbolizer, "./se:ChannelSelection", must=True):
         tag = etree.QName(_channel).localname
         band = re.sub("Channel$", "", tag).lower()
-        rasterrenderer.attrib[f"{band}Band"] = sld_find(_channel, "./se:SourceChannelName").text
+        _channel_name = sld_find(_channel, "./se:SourceChannelName", must=True)
+        assert _channel_name.text is not None
+        rasterrenderer.attrib[f"{band}Band"] = _channel_name.text
 
         if (_ce := sld_find(_channel, "./se:ContrastEnhancement")) is not None:
             if (_normalize := sld_find(_ce, "./se:Normalize")) is not None:
                 contrast_enhancement = E(f"{band}ContrastEnhancement")
                 rasterrenderer.append(contrast_enhancement)
                 for _vendor_option in _normalize.findall("./VendorOption"):
+                    assert _vendor_option.text is not None
                     contrast_enhancement.append(
                         E(_vendor_option.attrib["name"], _vendor_option.text)
                     )
@@ -51,13 +69,13 @@ def sld_to_qml_raster(xml):
     return etree.tostring(qml, encoding="unicode")
 
 
-def sld_fix_vector(xml):
+def sld_fix_vector(xml: str) -> str:
     fixed = False
 
     _sld = etree.fromstring(xml)
     E = ElementMaker(namespace=nsmap_sld["se"])
-    _fts = sld_find(_sld, "./NamedLayer/UserStyle/se:FeatureTypeStyle")
-    for _rule in sld_find(_fts, "./se:Rule"):
+    _fts = sld_find(_sld, "./NamedLayer/UserStyle/se:FeatureTypeStyle", must=True)
+    for _rule in sld_find(_fts, "./se:Rule", must=True):
         match etree.QName(_rule).localname:
             case "PointSymbolizer":
                 _graphic = sld_find(_rule, "./se:Graphic")
@@ -89,7 +107,7 @@ def sld_fix_vector(xml):
     return xml
 
 
-def fix_layer_geometry_type(qml_str, geometry_type):
+def fix_layer_geometry_type(qml_str: str, geometry_type: int) -> str:
     """Post-process QML to ensure correct layerGeometryType.
 
     Removes all existing layerGeometryType elements and inserts the correct
@@ -97,21 +115,20 @@ def fix_layer_geometry_type(qml_str, geometry_type):
     Desktop handles missing layerGeometryType, but QGIS Headless requires it
     to be explicit.
     """
-    if geometry_type is None:
-        return qml_str
-
     root = etree.fromstring(qml_str.encode("utf-8"))
 
     for el in root.findall("layerGeometryType"):
-        el.getparent().remove(el)
+        parent = el.getparent()
+        assert parent is not None
+        parent.remove(el)
 
     geom_el = etree.SubElement(root, "layerGeometryType")
     geom_el.text = str(geometry_type)
 
-    return etree.tostring(root, encoding="unicode", xml_declaration=False)
+    return etree.tostring(root, encoding="unicode", xml_declaration=False)  # ty: ignore[invalid-return-type]
 
 
-def fix_labeling_enabled(qml_str):
+def fix_labeling_enabled(qml_str: str) -> str:
     """Post-process QML to keep labelsEnabled consistent with <labeling>.
 
     QGIS Desktop only renders labels when the root element's labelsEnabled
@@ -121,10 +138,10 @@ def fix_labeling_enabled(qml_str):
     """
     root = etree.fromstring(qml_str.encode("utf-8"))
     root.attrib["labelsEnabled"] = "1" if root.find("labeling") is not None else "0"
-    return etree.tostring(root, encoding="unicode", xml_declaration=False)
+    return etree.tostring(root, encoding="unicode", xml_declaration=False)  # ty: ignore[invalid-return-type]
 
 
-def add_qml_metadata(qml_str, layer_id, prompt):
+def add_qml_metadata(qml_str: str, layer_id: int, prompt: str) -> str:
     """Add layer reference and user prompt to QML metadata for debugging."""
     root = etree.fromstring(qml_str.encode("utf-8"))
 
@@ -134,10 +151,10 @@ def add_qml_metadata(qml_str, layer_id, prompt):
     prompt_el = etree.SubElement(metadata, "user_prompt")
     prompt_el.text = prompt
 
-    return etree.tostring(root, encoding="unicode", xml_declaration=False)
+    return etree.tostring(root, encoding="unicode", xml_declaration=False)  # ty: ignore[invalid-return-type]
 
 
-def validate_qml_structure(qml_str):
+def validate_qml_structure(qml_str: str) -> None:
     """Validate that QML contains at least one renderer-v2 or labeling tag."""
     root = etree.fromstring(qml_str.encode("utf-8"))
     if root.find("renderer-v2") is None and root.find("labeling") is None:
@@ -151,7 +168,7 @@ QML_GEOM_TYPE_NAME = {0: "point", 1: "line", 2: "polygon"}
 QML_GEOM_TYPE_SYMBOL_TYPE = {0: "marker", 1: "line", 2: "fill"}
 
 
-def validate_symbol_geometry_type(qml_str, geometry_type):
+def validate_symbol_geometry_type(qml_str: str, geometry_type: int) -> None:
     """Validate that every top-level symbol matches the layer's geometry type.
 
     The LLM is told the layer's geometry type, but sometimes ignores it and
@@ -174,7 +191,7 @@ def validate_symbol_geometry_type(qml_str, geometry_type):
             )
 
 
-def file_md5_hexdigest(file):
+def file_md5_hexdigest(file: Path) -> str:
     h = md5()
     with open(file, "rb") as f:
         while buf := f.read(4096):

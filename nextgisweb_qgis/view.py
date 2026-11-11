@@ -1,9 +1,15 @@
-from nextgisweb.env import DBSession, env
+from typing import Any
 
+from nextgisweb.env import DBSession, inject
+
+from nextgisweb.feature_layer import FeatureLayerMixin
 from nextgisweb.jsrealm import jsentry
-from nextgisweb.resource import Widget
+from nextgisweb.pyramid.tomb import Request
+from nextgisweb.raster_layer import RasterLayer
+from nextgisweb.resource import Resource, Widget
 from nextgisweb.resource.view import resource_sections
 
+from .component import QgisComponent
 from .model import QgisRasterStyle, QgisVectorStyle
 
 
@@ -12,9 +18,11 @@ class VectorStyleWidget(Widget):
     operation = ("create", "update")
     amdmod = jsentry("@nextgisweb/qgis/vector-editor-widget")
 
-    def config(self):
+    def config(self) -> dict:
         result = super().config()
-        result["geometryType"] = self.obj.parent.geometry_type
+        parent = self.obj.parent
+        assert isinstance(parent, FeatureLayerMixin)
+        result["geometryType"] = parent.geometry_type
         return result
 
 
@@ -23,9 +31,10 @@ class RasterStyleWidget(Widget):
     operation = ("create", "update")
     amdmod = jsentry("@nextgisweb/qgis/raster-editor-widget")
 
-    def config(self):
+    def config(self) -> dict:
         result = super().config()
         parent = self.obj.parent
+        assert isinstance(parent, RasterLayer)
         result["dtype"] = parent.dtype
         result["band_count"] = parent.band_count
         result["parent_id"] = parent.id
@@ -33,8 +42,11 @@ class RasterStyleWidget(Widget):
 
 
 @resource_sections("@nextgisweb/qgis/resource-section/default-style", order=-60)
-def resource_section_default_style(obj, *, request, **kwargs):
-    if not env.qgis.options["default_style"] or any(
+@inject()
+def resource_section_default_style(
+    obj: Resource, *, request: Request, qgis: QgisComponent = inject.arg(), **kwargs: Any
+) -> dict | None:
+    if not qgis.options["default_style"] or any(
         child.cls.endswith("_style") for child in obj.children
     ):
         return
@@ -48,16 +60,12 @@ def resource_section_default_style(obj, *, request, **kwargs):
             display_name = child.suggest_display_name(request.localizer.translate)
             child.parent = None
 
-        return dict(
-            payload=dict(
-                resource=dict(
-                    cls=cls.identity,
-                    parent=dict(id=obj.id),
-                    display_name=display_name,
-                )
-            )
-        )
-
-
-def setup_pyramid(comp, config):
-    pass
+        return {
+            "payload": {
+                "resource": {
+                    "cls": cls.identity,
+                    "parent": {"id": obj.id},
+                    "display_name": display_name,
+                }
+            }
+        }

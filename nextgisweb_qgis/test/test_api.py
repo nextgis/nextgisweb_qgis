@@ -274,12 +274,12 @@ def two_point_style_id(two_point_layer_id, ngw_data_path):
 def test_feature_filter(
     feature_filter, color_max, two_point_style_id, ngw_webtest_app: WebTestApp
 ):
-    query = dict(
-        resource=two_point_style_id,
-        extent="-20037508,-20037508,20037508,20037508",
-        size="256,256",
-        nd=200,
-    )
+    query = {
+        "resource": two_point_style_id,
+        "extent": "-20037508,-20037508,20037508,20037508",
+        "size": "256,256",
+        "nd": 200,
+    }
     if feature_filter is not None:
         query[f"filter[{two_point_style_id}]"] = json.dumps(feature_filter)
 
