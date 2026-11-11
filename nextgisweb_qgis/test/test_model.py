@@ -18,9 +18,9 @@ def test_update_not_modified(point_layer_id, test_data, ngw_txn):
     assert update_not_modified(qvs, qml2, "qgis.test")
 
     fileobj2 = qvs.qgis_fileobj
-    digest2 = qvs.resmeta[0].value
+    digest2 = qvs.resmeta[0].value  # ty: ignore[missing-attribute]
 
-    assert qvs.resmeta[0].key == "qgis.test"
+    assert qvs.resmeta[0].key == "qgis.test"  # ty: ignore[missing-attribute]
     assert digest2
 
     qvs.qgis_format = QgisStyleFormat.DEFAULT
@@ -32,12 +32,12 @@ def test_update_not_modified(point_layer_id, test_data, ngw_txn):
     qvs.qgis_fileobj = fileobj2
 
     assert update_not_modified(qvs, qml2, "qgis.test")
-    assert qvs.resmeta[0].value == digest2
+    assert qvs.resmeta[0].value == digest2  # ty: ignore[missing-attribute]
 
     assert update_not_modified(qvs, qml1, "qgis.test")
-    assert qvs.resmeta[0].value != digest2
+    assert qvs.resmeta[0].value != digest2  # ty: ignore[missing-attribute]
 
-    qvs.resmeta[:] = []
+    qvs.resmeta[:] = []  # ty: ignore[missing-attribute]
     assert not update_not_modified(qvs, qml1, "qgis.test")
 
 

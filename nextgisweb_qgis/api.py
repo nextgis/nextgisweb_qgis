@@ -8,16 +8,19 @@ from nextgisweb.env import gettext
 from nextgisweb.lib.json import loads as json_loads
 
 from nextgisweb.core.exception import ValidationError
-from nextgisweb.feature_layer import IAggregatableFeatureQuery, IFeatureLayer
+from nextgisweb.feature_layer import FeatureLayerMixin, IAggregatableFeatureQuery, IFeatureLayer
 from nextgisweb.feature_layer.aggregation import MinMaxSpec, UniqueValuesSpec
+from nextgisweb.file_storage import FileStorageComponent
 from nextgisweb.file_upload.api import FileUploadObject
 from nextgisweb.file_upload.model import FileUpload
-from nextgisweb.pyramid.tomb import FileResponse, HTTPNotFound, Response
+from nextgisweb.llm_core import LLMCoreComponent
+from nextgisweb.pyramid.tomb import Configurator, FileResponse, HTTPNotFound, Request, Response
 from nextgisweb.resource import DataScope, ResourceFactory, ResourceScope, resource_factory
 
 import qgis_headless as qh
 from qgis_headless import Layer, Style
 
+from .component import QgisComponent
 from .model import (
     _GEOM_TYPE_TO_QGIS,
     QgisRasterStyle,
@@ -58,11 +61,11 @@ class OriginalEnum(Enum):
 
 
 def style_qml(
-    resource,
-    request,
+    resource: QgisRasterStyle | QgisVectorStyle,
+    request: Request,
     *,
     original: OriginalEnum = OriginalEnum.PREFER,
-):
+) -> Response:
     """Read style in QML format"""
     request.resource_permission(ResourceScope.read)
 
@@ -72,7 +75,7 @@ def style_qml(
         style = read_style(resource)
         response = Response(style.to_string(), request=request)
     elif resource.qgis_format == QgisStyleFormat.QML_FILE:
-        fn = request.env.file_storage.filename(resource.qgis_fileobj)
+        fn = request.env.component(FileStorageComponent).filename(resource.qgis_fileobj)
         response = FileResponse(fn, request=request)
     else:
         raise ValidationError(
@@ -91,7 +94,7 @@ _QML_PROMPT_TEMPLATE = Template(
 )
 
 
-def _qml_system_prompt(version):
+def _qml_system_prompt(version: str) -> str:
     return _QML_PROMPT_TEMPLATE.render(version=version)
 
 
@@ -99,7 +102,10 @@ _QML_TOOL = {
     "type": "function",
     "function": {
         "name": "set_qml",
-        "description": "Set the QML style for the layer. You MUST provide the complete QML XML in the 'qml' parameter.",
+        "description": (
+            "Set the QML style for the layer. You MUST provide the complete QML XML in "
+            "the 'qml' parameter."
+        ),
         "parameters": {
             "type": "object",
             "properties": {
@@ -118,7 +124,7 @@ class StyleGenerateBody(Struct, kw_only=True):
     prompt: str
 
 
-def _get_field_samples(resource, limit=20):
+def _get_field_samples(resource: FeatureLayerMixin, limit: int = 20) -> str:
     """Get sample data for fields to help LLM understand the data"""
     feature_query = resource.feature_query()
     if not IAggregatableFeatureQuery.providedBy(feature_query):
@@ -164,11 +170,13 @@ class StyleGenerateResponse(Struct, kw_only=True):
     file_upload: FileUploadObject
 
 
-def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenerateResponse:
+def style_generate(
+    resource: FeatureLayerMixin, request: Request, *, body: StyleGenerateBody
+) -> StyleGenerateResponse:
     """Generate QML style from natural language prompt using LLM"""
     request.resource_permission(DataScope.read)
 
-    llm = request.env.llm_core
+    llm = request.env.component(LLMCoreComponent)
     if not llm.available:
         raise HTTPNotFound()
 
@@ -249,7 +257,7 @@ def style_generate(resource, request, *, body: StyleGenerateBody) -> StyleGenera
     )
 
 
-def setup_pyramid(comp, config):
+def setup_pyramid(comp: QgisComponent, config: Configurator) -> None:
     route = config.add_route(
         "qgis.style_qml",
         "/api/resource/{id:uint}/qml",
